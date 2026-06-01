@@ -2,6 +2,8 @@ import { connectDB } from "@/lib/db";
 import { MentalBatteryInstrumentModel } from "@/models/MentalBatteryInstrument";
 import QuizClient from "./QuizClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function QuizPage() {
   await connectDB();
   // Fetch instruments that are NOT archived, sorted so PHQ-9 is first, then GAD-7, then DASS-21
