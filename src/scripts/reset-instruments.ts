@@ -8,7 +8,7 @@ async function run() {
   await mongoose.connect(process.env.MONGODB_URI as string);
   console.log("Connected to MongoDB");
 
-  const db = mongoose.connection.db;
+  const db = mongoose.connection.db!;
   
   const result = await db.collection("mentalbatteryinstruments").updateMany(
     {},

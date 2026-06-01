@@ -1,9 +1,7 @@
 import mongoose, { Schema, models, model } from "mongoose";
 import type { ArchetypeId } from "@/data/mental-battery/archetypes";
-import type {
-  MentalBatteryResult as MBResult,
-  SeverityLevel,
-} from "@/lib/mental-battery";
+import type { MentalBatteryResult as MBResult } from "@/lib/mental-battery";
+import type { SeverityLevel } from "@/lib/mental-battery-constants";
 
 export interface IMentalBatteryResult {
   _id: mongoose.Types.ObjectId;

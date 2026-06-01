@@ -8,7 +8,7 @@ async function check() {
   await mongoose.connect(process.env.MONGODB_URI as string);
   console.log("Connected");
   
-  const db = mongoose.connection.db;
+  const db = mongoose.connection.db!;
   const archetypes = await db.collection("dynamicarchetypes").find({}).toArray();
   
   for (const arch of archetypes) {
