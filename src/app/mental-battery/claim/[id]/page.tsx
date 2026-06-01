@@ -113,21 +113,21 @@ export default function MentalBatteryClaimPage() {
           </div>
 
           {/* Teaser Card */}
-          <div className="lmhy-card p-8 text-center bg-gradient-to-br from-white to-slate-50 border-2 shadow-sm">
+          <div className={`rounded-2xl bg-gradient-to-br ${archetype.gradient || 'from-indigo-500 to-purple-600'} p-8 text-white flex flex-col items-center text-center shadow-lg`}>
             {archetype.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={archetype.imageUrl.replace(/^\/uploads\//, "/api/uploads/")} alt={archetype.name} className="w-16 h-16 rounded-full object-cover shadow-sm bg-white mx-auto" />
+              <img src={archetype.imageUrl.replace(/^\/uploads\//, "/api/uploads/")} alt={archetype.name} className="w-20 h-20 mb-4 object-cover rounded-xl shadow-sm bg-white/10" />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-white shadow-inner flex items-center justify-center text-slate-300 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="w-20 h-20 mb-4 rounded-xl bg-white/10 shadow-inner flex items-center justify-center text-white/50">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
             )}
-            <h2 className="mt-4 text-2xl font-bold" style={{ color: "var(--black-90)" }}>
+            <h2 className="text-3xl font-bold">
               {archetype.name}
             </h2>
-            <p className="mt-2 text-sm text-slate-500 italic">
+            <p className="mt-2 text-base opacity-90 italic">
               "{archetype.tagline}"
             </p>
           </div>
