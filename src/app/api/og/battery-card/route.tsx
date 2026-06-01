@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { ARCHETYPES, type ArchetypeId } from "@/data/mental-battery/archetypes";
+import { SEVERITY_LABELS, type SeverityLevel } from "@/lib/mental-battery-constants";
 
 export const runtime = "edge";
 
@@ -7,10 +8,16 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const archetypeId = searchParams.get("archetype") as ArchetypeId;
-    const score = searchParams.get("score");
+    const score = searchParams.get("score") || "0";
+    
+    // Extract submetrics
+    const stress = (searchParams.get("stress") as SeverityLevel) || "rendah";
+    const recovery = (searchParams.get("recovery") as SeverityLevel) || "rendah";
+    const focus = (searchParams.get("focus") as SeverityLevel) || "rendah";
+    const emotional = (searchParams.get("emotional") as SeverityLevel) || "rendah";
 
     const archetype = ARCHETYPES[archetypeId] || ARCHETYPES["silent_burnout"];
-    const batteryScore = score || "0";
+    const baseUrl = new URL(request.url).origin;
 
     return new ImageResponse(
       (
@@ -20,77 +27,89 @@ export async function GET(request: Request) {
             width: "100%",
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
             backgroundColor: "#fff",
             backgroundImage: `linear-gradient(to bottom right, ${
               archetype.accentColor || "#f8fafc"
             }, #ffffff)`,
             fontFamily: "sans-serif",
-            padding: "40px",
+            padding: "50px",
           }}
         >
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", position: "absolute", top: 40, left: 40 }}>
-            <span style={{ fontSize: 24, fontWeight: "bold", color: "#333" }}>Let Me Hear You</span>
-          </div>
-          
-          <div style={{ display: "flex", position: "absolute", top: 40, right: 40 }}>
-            <span style={{ fontSize: 24, fontWeight: "bold", color: "#666" }}>⚡ Mental Battery: {batteryScore}%</span>
-          </div>
-
-          {/* Main Content */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.8)",
-              padding: "40px 60px",
-              borderRadius: "32px",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-              border: "1px solid rgba(0,0,0,0.05)",
-              marginTop: "20px",
-            }}
-          >
-            <div style={{ fontSize: 100, marginBottom: 20 }}>{archetype.emoji}</div>
-            <h1
-              style={{
-                fontSize: 60,
-                fontWeight: 900,
-                color: "#111",
-                marginBottom: 10,
-                textAlign: "center",
-                lineHeight: 1.1,
-              }}
-            >
-              {archetype.name}
-            </h1>
-            <p style={{ fontSize: 30, color: "#666", fontStyle: "italic", textAlign: "center", marginBottom: 30 }}>
-              "{archetype.tagline}"
-            </p>
-
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "12px", maxWidth: "800px" }}>
-              {archetype.signals.slice(0, 3).map((s) => (
-                <div
-                  key={s}
-                  style={{
-                    backgroundColor: "#f1f5f9",
-                    padding: "10px 20px",
-                    borderRadius: "20px",
-                    fontSize: 20,
-                    color: "#334155",
-                  }}
-                >
-                  {s}
-                </div>
-              ))}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: "40px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`${baseUrl}/assets/LMHY.png`} alt="LMHY" width="60" height="60" style={{ borderRadius: "12px" }} />
+              <span style={{ fontSize: 32, fontWeight: "bold", color: "#334155", letterSpacing: "-1px" }}>Let Me Hear You</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", backgroundColor: "rgba(255,255,255,0.9)", padding: "12px 24px", borderRadius: "30px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
+              <span style={{ fontSize: 36, fontWeight: "900", color: "#4f46e5" }}>⚡ Mental Battery: {score}%</span>
             </div>
           </div>
 
-          <div style={{ display: "flex", position: "absolute", bottom: 40, fontSize: 24, color: "#888" }}>
-            Cek kondisi mentalmu gratis di mentalbattery.lmhy.id
+          {/* Main Layout */}
+          <div style={{ display: "flex", width: "100%", gap: "40px", flex: 1 }}>
+            
+            {/* Left side: Archetype */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                padding: "40px",
+                borderRadius: "32px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+                border: "1px solid rgba(0,0,0,0.05)",
+                flex: 1.2,
+              }}
+            >
+              <div style={{ fontSize: 120, marginBottom: 10 }}>{archetype.emoji}</div>
+              <h1
+                style={{
+                  fontSize: 55,
+                  fontWeight: 900,
+                  color: "#0f172a",
+                  marginBottom: 10,
+                  textAlign: "center",
+                  lineHeight: 1.1,
+                }}
+              >
+                {archetype.name}
+              </h1>
+              <p style={{ fontSize: 28, color: "#64748b", fontStyle: "italic", textAlign: "center", marginBottom: 0 }}>
+                "{archetype.tagline}"
+              </p>
+            </div>
+
+            {/* Right side: Sub metrics */}
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "16px", justifyContent: "center" }}>
+              <div style={{ display: "flex", backgroundColor: "rgba(255,255,255,0.9)", borderRadius: "24px", padding: "20px 24px", flexDirection: "column", border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 4px 15px rgba(0,0,0,0.03)" }}>
+                <span style={{ fontSize: 22, color: "#64748b", marginBottom: "8px" }}>Stress Level</span>
+                <span style={{ fontSize: 32, fontWeight: "bold", color: "#1e293b" }}>{SEVERITY_LABELS[stress]?.emoji} {SEVERITY_LABELS[stress]?.label}</span>
+              </div>
+              
+              <div style={{ display: "flex", backgroundColor: "rgba(255,255,255,0.9)", borderRadius: "24px", padding: "20px 24px", flexDirection: "column", border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 4px 15px rgba(0,0,0,0.03)" }}>
+                <span style={{ fontSize: 22, color: "#64748b", marginBottom: "8px" }}>Recovery Score</span>
+                <span style={{ fontSize: 32, fontWeight: "bold", color: "#1e293b" }}>{SEVERITY_LABELS[recovery]?.emoji} {SEVERITY_LABELS[recovery]?.label}</span>
+              </div>
+
+              <div style={{ display: "flex", backgroundColor: "rgba(255,255,255,0.9)", borderRadius: "24px", padding: "20px 24px", flexDirection: "column", border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 4px 15px rgba(0,0,0,0.03)" }}>
+                <span style={{ fontSize: 22, color: "#64748b", marginBottom: "8px" }}>Focus Capacity</span>
+                <span style={{ fontSize: 32, fontWeight: "bold", color: "#1e293b" }}>{SEVERITY_LABELS[focus]?.emoji} {SEVERITY_LABELS[focus]?.label}</span>
+              </div>
+
+              <div style={{ display: "flex", backgroundColor: "rgba(255,255,255,0.9)", borderRadius: "24px", padding: "20px 24px", flexDirection: "column", border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 4px 15px rgba(0,0,0,0.03)" }}>
+                <span style={{ fontSize: 22, color: "#64748b", marginBottom: "8px" }}>Emotional Load</span>
+                <span style={{ fontSize: 32, fontWeight: "bold", color: "#1e293b" }}>{SEVERITY_LABELS[emotional]?.emoji} {SEVERITY_LABELS[emotional]?.label}</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div style={{ display: "flex", width: "100%", justifyContent: "center", marginTop: "30px" }}>
+             <span style={{ fontSize: 24, color: "#64748b", fontWeight: "bold" }}>Cek kondisi mentalmu gratis di mentalbattery.lmhy.id</span>
           </div>
         </div>
       ),

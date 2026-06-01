@@ -147,7 +147,7 @@ export default function MentalBatteryResultPage() {
           <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative aspect-[1200/630] bg-slate-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src={`/api/og/battery-card?archetype=${result.archetypeId}&score=${result.batteryPercentage}`}
+              src={`/api/og/battery-card?archetype=${result.archetypeId}&score=${result.batteryPercentage}&stress=${result.subMetrics.stressLevel}&recovery=${result.subMetrics.recoveryScore}&focus=${result.subMetrics.focusCapacity}&emotional=${result.subMetrics.emotionalLoad}`}
               alt="Mental Battery Share Card"
               className="absolute inset-0 w-full h-full object-cover"
             />
