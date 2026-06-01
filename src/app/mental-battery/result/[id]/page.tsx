@@ -40,9 +40,8 @@ export default function MentalBatteryResultPage() {
   const id = params.id as string;
   const token = searchParams.get("token") || "";
 
-  const [data, setData] = useState<ResultData | null>(null);
+  const [result, setResult] = useState<(ResultData & { archetype?: any }) | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -100,29 +99,29 @@ export default function MentalBatteryResultPage() {
   const subMetricItems = [
     {
       label: "Stress Level",
-      value: data.subMetrics.stressLevel,
+      value: result.subMetrics.stressLevel,
       desc: "Tingkat tekanan yang dirasakan",
     },
     {
       label: "Recovery Score",
-      value: data.subMetrics.recoveryScore,
+      value: result.subMetrics.recoveryScore,
       desc: "Kemampuan menikmati hidup",
     },
     {
       label: "Focus Capacity",
-      value: data.subMetrics.focusCapacity,
+      value: result.subMetrics.focusCapacity,
       desc: "Gangguan pada konsentrasi",
     },
     {
       label: "Emotional Load",
-      value: data.subMetrics.emotionalLoad,
+      value: result.subMetrics.emotionalLoad,
       desc: "Beban emosional keseluruhan",
     },
   ];
 
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/mental-battery/result/${id}?token=${data.publicToken}`;
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/mental-battery/result/${id}?token=${result.publicToken}`;
   const waText = encodeURIComponent(
-    `Saya baru saja cek Mental Battery di Let Me Hear You!\n\nSkor saya: ${data.batteryPercentage}% (Archetype: ${archetype?.name}).\n\nCek kondisi mentalmu di sini:\nhttps://mentalbattery.lmhy.id`
+    `Saya baru saja cek Mental Battery di Let Me Hear You!\n\nSkor saya: ${result.batteryPercentage}% (Archetype: ${archetype?.name}).\n\nCek kondisi mentalmu di sini:\nhttps://mentalbattery.lmhy.id`
   );
 
   return (
@@ -148,7 +147,7 @@ export default function MentalBatteryResultPage() {
           <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative aspect-[1200/630] bg-slate-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src={`/api/og/battery-card?archetype=${data.archetypeId}&score=${data.batteryPercentage}`}
+              src={`/api/og/battery-card?archetype=${result.archetypeId}&score=${result.batteryPercentage}`}
               alt="Mental Battery Share Card"
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -168,7 +167,7 @@ export default function MentalBatteryResultPage() {
       )}
 
       {/* High Risk Alert */}
-      {data.isHighRisk && (
+      {result.isHighRisk && (
         <div className="rounded-xl border-2 border-red-400 bg-red-50 p-4 text-sm text-red-900 dark:border-red-600 dark:bg-red-950/30 dark:text-red-100">
           <strong>⚠️ Perhatian:</strong> Hasil assessment menunjukkan kondisi
           yang perlu perhatian segera. Jika kamu merasa tidak aman, segera
@@ -195,7 +194,7 @@ export default function MentalBatteryResultPage() {
             className="text-6xl font-bold"
             style={{ color: "var(--black-90)" }}
           >
-            {data.batteryPercentage}%
+            {result.batteryPercentage}%
           </span>
           <div className="mt-3 mx-auto max-w-xs">
             <div
@@ -205,13 +204,13 @@ export default function MentalBatteryResultPage() {
               <div
                 className="h-full rounded-full transition-all duration-1000"
                 style={{
-                  width: `${data.batteryPercentage}%`,
+                  width: `${result.batteryPercentage}%`,
                   background:
-                    data.batteryPercentage >= 60
+                    result.batteryPercentage >= 60
                       ? "#22c55e"
-                      : data.batteryPercentage >= 40
+                      : result.batteryPercentage >= 40
                         ? "#eab308"
-                        : data.batteryPercentage >= 20
+                        : result.batteryPercentage >= 20
                           ? "#f97316"
                           : "#ef4444",
                 }}
@@ -279,7 +278,7 @@ export default function MentalBatteryResultPage() {
 
           {/* Signals */}
           <div className="mt-4 flex flex-wrap gap-2">
-            {archetype.signals.map((s) => (
+            {archetype.signals.map((s: string) => (
               <span
                 key={s}
                 className="rounded-full bg-white/20 px-3 py-1 text-xs"
@@ -303,31 +302,31 @@ export default function MentalBatteryResultPage() {
           <div>
             <p style={{ color: "var(--black-70)" }}>PHQ-9</p>
             <p className="font-semibold" style={{ color: "var(--black-90)" }}>
-              {data.rawScores.phq9Total} / 27
+              {result.rawScores.phq9Total} / 27
             </p>
           </div>
           <div>
             <p style={{ color: "var(--black-70)" }}>GAD-7</p>
             <p className="font-semibold" style={{ color: "var(--black-90)" }}>
-              {data.rawScores.gad7Total} / 21
+              {result.rawScores.gad7Total} / 21
             </p>
           </div>
           <div>
             <p style={{ color: "var(--black-70)" }}>DASS-21 Depresi</p>
             <p className="font-semibold" style={{ color: "var(--black-90)" }}>
-              {data.rawScores.dass21Depression} / 21
+              {result.rawScores.dass21Depression} / 21
             </p>
           </div>
           <div>
             <p style={{ color: "var(--black-70)" }}>DASS-21 Kecemasan</p>
             <p className="font-semibold" style={{ color: "var(--black-90)" }}>
-              {data.rawScores.dass21Anxiety} / 21
+              {result.rawScores.dass21Anxiety} / 21
             </p>
           </div>
           <div>
             <p style={{ color: "var(--black-70)" }}>DASS-21 Stres</p>
             <p className="font-semibold" style={{ color: "var(--black-90)" }}>
-              {data.rawScores.dass21Stress} / 21
+              {result.rawScores.dass21Stress} / 21
             </p>
           </div>
         </div>
