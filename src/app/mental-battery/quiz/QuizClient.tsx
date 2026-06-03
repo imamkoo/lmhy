@@ -100,8 +100,8 @@ export default function QuizClient({ instruments, totalQuestions }: { instrument
       }
 
       const data = await res.json();
-      // Redirect to Teaser / Lead Form instead of full result
-      router.push(`/mental-battery/claim/${data.id}?token=${data.publicToken}`);
+      // Redirect directly to the full result page as requested
+      router.push(`/mental-battery/result/${data.id}?token=${data.publicToken}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Gagal menyimpan. Coba lagi."

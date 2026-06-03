@@ -18,8 +18,7 @@ export const metadata: Metadata = {
     "Komunitas kesehatan mental — skrining mandiri, pelacakan mood, dan alat relaksasi.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon.png?v=3",
-    shortcut: "/icon.png?v=3",
+    icon: "/assets/logo let me hear you.jpeg",
   },
 };
 
