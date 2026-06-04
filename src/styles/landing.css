@@ -1413,10 +1413,30 @@ a.learn-more:active::before {
 
 /* Force heading sizes back — Tailwind preflight sets font-size: inherit */
 .home-text h1 {
-  font-size: 50px !important;
   font-weight: 700 !important;
   line-height: 1.2 !important;
   color: var(--black-90) !important;
+}
+@media (min-width: 912px) {
+  .home-text h1 {
+    font-size: 50px !important;
+  }
+}
+@media (max-width: 911px) {
+  .home-text h1 {
+    font-size: 35px !important;
+  }
+}
+.home {
+  padding-top: 180px !important;
+}
+@media (max-width: 767px) {
+  .home {
+    padding-top: 140px !important;
+  }
+  .home-img {
+    display: none !important; /* Hide the big image on mobile to save space */
+  }
 }
 
 .section-title .title {

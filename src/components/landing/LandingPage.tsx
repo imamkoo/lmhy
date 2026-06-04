@@ -67,12 +67,14 @@ export function LandingPage() {
                 mendengar apa yang ingin mereka dengar, tapi tidak dengan kami. Kami
                 siap untuk mendengarkan kalian dalam kondisi apapun.
               </p>
-              <a href="#contact" className="learn-more">
-                Contact Us
-              </a>
-              <a href="/mental-battery" className="learn-more" style={{ marginLeft: 12 }}>
-                Cek Mental Battery
-              </a>
+              <div className="flex flex-col sm:flex-row gap-4 mt-8" style={{ zIndex: 10, position: "relative" }}>
+                <a href="#contact" className="learn-more text-center">
+                  Contact Us
+                </a>
+                <a href="/mental-battery" className="learn-more text-center">
+                  Cek Mental Battery
+                </a>
+              </div>
             </div>
             <div className="home-img">
               <div className="fancy-br-box">

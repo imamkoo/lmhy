@@ -127,13 +127,13 @@ export default function MentalBatteryResultPage() {
   return (
     <div className="min-h-screen font-sans" style={{ background: "#FFFDF8", color: "#1E293B" }}>
       {/* Simple Header */}
-      <header className="py-6 px-4 max-w-5xl mx-auto flex justify-between items-center">
+      <header className="py-4 md:py-6 px-4 max-w-5xl mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/LMHY.png" alt="Let Me Hear You" className="w-10 h-10" />
-          <span className="font-bold text-indigo-900 tracking-tight text-lg">Let Me Hear You</span>
+          <img src="/assets/LMHY.png" alt="Let Me Hear You" className="h-8 md:h-10 w-auto object-contain" />
+          <span className="font-bold text-indigo-900 tracking-tight text-base md:text-lg whitespace-nowrap hidden sm:inline-block">Let Me Hear You</span>
         </Link>
-        <Link href="/mental-battery" className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition">
+        <Link href="/mental-battery" className="text-xs md:text-sm font-medium text-slate-500 hover:text-indigo-600 transition text-right whitespace-nowrap">
           Ambil Assessment Lagi
         </Link>
       </header>
