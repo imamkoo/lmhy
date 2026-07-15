@@ -19,7 +19,7 @@ export default async function QuizPage() {
     title: i.title,
     instruction: i.instruction,
     scaleLabels: i.scaleLabels,
-    questions: i.questions.map((q: any) => ({
+    questions: i.questions.map((q: { id: string; text: string; subscale?: string }) => ({
       id: q.id,
       text: q.text,
       subscale: q.subscale

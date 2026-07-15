@@ -22,6 +22,7 @@ export interface ArchetypeDefinition {
   id: ArchetypeId;
   name: string;
   emoji: string;
+  imageUrl?: string;
   tagline: string;
   description: string;
   signals: string[];
