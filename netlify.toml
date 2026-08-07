@@ -1,0 +1,7 @@
+# Netlify framework-preset untuk Next.js
+# Netlify mendeteksi Next otomatis; publish & build didefinisikan Netlify via plugin @netlify/plugin-nextjs.
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
