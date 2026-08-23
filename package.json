@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "gray-matter": "^4.0.3",
     "next": "16.3.0",
+    "next-mdx-remote": "^6.0.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "shadcn": "^4.10.0",

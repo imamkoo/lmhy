@@ -199,6 +199,7 @@ export function LandingPage() {
           {[
             {
               title: "Mental illness",
+              slug: "memahami-kesehatan-mental",
               tag: "Mental Illness",
               bg: "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
               excerpt:
@@ -206,6 +207,7 @@ export function LandingPage() {
             },
             {
               title: "Mental Health",
+              slug: "mengenali-tanda-burnout",
               tag: "Mental Health",
               bg: "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
               excerpt:
@@ -213,6 +215,7 @@ export function LandingPage() {
             },
             {
               title: "Mental Disorder",
+              slug: "memahami-kesehatan-mental",
               tag: "Mental Disorder",
               bg: "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
               excerpt:
@@ -222,7 +225,7 @@ export function LandingPage() {
             <div key={card.title} className="card-grid-space">
               <a
                 className="card"
-                href="#article"
+                href={`/blog/${card.slug}`}
                 style={{ "--bg-img": `url(${card.bg})` } as React.CSSProperties}
               >
                 <div>
@@ -236,6 +239,11 @@ export function LandingPage() {
             </div>
           ))}
         </section>
+        <div className="container mt-8 text-center">
+          <Link href="/blog" className="learn-more" style={{ display: "inline-block" }}>
+            Lihat Semua Artikel →
+          </Link>
+        </div>
       </section>
 
       <section className="contact section-padding" id="contact">
