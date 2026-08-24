@@ -17,6 +17,10 @@ export function LiteraWidget({ title }: { title: string }) {
       title,
     };
 
+    window.dispatchEvent(new CustomEvent("litera:article-change", {
+      detail: { permalink: window.location.href, title },
+    }));
+
     if (!document.getElementById(LOADER_ID)) {
       const script = document.createElement("script");
       script.id = LOADER_ID;
