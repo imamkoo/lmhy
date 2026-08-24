@@ -21,6 +21,9 @@ export function LiteraWidget({ title }: { title: string }) {
       detail: { permalink: currentHref, title },
     }));
 
+    const mount = (window as Window & { literaMount?: (container: HTMLElement) => void }).literaMount;
+    if (mount) mount(root);
+
     if (!document.getElementById(LOADER_ID)) {
       const script = document.createElement("script");
       script.id = LOADER_ID;
