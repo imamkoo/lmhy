@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 
 const LOADER_ID = "lmhy-litera-loader";
+const EMBED_URL = "https://cdn.literaa.xyz/litera-embed.js";
 const ROOT_ID = "my-react-plugin-root";
-const LOADER_URL = "https://cdn.literaa.xyz/loader.js";
 
 export function LiteraWidget({ title }: { title: string }) {
   useEffect(() => {
@@ -20,7 +20,9 @@ export function LiteraWidget({ title }: { title: string }) {
     if (!document.getElementById(LOADER_ID)) {
       const script = document.createElement("script");
       script.id = LOADER_ID;
-      script.src = LOADER_URL;
+      script.src = EMBED_URL;
+      script.dataset.articleUrl = window.location.href;
+      script.dataset.title = title;
       script.async = true;
       document.body.appendChild(script);
     }
