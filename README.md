@@ -1,53 +1,57 @@
 # Let Me Hear You
 
-Situs komunitas kesehatan mental dengan **landing marketing** dan **aplikasi wellness** (skrining mandiri, mood tracker, aktivitas, dasbor, mini-games relaksasi).
+Platform kesehatan mental berbasis AI + telehealth — saat ini dalam mode **landing + blog** (Milestone 1 selesai).
 
-## Struktur
+## Halaman Aktif
 
-- `/` — Landing (konten dari situs statis asli, styling [`src/styles/landing.css`](src/styles/landing.css))
-- `/login`, `/register` — Autentikasi
-- `/dashboard`, `/mood`, `/activities`, `/screening`, `/games`, `/emergency` — Aplikasi wellness
-- `/assets/*` — Asset gambar brand (dari folder [`public/assets/`](public/assets/))
+- `/` — Landing page (marketing, brand Warm Sanctuary)
+- `/blog` — Daftar artikel (SSG dari MDX)
+- `/blog/[slug]` — Detail artikel + widget Litera (universal embed)
 
 ## Stack
 
-- Next.js 16 (App Router, Route Handlers)
-- MongoDB + Mongoose
-- Tailwind CSS v4 + token brand dari desain asli
-- JWT httpOnly cookie
+| Layer | Teknologi |
+|---|---|
+| Framework | Next.js 16.3 (App Router, SSG) |
+| Styling | Tailwind CSS v4 + design tokens Warm Sanctuary |
+| Konten | MDX (`content/blog/`) + `gray-matter` + `next-mdx-remote` |
+| CI | GitHub Actions (`ci.yml`: lint + tsc + build @ Node 22) |
+| Deploy | Netlify (auto-deploy dari GitHub) |
+| Domain | `letmehearyou.id` |
 
-## Pengembangan lokal
+## Pengembangan Lokal
 
 ```bash
 npm install
-cp .env.example .env.local
-# Set MONGODB_URI dan JWT_SECRET
 npm run dev
 ```
 
 Buka http://localhost:3000
 
-## Environment
+## Quality Check
 
-| Variabel | Wajib | Keterangan |
-|----------|-------|------------|
-| `MONGODB_URI` | Ya | MongoDB lokal atau Atlas |
-| `JWT_SECRET` | Ya (prod) | Min. 16 karakter |
-| `NEXT_PUBLIC_FOREST_AUDIO_URL` | Tidak | Audio Mindful Forest |
+```bash
+npm run lint       # ESLint
+npx tsc --noEmit   # TypeScript
+npm run build      # Production build
+```
 
-## Deploy
+## Dokumentasi
 
-- **Disarankan:** [Vercel](https://vercel.com) + [MongoDB Atlas](https://www.mongodb.com/atlas)
-- GitHub Pages **tidak** mendukung API Route + auth tanpa backend terpisah.
+| Dokumen | Isi |
+|---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Panduan untuk developer baru (branching, PR, commit convention) |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Visi produk: 9 fitur, 4 milestone |
+| [docs/design/warm-sanctuary-tokens.md](docs/design/warm-sanctuary-tokens.md) | Design tokens (warna, tipografi) |
+| [AGENTS.md](AGENTS.md) | Instruksi untuk AI assistant |
 
-## Privasi
+## Milestone
 
-Data skrining dan mood disimpan per akun. Skrining v1 **tidak** memberikan interpretasi diagnosis otomatis.
+| # | Nama | Status |
+|---|---|---|
+| M1 | Content & Web3 (Blog + Litera Embed) | ✅ Selesai |
+| M2 | Data & Context Layer (Check-in, Journaling, Psychometric) | ⏳ |
+| M3 | AI Counseling Engine (Chatbot RAG, Crisis Detection) | ⏳ |
+| M4 | Telehealth & Services (Coaching, Video, Events) | ⏳ |
 
-## Audio testing
-
-Lihat [AUDIO_SOURCES.md](AUDIO_SOURCES.md).
-
-## Legacy
-
-File HTML/CSS/JS statis lama ada di [`_legacy/`](_legacy/) untuk referensi.
+Detail: lihat [docs/ROADMAP.md](docs/ROADMAP.md)
