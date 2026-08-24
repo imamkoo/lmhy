@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 const LOADER_ID = "lmhy-litera-loader";
 const EMBED_URL = "https://cdn.literaa.xyz/litera-embed.js";
 const ROOT_ID = "my-react-plugin-root";
 
 export function LiteraWidget({ title }: { title: string }) {
+  const pathname = usePathname();
+
   useEffect(() => {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
@@ -33,7 +36,7 @@ export function LiteraWidget({ title }: { title: string }) {
       script.async = true;
       document.body.appendChild(script);
     }
-  }, [window.location.href, title]);
+  }, [pathname, title]);
 
   return <div id={ROOT_ID} className="mt-12 min-h-16" aria-label="Litera article access" />;
 }
