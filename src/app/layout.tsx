@@ -3,6 +3,7 @@ import { Poppins, Geist } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { siteUrl } from "@/lib/site";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -13,6 +14,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Let Me Hear You",
   description:
     "Komunitas kesehatan mental — skrining mandiri, pelacakan mood, dan alat relaksasi.",
