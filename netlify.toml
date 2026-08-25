@@ -1,4 +1,4 @@
-# Netlify framework-preset untuk Next.js
+# Netlify configuration for Next.js App Router
 [build]
   command = "npm run build"
 
