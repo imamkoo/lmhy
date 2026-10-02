@@ -7,14 +7,19 @@ const LOADER_ID = "lmhy-litera-loader";
 const EMBED_URL = "https://cdn.literaa.xyz/litera-embed.js";
 const ROOT_ID = "litera";
 
-export function LiteraWidget({ title }: { title: string }) {
+interface LiteraWidgetProps {
+  title: string;
+  articleUrl?: string;
+}
+
+export function LiteraWidget({ title, articleUrl }: LiteraWidgetProps) {
   const pathname = usePathname();
 
   useEffect(() => {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
 
-    const currentHref = window.location.href;
+    const currentHref = articleUrl || window.location.href;
     (window as Window & { myReactPluginData?: { permalink: string; title: string } }).myReactPluginData = {
       permalink: currentHref,
       title,
@@ -65,7 +70,7 @@ export function LiteraWidget({ title }: { title: string }) {
       clearInterval(timer);
       clearTimeout(timeout);
     };
-  }, [pathname, title]);
+  }, [pathname, title, articleUrl]);
 
   return <div id={ROOT_ID} data-litera-widget="true" className="mt-12 min-h-16" aria-label="Litera article access" />;
 }
