@@ -73,7 +73,7 @@ export function LandingPage() {
                 <a href="#contact" className="learn-more text-center">
                   Contact Us
                 </a>
-                <Link href="/builder" className="learn-more learn-more-primary text-center">
+                <Link href="/builder" className="learn-more text-center">
                   Mulai Menulis (Web Builder)
                 </Link>
               </div>
