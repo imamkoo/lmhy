@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { literaClient, LiteraQuizInput } from "@/lib/litera";
 import { saveTenantArticle, TenantArticle } from "@/lib/tenant-storage";
+import { getAdminTokenomicsConfig } from "@/lib/admin-tokenomics-storage";
 
 export interface PublishArticleInput {
   username: string;
@@ -14,8 +15,8 @@ export interface PublishArticleInput {
   creatorAddress?: string;
   collectionName?: string;
   unlockableUrl?: string;
-  maxMint?: number;
-  priceLite?: number;
+  mediaType?: "IMAGE" | "VIDEO";
+  mediaUrl?: string;
   quiz?: LiteraQuizInput;
 }
 
@@ -39,6 +40,8 @@ export async function publishTenantArticle(
     creatorAddress,
     collectionName,
     unlockableUrl,
+    mediaType = "IMAGE",
+    mediaUrl,
     quiz,
   } = input;
 
@@ -76,6 +79,8 @@ export async function publishTenantArticle(
     content: content.trim(),
     createdAt: new Date().toISOString(),
     tags: parsedTags,
+    mediaType,
+    mediaUrl: mediaUrl || "/assets/sapiens.png",
     isLiteraRegistered: registerLitera,
   };
 
@@ -92,7 +97,10 @@ export async function publishTenantArticle(
       `${username}.letmehearyou.my.id`,
     ]);
 
-    // 2. Register article intent to Litera S2S CMS API with full creator metadata & platform-enforced tokenomics
+    // 2. Fetch centralized Admin Tokenomics settings
+    const adminTokenomics = getAdminTokenomicsConfig();
+
+    // 3. Register article intent to Litera S2S CMS API merging User Content & Admin Tokenomics
     const regRes = await literaClient.registerArticle({
       articleUrl: fullArticleUrl,
       title: article.title,
@@ -101,8 +109,14 @@ export async function publishTenantArticle(
       creatorAddress,
       collectionName,
       unlockableUrl,
-      maxMint: 100, // Platform Policy: 100 editions
-      priceLite: 0, // Platform Policy: Free for readers (0 LITE)
+      mediaType,
+      mediaUrl: article.mediaUrl,
+      userReward: adminTokenomics.userReward,
+      creatorReward: adminTokenomics.creatorReward,
+      creatorApproveReward: adminTokenomics.creatorApproveReward,
+      maxMint: adminTokenomics.maxMint,
+      mintingFeeEnabled: adminTokenomics.mintingFeeEnabled,
+      priceLite: adminTokenomics.priceLite,
       quiz,
     });
 

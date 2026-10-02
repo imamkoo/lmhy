@@ -43,6 +43,12 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
   const [quizOptions, setQuizOptions] = useState<string[]>(["", "", ""]);
   const [correctIndex, setCorrectIndex] = useState<number>(0);
 
+  // Media Asset State (Gambar / Video Switcher)
+  const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">("IMAGE");
+  const [mediaPreview, setMediaPreview] = useState<string>("/assets/sapiens.png");
+  const [mediaFileName, setMediaFileName] = useState<string>("");
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+
   // 5. System & UI State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -184,6 +190,15 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     setError(null);
   };
 
+  const handleMediaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setMediaFileName(file.name);
+      const url = URL.createObjectURL(file);
+      setMediaPreview(url);
+    }
+  };
+
   const handleSelectTemplate = (template: ReflectionTemplate) => {
     setSelectedTemplateId(template.id);
     if (template.id !== "blank-canvas") {
@@ -265,6 +280,8 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         creatorAddress: creatorWallet || undefined,
         collectionName: finalCollection,
         unlockableUrl: unlockableUrl.trim() || undefined,
+        mediaType,
+        mediaUrl: mediaPreview,
         quiz: quizPayload,
       });
 
@@ -589,6 +606,60 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                   className="w-full rounded-2xl border-2 border-[#3F3766]/15 bg-white px-4 py-2 text-xs font-semibold text-[#3F3766] placeholder:text-[#3F3766]/40 focus:border-[#3F3766] focus:ring-4 focus:ring-[#F7ABC5]/30 focus:outline-none transition"
                 />
               </div>
+
+              {/* MEDIA ASSET (IMAGE / VIDEO SWITCHER FOR USER) */}
+              <div className="pt-2 border-t border-[#3F3766]/10 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-wider text-[#3F3766]">
+                    Media Sampul Artikel (Cover Asset)
+                  </label>
+                  <div className="flex rounded-xl bg-[#3F3766]/10 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setMediaType("IMAGE")}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                        mediaType === "IMAGE" ? "bg-[#3F3766] text-white shadow" : "text-[#3F3766]/70"
+                      }`}
+                    >
+                      Gambar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMediaType("VIDEO")}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                        mediaType === "VIDEO" ? "bg-[#3F3766] text-white shadow" : "text-[#3F3766]/70"
+                      }`}
+                    >
+                      Video MP4
+                    </button>
+                  </div>
+                </div>
+
+                <input
+                  ref={mediaInputRef}
+                  type="file"
+                  accept={mediaType === "IMAGE" ? "image/png,image/jpeg,image/webp" : "video/mp4"}
+                  onChange={handleMediaFileChange}
+                  className="hidden"
+                />
+
+                <div
+                  onClick={() => mediaInputRef.current?.click()}
+                  className="rounded-2xl border-2 border-dashed border-[#3F3766]/20 bg-[#F5E7C6]/30 hover:bg-[#F5E7C6]/50 p-4 text-center cursor-pointer transition flex items-center justify-center gap-3"
+                >
+                  <span className="h-9 w-9 rounded-xl bg-[#3F3766] text-[#F7ABC5] flex items-center justify-center font-bold text-sm shadow-sm">
+                    ↑
+                  </span>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-[#3F3766]">
+                      {mediaFileName || (mediaType === "IMAGE" ? "Pilih Gambar Sampul (JPG/PNG/WEBP)" : "Pilih Video Singkat (MP4)")}
+                    </p>
+                    <p className="text-[10px] text-[#3F3766]/60">
+                      Tampil di halaman blog dan visual token NFT resmi
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* SECTION 3: UNIFIED LITERA WEB3 INTEGRATION CARD (NO SEPARATE TAB) */}
@@ -786,35 +857,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                     )}
                   </div>
 
-                  {/* TOKENOMICS POLICY BADGE (MANAGED BY ADMIN, READ-ONLY FOR USERS) */}
-                  <div className="pt-2 border-t border-[#3F3766]/10">
-                    <div className="rounded-2xl bg-[#F5E7C6]/50 p-3.5 border-2 border-[#3F3766]/15 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
-                          Kebijakan Tokenomics Platform
-                        </span>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-[#3F3766] bg-[#F7ABC5] px-2 py-0.5 rounded-full border border-[#3F3766]/20">
-                          Dikelola Admin
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs font-mono font-bold text-[#3F3766] pt-1">
-                        <span>Biaya Cetak: 0 LITE (Gratis Pembaca)</span>
-                        <span>Suplai: 100 Edisi Koleksi</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-1">
-                        <p className="text-[10px] text-[#3F3766]/70 leading-relaxed">
-                          Parameter ekonomi digital dikunci oleh Admin Platform agar seluruh konten refleksi tetap dapat diakses publik secara gratis.
-                        </p>
-                        <Link
-                          href="/admin/litera"
-                          className="shrink-0 text-[10px] font-black text-[#3F3766] underline hover:text-[#3F3766]/70 ml-2"
-                        >
-                          Kelola di Portal Admin →
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-
                 </div>
               ) : (
                 <div className="rounded-2xl border-2 border-dashed border-[#3F3766]/20 bg-[#F5E7C6]/20 p-4 text-center">
@@ -881,6 +923,28 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
 
                     {/* Article Body */}
                     <article className="space-y-4">
+                      {/* Media Header (Image or Video) */}
+                      {mediaPreview && (
+                        <div className="overflow-hidden rounded-2xl border-2 border-[#3F3766]/15 shadow-sm bg-[#3F3766]/5">
+                          {mediaType === "VIDEO" ? (
+                            <video
+                              src={mediaPreview}
+                              controls
+                              className="w-full max-h-56 object-cover bg-black"
+                            />
+                          ) : (
+                            <div className="relative w-full h-48 sm:h-56 flex items-center justify-center">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={mediaPreview}
+                                alt={title || "Cover Artikel"}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap gap-1.5">
                         {tags
                           .split(",")

@@ -87,6 +87,28 @@ export default async function TenantArticlePage({
           </div>
         </header>
 
+        {/* Media Cover (Image or Video) */}
+        {article?.mediaUrl && (
+          <div className="mb-8 overflow-hidden rounded-3xl border-2 border-slate-200 shadow-sm">
+            {article.mediaType === "VIDEO" ? (
+              <video
+                src={article.mediaUrl}
+                controls
+                className="w-full max-h-[480px] object-cover bg-black"
+              />
+            ) : (
+              <div className="relative w-full h-72 sm:h-96 bg-slate-100 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={article.mediaUrl}
+                  alt={title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Konten Tulisan */}
         <div className="prose prose-slate max-w-none text-lg leading-relaxed text-slate-700">
           {content.split("\n\n").map((paragraph, i) => (
