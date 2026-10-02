@@ -1,7 +1,7 @@
 /**
  * Litera Protocol Client for Let Me Hear You
  * Standardized S2S Integration with Litera Platform (Polygon Web3 NFT Publishing)
- * Blueprint Integrasi BikinWeb PANDI x Litera Protocol
+ * Blueprint Integrasi BikinWeb PANDI x Litera Protocol (Creator & Admin Specification)
  */
 
 export interface LiteraQuizInput {
@@ -19,9 +19,18 @@ export interface LiteraRegisterArticleInput {
   creatorAddress?: string;
   collectionName?: string;
   collectionId?: string;
+  info?: string;
+  externalUrl?: string;
   unlockableUrl?: string;
+  userReward?: number;
+  creatorReward?: number;
+  creatorApproveReward?: number;
   maxMint?: number;
+  mintingFeeEnabled?: boolean;
   priceLite?: number;
+  mediaType?: "IMAGE" | "VIDEO";
+  mediaUrl?: string;
+  mediaIpfsCid?: string;
   quiz?: LiteraQuizInput;
 }
 
@@ -79,7 +88,6 @@ class LiteraClient {
 
   /**
    * Register domains / subdomains to Litera CORS whitelist
-   * Call this when a new tenant/author subdomain is provisioned.
    */
   async registerDomains(
     domains: string | string[]
@@ -125,8 +133,7 @@ class LiteraClient {
   }
 
   /**
-   * Register an article intent with Litera CMS
-   * Call this when an author publishes an article to be minted as NFT.
+   * Register an article NFT intent with Litera CMS
    */
   async registerArticle(
     input: LiteraRegisterArticleInput
@@ -153,9 +160,18 @@ class LiteraClient {
           description: input.description,
           creatorAddress: input.creatorAddress,
           collectionName: input.collectionName,
+          info: input.info,
+          externalUrl: input.externalUrl,
           unlockableUrl: input.unlockableUrl,
+          userReward: input.userReward ?? 0,
+          creatorReward: input.creatorReward ?? 0,
+          creatorApproveReward: input.creatorApproveReward ?? 0,
           maxMint: input.maxMint ?? 100,
+          mintingFeeEnabled: input.mintingFeeEnabled ?? false,
           priceLite: input.priceLite ?? 0,
+          mediaType: input.mediaType || "IMAGE",
+          mediaUrl: input.mediaUrl,
+          mediaIpfsCid: input.mediaIpfsCid,
           quiz: input.quiz,
         }),
       });
