@@ -19,7 +19,10 @@ export function LiteraWidget({ title, articleUrl }: LiteraWidgetProps) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
 
-    const currentHref = articleUrl || window.location.href;
+    const canonicalHref = typeof document !== "undefined"
+      ? document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href
+      : undefined;
+    const currentHref = articleUrl || canonicalHref || window.location.href;
     (window as Window & { myReactPluginData?: { permalink: string; title: string } }).myReactPluginData = {
       permalink: currentHref,
       title,
