@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { literaClient } from "@/lib/litera";
+import { literaClient, LiteraQuizInput } from "@/lib/litera";
 import { saveTenantArticle, TenantArticle } from "@/lib/tenant-storage";
 
 export interface PublishArticleInput {
@@ -13,6 +13,10 @@ export interface PublishArticleInput {
   registerLitera?: boolean;
   creatorAddress?: string;
   collectionName?: string;
+  unlockableUrl?: string;
+  maxMint?: number;
+  priceLite?: number;
+  quiz?: LiteraQuizInput;
 }
 
 export interface PublishArticleResult {
@@ -25,16 +29,29 @@ export interface PublishArticleResult {
 export async function publishTenantArticle(
   input: PublishArticleInput
 ): Promise<PublishArticleResult> {
-  const { username, title, excerpt, content, tags, registerLitera = true } = input;
+  const {
+    username,
+    title,
+    excerpt,
+    content,
+    tags,
+    registerLitera = true,
+    creatorAddress,
+    collectionName,
+    unlockableUrl,
+    maxMint = 100,
+    priceLite = 0,
+    quiz,
+  } = input;
 
   if (!username || !username.trim()) {
-    return { success: false, error: "Username tidak valid" };
+    return { success: false, error: "Subdomain atau username belum ditentukan." };
   }
   if (!title || !title.trim()) {
-    return { success: false, error: "Judul artikel wajib diisi" };
+    return { success: false, error: "Judul tulisan wajib diisi." };
   }
   if (!content || !content.trim()) {
-    return { success: false, error: "Konten tulisan tidak boleh kosong" };
+    return { success: false, error: "Isi tulisan tidak boleh kosong." };
   }
 
   // Generate safe slug from title
@@ -77,17 +94,26 @@ export async function publishTenantArticle(
       `${username}.letmehearyou.my.id`,
     ]);
 
-    // 2. Register article intent to Litera S2S CMS API with full creator metadata
+    // 2. Register article intent to Litera S2S CMS API with full creator metadata & tokenomics
     const regRes = await literaClient.registerArticle({
       articleUrl: fullArticleUrl,
       title: article.title,
       author: `@${username}`,
       description: article.excerpt,
-      creatorAddress: input.creatorAddress,
-      collectionName: input.collectionName,
+      creatorAddress,
+      collectionName,
+      unlockableUrl,
+      maxMint,
+      priceLite,
+      quiz,
     });
 
-    literaNotice = regRes.message || "Artikel terdaftar di jaringan Litera";
+    if (!regRes.success) {
+      console.warn("[Publish Notice] Litera S2S Registration Warning:", regRes.message);
+      literaNotice = regRes.message || "Peringatan: Kunci API Litera belum terkonfigurasi di server.";
+    } else {
+      literaNotice = regRes.message || "Artikel terdaftar di jaringan Litera";
+    }
   }
 
   revalidatePath(`/tenant/${username}`);
