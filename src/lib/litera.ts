@@ -7,6 +7,9 @@ export interface LiteraRegisterArticleInput {
   articleUrl: string;
   title: string;
   author?: string;
+  description?: string;
+  creatorAddress?: string;
+  collectionName?: string;
   collectionId?: string;
   quiz?: {
     question: string;

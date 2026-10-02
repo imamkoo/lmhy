@@ -11,6 +11,8 @@ export interface PublishArticleInput {
   content: string;
   tags?: string;
   registerLitera?: boolean;
+  creatorAddress?: string;
+  collectionName?: string;
 }
 
 export interface PublishArticleResult {
@@ -75,11 +77,14 @@ export async function publishTenantArticle(
       `${username}.letmehearyou.my.id`,
     ]);
 
-    // 2. Register article intent to Litera S2S CMS API
+    // 2. Register article intent to Litera S2S CMS API with full creator metadata
     const regRes = await literaClient.registerArticle({
       articleUrl: fullArticleUrl,
       title: article.title,
       author: `@${username}`,
+      description: article.excerpt,
+      creatorAddress: input.creatorAddress,
+      collectionName: input.collectionName,
     });
 
     literaNotice = regRes.message || "Artikel terdaftar di jaringan Litera";

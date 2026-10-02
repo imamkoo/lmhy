@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { REFLECTION_TEMPLATES, ReflectionTemplate } from "@/lib/builder-templates";
 import { publishTenantArticle } from "@/app/actions/tenant";
+import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
 
 export function WebBuilderClient({ initialUsername }: { initialUsername?: string }) {
   const [username, setUsername] = useState(initialUsername || "");
@@ -12,7 +13,14 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
   const [excerpt, setExcerpt] = useState(REFLECTION_TEMPLATES[0].defaultExcerpt);
   const [content, setContent] = useState(REFLECTION_TEMPLATES[0].content);
   const [tags, setTags] = useState(REFLECTION_TEMPLATES[0].defaultTags);
+  
+  // Litera Web3 Optional Toggle & Account State
   const [registerLitera, setRegisterLitera] = useState(true);
+  const [creatorWallet, setCreatorWallet] = useState<string>("");
+  const [loginMethod, setLoginMethod] = useState<string>("");
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState<string>("");
+  const [newCollectionName, setNewCollectionName] = useState<string>("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +49,19 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     }
   };
 
+  const handleToggleLitera = (enabled: boolean) => {
+    setRegisterLitera(enabled);
+    if (enabled && !creatorWallet) {
+      setIsLoginModalOpen(true);
+    }
+  };
+
+  const handleLoginSuccess = (walletAddress: string, method: string) => {
+    setCreatorWallet(walletAddress);
+    setLoginMethod(method);
+    setRegisterLitera(true);
+  };
+
   const slugPreview = title
     ? title
         .toLowerCase()
@@ -65,10 +86,20 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       return;
     }
 
+    if (registerLitera && !creatorWallet) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
+      const finalCollection =
+        selectedCollection === "__new__"
+          ? newCollectionName.trim()
+          : selectedCollection || "Let Me Hear You - Jurnal & Refleksi";
+
       const res = await publishTenantArticle({
         username: cleanUser,
         title,
@@ -76,6 +107,8 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         content,
         tags,
         registerLitera,
+        creatorAddress: creatorWallet || undefined,
+        collectionName: finalCollection,
       });
 
       if (!res.success) {
@@ -291,24 +324,107 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
             />
           </div>
 
-          {/* LITERA WEB3 SWITCH */}
-          <div className="rounded-2xl border border-orange-200/70 bg-[#fbf8f5] p-5">
-            <label className="flex items-start gap-3.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={registerLitera}
-                onChange={(e) => setRegisterLitera(e.target.checked)}
-                className="mt-1 h-5 w-5 rounded border-slate-300 text-[#d07954] focus:ring-[#d07954]"
-              />
+          {/* LITERA WEB3 SWITCH (PERSIS BIKINWEB PANDI SPEC) */}
+          <div className="rounded-3xl border border-orange-200/80 bg-gradient-to-br from-[#fbf8f5] to-orange-50/40 p-6 space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                  <span>💎</span> Aktifkan Sertifikat Digital Web3 (Litera Network di Polygon)
+                <span className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <span>💎</span> Integrasi Litera Web3 NFT Publishing
                 </span>
-                <p className="mt-1 text-xs text-slate-600 leading-relaxed">
-                  Otomatis mendaftarkan tulisan Anda ke smart contract Litera. Pembaca dapat mengoleksi bukti baca sebagai sertifikat digital eksklusif.
+                <p className="mt-1 text-xs text-slate-600 leading-relaxed max-w-xl">
+                  {registerLitera
+                    ? "Artikel akan didaftarkan ke smart contract Litera di Polygon. Pembaca dapat mengoleksi sertifikat digital kepemilikan."
+                    : "Mode tulisan biasa tanpa NFT Web3."}
                 </p>
               </div>
-            </label>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={registerLitera}
+                  onChange={(e) => handleToggleLitera(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#d07954]"></div>
+              </label>
+            </div>
+
+            {/* STATUS AKUN DOMPET KREATOR (PRIVY / METAMASK) */}
+            {registerLitera && (
+              <div className="pt-3 border-t border-orange-200/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">Akun / Dompet Penulis</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="text-xs text-[#d07954] hover:text-[#b86644] font-bold"
+                  >
+                    {creatorWallet ? "Ganti Akun" : "Hubungkan Akun"}
+                  </button>
+                </div>
+
+                {creatorWallet ? (
+                  <div className="p-3.5 bg-white rounded-2xl border border-emerald-200 flex items-start gap-3 shadow-sm">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold">
+                      ✓
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-slate-900 truncate">
+                          {loginMethod || "Litera Cloud Wallet"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-mono truncate mt-0.5">
+                        {creatorWallet}
+                      </p>
+                      <p className="text-[10px] text-emerald-600 font-medium mt-1">
+                        ✓ Siap menerima sertifikat digital on-chain & royalti di Polygon
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-[#d07954] bg-white hover:bg-[#d07954]/5 text-xs font-bold text-[#d07954] flex items-center justify-center gap-2 transition cursor-pointer"
+                  >
+                    <span>🔐</span> Masuk Akun Litera Cloud (Google / Email)
+                  </button>
+                )}
+
+                {/* KOLEKSI NFT */}
+                <div className="pt-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Koleksi Litera
+                  </label>
+                  <select
+                    value={selectedCollection}
+                    onChange={(e) => setSelectedCollection(e.target.value)}
+                    className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#d07954]"
+                  >
+                    <option value="">Let Me Hear You - Jurnal & Refleksi (Default)</option>
+                    <option value="Ruang Pemulihan & Self-Care">Ruang Pemulihan & Self-Care</option>
+                    <option value="Jurnal Mindfulness Harian">Jurnal Mindfulness Harian</option>
+                    <option value="__new__">➕ + Buat Koleksi Baru...</option>
+                  </select>
+
+                  {selectedCollection === "__new__" && (
+                    <div className="mt-2.5 p-3 rounded-2xl bg-white border border-orange-200 space-y-2">
+                      <label className="block text-[11px] font-bold text-slate-700">
+                        Nama Koleksi Baru
+                      </label>
+                      <input
+                        type="text"
+                        value={newCollectionName}
+                        onChange={(e) => setNewCollectionName(e.target.value)}
+                        placeholder="Misal: Jurnal Jiwa Tenang"
+                        required
+                        className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#d07954]"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* SUBMIT BUTTON */}
@@ -334,6 +450,13 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
           </div>
         </section>
       </form>
+
+      {/* MODAL AUTH LITERA RESMI */}
+      <LiteraLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }
