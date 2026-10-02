@@ -14,7 +14,7 @@ export default async function WebBuilderPage({
   const { username } = await searchParams;
 
   return (
-    <main className="min-h-screen bg-[#fbf8f5] px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#F5E7C6] px-4 py-8 text-[#3F3766] sm:px-6 lg:px-8">
       <WebBuilderClient initialUsername={username} />
     </main>
   );
