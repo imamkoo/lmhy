@@ -106,7 +106,10 @@ export default async function TenantArticlePage({
               Dukung penulis dan simpan bukti keterlibatan Anda sebagai sertifikat digital resmi di Polygon melalui Litera.
             </p>
           </div>
-          <LiteraWidget title={title} />
+          <LiteraWidget
+            title={title}
+            articleUrl={`https://${username}.letmehearyou.id/${slug}`}
+          />
         </div>
 
         {/* Rekomendasi Tulisan Lain dari Penulis Ini */}
