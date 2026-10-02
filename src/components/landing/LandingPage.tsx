@@ -73,7 +73,7 @@ export function LandingPage() {
                 <a href="#contact" className="learn-more text-center">
                   Contact Us
                 </a>
-                <Link href="/builder" className="learn-more text-center" style={{ backgroundColor: "#b86644" }}>
+                <Link href="/builder" className="learn-more learn-more-primary text-center">
                   Mulai Menulis (Web Builder)
                 </Link>
               </div>

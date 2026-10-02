@@ -25,6 +25,15 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [activeBaseDomain] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return window.location.hostname.includes("letmehearyou.my.id")
+        ? "letmehearyou.my.id"
+        : "letmehearyou.id";
+    }
+    return "letmehearyou.id";
+  });
+
   // Auto-format clean username (alphanumeric, lowercase, hyphen)
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const clean = e.target.value
@@ -72,7 +81,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     : "judul-tulisan";
 
   const cleanUser = username.trim() || "username-kamu";
-  const domainPreview = `https://${cleanUser}.letmehearyou.id`;
+  const domainPreview = `https://${cleanUser}.${activeBaseDomain}`;
   const articleUrlPreview = `${domainPreview}/${slugPreview}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,8 +126,8 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         return;
       }
 
-      // Langsung arahkan ke URL subdomain live pengguna
-      const targetUrl = `https://${cleanUser}.letmehearyou.id/${res.slug}`;
+      // Langsung arahkan ke URL subdomain live pengguna sesuai domain yang sedang aktif
+      const targetUrl = `https://${cleanUser}.${activeBaseDomain}/${res.slug}`;
       window.location.href = targetUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan saat mempublikasikan.");
