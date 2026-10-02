@@ -74,7 +74,7 @@ export function LandingPage() {
                   Contact Us
                 </a>
                 <Link href="/builder" className="learn-more text-center">
-                  Mulai Menulis (Web Builder)
+                  Tulis Ceritamu
                 </Link>
               </div>
             </div>
