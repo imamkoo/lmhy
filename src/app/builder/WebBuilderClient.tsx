@@ -801,9 +801,17 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                         <span>Biaya Cetak: 0 LITE (Gratis Pembaca)</span>
                         <span>Suplai: 100 Edisi Koleksi</span>
                       </div>
-                      <p className="text-[10px] text-[#3F3766]/70 leading-relaxed pt-0.5">
-                        Parameter ekonomi digital dikunci oleh Admin Platform agar seluruh konten refleksi tetap dapat diakses publik secara gratis dan terstandarisasi di blockchain Polygon.
-                      </p>
+                      <div className="flex items-center justify-between pt-1">
+                        <p className="text-[10px] text-[#3F3766]/70 leading-relaxed">
+                          Parameter ekonomi digital dikunci oleh Admin Platform agar seluruh konten refleksi tetap dapat diakses publik secara gratis.
+                        </p>
+                        <Link
+                          href="/admin/litera"
+                          className="shrink-0 text-[10px] font-black text-[#3F3766] underline hover:text-[#3F3766]/70 ml-2"
+                        >
+                          Kelola di Portal Admin →
+                        </Link>
+                      </div>
                     </div>
                   </div>
 
