@@ -1,7 +1,15 @@
 /**
  * Litera Protocol Client for Let Me Hear You
  * Standardized S2S Integration with Litera Platform (Polygon Web3 NFT Publishing)
+ * Blueprint Integrasi BikinWeb PANDI x Litera Protocol
  */
+
+export interface LiteraQuizInput {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation?: string;
+}
 
 export interface LiteraRegisterArticleInput {
   articleUrl: string;
@@ -11,12 +19,10 @@ export interface LiteraRegisterArticleInput {
   creatorAddress?: string;
   collectionName?: string;
   collectionId?: string;
-  quiz?: {
-    question: string;
-    options: string[];
-    correctIndex: number;
-    explanation?: string;
-  };
+  unlockableUrl?: string;
+  maxMint?: number;
+  priceLite?: number;
+  quiz?: LiteraQuizInput;
 }
 
 export interface LiteraCollection {
@@ -43,6 +49,7 @@ export interface LiteraRegisterArticleResponse {
   collectionId?: string;
   intentId?: string;
   message?: string;
+  error?: string;
 }
 
 class LiteraClient {
@@ -64,6 +71,7 @@ class LiteraClient {
       Accept: "application/json",
     };
     if (this.apiKey) {
+      headers["Authorization"] = `Bearer ${this.apiKey}`;
       headers["x-api-key"] = this.apiKey;
     }
     return headers;
@@ -83,11 +91,11 @@ class LiteraClient {
 
     if (!this.apiKey) {
       return {
-        success: true,
-        addedDomains: cleaned,
-        totalDomains: cleaned.length,
-        addedToCORS: true,
-        message: "Simulated registration: LITERA_API_KEY is not configured.",
+        success: false,
+        addedDomains: [],
+        totalDomains: 0,
+        addedToCORS: false,
+        message: "LITERA_API_KEY tidak dikonfigurasi di server environment.",
       };
     }
 
@@ -100,12 +108,12 @@ class LiteraClient {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Failed to register domains (${res.status}): ${errorText}`);
+        throw new Error(`Gagal mendaftarkan domain CORS (${res.status}): ${errorText}`);
       }
 
       return await res.json();
     } catch (err) {
-      console.warn("[Litera] Domain registration notice:", err);
+      console.warn("[Litera S2S] Domain registration notice:", err);
       return {
         success: false,
         addedDomains: [],
@@ -125,12 +133,12 @@ class LiteraClient {
   ): Promise<LiteraRegisterArticleResponse> {
     if (!this.apiKey) {
       return {
-        success: true,
-        registered: true,
+        success: false,
+        registered: false,
         articleUrl: input.articleUrl,
         title: input.title,
-        collectionId: input.collectionId,
-        message: "Simulated registration: LITERA_API_KEY is not configured.",
+        message: "LITERA_API_KEY tidak dikonfigurasi di server environment.",
+        error: "LITERA_API_KEY_MISSING",
       };
     }
 
@@ -138,23 +146,35 @@ class LiteraClient {
       const res = await fetch(`${this.baseUrl}/cms/articles/register`, {
         method: "POST",
         headers: this.headers,
-        body: JSON.stringify(input),
+        body: JSON.stringify({
+          articleUrl: input.articleUrl,
+          title: input.title,
+          author: input.author,
+          description: input.description,
+          creatorAddress: input.creatorAddress,
+          collectionName: input.collectionName,
+          unlockableUrl: input.unlockableUrl,
+          maxMint: input.maxMint ?? 100,
+          priceLite: input.priceLite ?? 0,
+          quiz: input.quiz,
+        }),
       });
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Failed to register article (${res.status}): ${errorText}`);
+        throw new Error(`Gagal mendaftarkan artikel ke Litera (${res.status}): ${errorText}`);
       }
 
       return await res.json();
     } catch (err) {
-      console.warn("[Litera] Article registration notice:", err);
+      console.warn("[Litera S2S] Article registration notice:", err);
       return {
         success: false,
         registered: false,
         articleUrl: input.articleUrl,
         title: input.title,
         message: err instanceof Error ? err.message : String(err),
+        error: "S2S_NETWORK_OR_AUTH_ERROR",
       };
     }
   }
@@ -187,13 +207,13 @@ class LiteraClient {
       const data = await res.json();
       return Array.isArray(data) ? data : data.data || [];
     } catch (err) {
-      console.warn("[Litera] Failed to fetch collections:", err);
+      console.warn("[Litera S2S] Failed to fetch collections:", err);
       return [];
     }
   }
 
   /**
-   * Create a new collection for a author or category
+   * Create a new collection on the fly
    */
   async createCollection(
     name: string,
@@ -219,47 +239,11 @@ class LiteraClient {
         return null;
       }
 
-      return await res.json();
+      const result = await res.json();
+      return result.data || result;
     } catch (err) {
-      console.warn("[Litera] Failed to create collection:", err);
+      console.warn("[Litera S2S] Failed to create collection:", err);
       return null;
-    }
-  }
-
-  /**
-   * Resolve article mint status on Polygon blockchain
-   */
-  async resolveArticle(articleUrl: string): Promise<{
-    isMinted: boolean;
-    tokenId?: string;
-    generation?: number;
-  }> {
-    try {
-      const res = await fetch(
-        `${this.baseUrl}/articles/resolve?url=${encodeURIComponent(articleUrl)}`,
-        {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        }
-      );
-
-      if (res.status === 404) {
-        return { isMinted: false };
-      }
-
-      if (!res.ok) {
-        return { isMinted: false };
-      }
-
-      const data = await res.json();
-      return {
-        isMinted: true,
-        tokenId: data.tokenId,
-        generation: data.generation,
-      };
-    } catch (err) {
-      console.warn("[Litera] Failed to resolve article:", err);
-      return { isMinted: false };
     }
   }
 }
