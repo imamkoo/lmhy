@@ -43,11 +43,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
   const [quizOptions, setQuizOptions] = useState<string[]>(["", "", ""]);
   const [correctIndex, setCorrectIndex] = useState<number>(0);
 
-  // Tokenomics Customization (Platform Default: 0 LITE, 100 supply)
-  const [showAdvancedTokenomics, setShowAdvancedTokenomics] = useState<boolean>(false);
-  const [maxMint, setMaxMint] = useState<number>(100);
-  const [priceLite, setPriceLite] = useState<number>(0);
-
   // 5. System & UI State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,8 +95,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
           if (d.quizQuestion !== undefined) setQuizQuestion(d.quizQuestion);
           if (d.quizOptions !== undefined) setQuizOptions(d.quizOptions);
           if (d.correctIndex !== undefined) setCorrectIndex(d.correctIndex);
-          if (d.maxMint !== undefined) setMaxMint(d.maxMint);
-          if (d.priceLite !== undefined) setPriceLite(d.priceLite);
           if (d.savedAt) setLastSavedTime(d.savedAt);
         }
       } catch (e) {
@@ -137,8 +130,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       quizQuestion,
       quizOptions,
       correctIndex,
-      maxMint,
-      priceLite,
       savedAt: timeStr,
     };
 
@@ -164,8 +155,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     quizQuestion,
     quizOptions,
     correctIndex,
-    maxMint,
-    priceLite,
     isPublished,
   ]);
 
@@ -276,8 +265,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         creatorAddress: creatorWallet || undefined,
         collectionName: finalCollection,
         unlockableUrl: unlockableUrl.trim() || undefined,
-        maxMint: Number(maxMint) || 100,
-        priceLite: Number(priceLite) || 0,
         quiz: quizPayload,
       });
 
@@ -799,55 +786,25 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                     )}
                   </div>
 
-                  {/* TOKENOMICS SETTINGS ACCORDION */}
+                  {/* TOKENOMICS POLICY BADGE (MANAGED BY ADMIN, READ-ONLY FOR USERS) */}
                   <div className="pt-2 border-t border-[#3F3766]/10">
-                    <button
-                      type="button"
-                      onClick={() => setShowAdvancedTokenomics(!showAdvancedTokenomics)}
-                      className="w-full flex items-center justify-between text-xs font-bold text-[#3F3766]/80 hover:text-[#3F3766] py-1"
-                    >
-                      <span>Parameter Tokenomics Platform</span>
-                      <span className="font-mono text-xs">{showAdvancedTokenomics ? "▲" : "▼"}</span>
-                    </button>
-
-                    {showAdvancedTokenomics ? (
-                      <div className="mt-2.5 p-3 rounded-2xl bg-white border-2 border-[#3F3766]/15 space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-[11px] font-bold text-[#3F3766] mb-1">
-                              Batas Suplai (Max Mint)
-                            </label>
-                            <input
-                              type="number"
-                              min={2}
-                              value={maxMint}
-                              onChange={(e) => setMaxMint(Number(e.target.value))}
-                              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-[#3F3766]/20 focus:outline-none focus:border-[#3F3766]"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-[#3F3766] mb-1">
-                              Biaya Mint (LITE)
-                            </label>
-                            <input
-                              type="number"
-                              min={0}
-                              value={priceLite}
-                              onChange={(e) => setPriceLite(Number(e.target.value))}
-                              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-[#3F3766]/20 focus:outline-none focus:border-[#3F3766]"
-                            />
-                          </div>
-                        </div>
-                        <p className="text-[10px] text-[#3F3766]/60 leading-relaxed">
-                          Nilai bawaan platform: 0 LITE (Gratis bagi pembaca) dengan batas cetak 100 edisi koleksi.
-                        </p>
+                    <div className="rounded-2xl bg-[#F5E7C6]/50 p-3.5 border-2 border-[#3F3766]/15 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
+                          Kebijakan Tokenomics Platform
+                        </span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-[#3F3766] bg-[#F7ABC5] px-2 py-0.5 rounded-full border border-[#3F3766]/20">
+                          Dikelola Admin
+                        </span>
                       </div>
-                    ) : (
-                      <div className="mt-1.5 flex items-center justify-between text-[11px] font-mono font-bold text-[#3F3766]/70 bg-white/60 p-2.5 rounded-xl border border-[#3F3766]/10">
-                        <span>Biaya: 0 LITE (Gratis)</span>
-                        <span>Suplai: {maxMint} Edisi</span>
+                      <div className="flex items-center justify-between text-xs font-mono font-bold text-[#3F3766] pt-1">
+                        <span>Biaya Cetak: 0 LITE (Gratis Pembaca)</span>
+                        <span>Suplai: 100 Edisi Koleksi</span>
                       </div>
-                    )}
+                      <p className="text-[10px] text-[#3F3766]/70 leading-relaxed pt-0.5">
+                        Parameter ekonomi digital dikunci oleh Admin Platform agar seluruh konten refleksi tetap dapat diakses publik secara gratis dan terstandarisasi di blockchain Polygon.
+                      </p>
+                    </div>
                   </div>
 
                 </div>

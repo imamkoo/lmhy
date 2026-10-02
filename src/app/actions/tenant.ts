@@ -39,8 +39,6 @@ export async function publishTenantArticle(
     creatorAddress,
     collectionName,
     unlockableUrl,
-    maxMint = 100,
-    priceLite = 0,
     quiz,
   } = input;
 
@@ -94,7 +92,7 @@ export async function publishTenantArticle(
       `${username}.letmehearyou.my.id`,
     ]);
 
-    // 2. Register article intent to Litera S2S CMS API with full creator metadata & tokenomics
+    // 2. Register article intent to Litera S2S CMS API with full creator metadata & platform-enforced tokenomics
     const regRes = await literaClient.registerArticle({
       articleUrl: fullArticleUrl,
       title: article.title,
@@ -103,8 +101,8 @@ export async function publishTenantArticle(
       creatorAddress,
       collectionName,
       unlockableUrl,
-      maxMint,
-      priceLite,
+      maxMint: 100, // Platform Policy: 100 editions
+      priceLite: 0, // Platform Policy: Free for readers (0 LITE)
       quiz,
     });
 
