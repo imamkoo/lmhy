@@ -11,6 +11,8 @@ export interface TenantArticle {
   content: string;
   createdAt: string;
   tags: string[];
+  mediaType?: "IMAGE" | "VIDEO";
+  mediaUrl?: string;
   isLiteraRegistered?: boolean;
 }
 
