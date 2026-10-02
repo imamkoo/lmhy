@@ -42,9 +42,11 @@ export function LandingPage() {
                 <li style={{ "--item": 4 } as React.CSSProperties}>
                   <a href="#contact">Contact</a>
                 </li>
-                {/* <li style={{ "--item": 5 } as React.CSSProperties}>
-                  <Link href="/login">Login Admin / Member</Link>
-                </li> */}
+                <li style={{ "--item": 5 } as React.CSSProperties}>
+                  <Link href="/builder" className="font-semibold text-[#b86644] hover:text-[#d07954]">
+                    ✍️ Web Builder
+                  </Link>
+                </li>
                 <li style={{ "--item": 6 } as React.CSSProperties}>
                   <a href="/mental-battery" className="learn-more" style={{ display: "inline-block", marginTop: 8 }}>
                     Cek Kondisi Sekarang
@@ -71,9 +73,9 @@ export function LandingPage() {
                 <a href="#contact" className="learn-more text-center">
                   Contact Us
                 </a>
-                <a href="/mental-battery" className="learn-more text-center">
-                  Cek Mental Battery
-                </a>
+                <Link href="/builder" className="learn-more text-center" style={{ backgroundColor: "#b86644" }}>
+                  Mulai Menulis (Web Builder)
+                </Link>
               </div>
             </div>
             <div className="home-img">

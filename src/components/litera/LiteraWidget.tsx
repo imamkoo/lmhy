@@ -72,6 +72,11 @@ export function LiteraWidget({ title, articleUrl }: LiteraWidgetProps) {
     return () => {
       clearInterval(timer);
       clearTimeout(timeout);
+      // Clean up widget root content and data so it doesn't leak to other SPA pages
+      if (root) {
+        root.innerHTML = "";
+      }
+      delete (window as Window & { myReactPluginData?: { permalink: string; title: string } }).myReactPluginData;
     };
   }, [pathname, title, articleUrl]);
 

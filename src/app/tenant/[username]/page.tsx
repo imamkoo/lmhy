@@ -26,12 +26,12 @@ export default async function TenantProfilePage({
                 Kumpulan refleksi, tulisan kesehatan mental, dan edisi sertifikat digital resmi di Let Me Hear You.
               </p>
             </div>
-            <div className="self-start sm:self-auto">
+            <div className="self-start sm:self-auto flex items-center gap-2">
               <Link
-                href={`/write`}
+                href={`/builder?username=${username}`}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b86644]"
               >
-                <span>✏️</span> Tulis Refleksi Baru
+                <span>✏️</span> Tulis di Web Builder
               </Link>
             </div>
           </div>
