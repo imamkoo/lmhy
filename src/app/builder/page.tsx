@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import { WebBuilderClient } from "./WebBuilderClient";
 
 export const metadata: Metadata = {
-  title: "Web Builder Refleksi & Subdomain — Let Me Hear You",
-  description: "Buat personal blog subdomain refleksi kesehatan mental Anda dengan template siap pakai dan integrasi sertifikat Web3 Litera.",
+  title: "Studio Web Builder Refleksi — Let Me Hear You",
+  description: "Rancang dan terbitkan ruang publikasi refleksi digital Anda secara live dengan sertifikat resmi Web3 Litera.",
 };
 
 export default async function WebBuilderPage({
@@ -14,7 +14,7 @@ export default async function WebBuilderPage({
   const { username } = await searchParams;
 
   return (
-    <main className="min-h-screen bg-[#F5E7C6] px-4 py-8 text-[#3F3766] sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#F5E7C6] text-[#3F3766] selection:bg-[#F7ABC5] selection:text-[#3F3766]">
       <WebBuilderClient initialUsername={username} />
     </main>
   );
