@@ -108,7 +108,7 @@ export default async function TenantArticlePage({
           </div>
           <LiteraWidget
             title={title}
-            articleUrl={`https://${username}.letmehearyou.id/${slug}`}
+            articleUrl={`https://letmehearyou.id/blog/${slug}`}
           />
         </div>
 
