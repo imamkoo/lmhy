@@ -58,7 +58,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <p className="mt-4 text-sm text-slate-500">{post.author} · {new Date(post.date).toLocaleDateString("id-ID", { dateStyle: "long" })}</p>
         </header>
         <div className="prose prose-slate max-w-none">{content}</div>
-        <LiteraWidget title={post.title} />
+        <LiteraWidget
+          title={post.title}
+          articleUrl={`https://letmehearyou.id/blog/${slug}`}
+        />
         {related.length > 0 && <section className="mt-16 border-t border-slate-200 pt-10"><h2 className="mb-6 text-2xl font-bold">Artikel terkait</h2><BlogList posts={related} /></section>}
       </article>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
