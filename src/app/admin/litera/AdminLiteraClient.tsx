@@ -32,6 +32,8 @@ export function AdminLiteraClient() {
 
   // 4. Litera Quota & Credits State (Free Kuota & Paid Credits)
   const [quotaData, setQuotaData] = useState<LiteraPublisherQuota | null>(null);
+  const [hasApiKey, setHasApiKey] = useState<boolean>(true);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isLoadingQuota, setIsLoadingQuota] = useState(true);
 
   // Load existing tokenomics config & Litera quota on mount
@@ -50,7 +52,9 @@ export function AdminLiteraClient() {
 
     getAdminLiteraQuotaAction()
       .then((res) => {
-        setQuotaData(res);
+        setQuotaData(res.quota);
+        setHasApiKey(res.hasApiKey);
+        setQuotaError(res.error || null);
       })
       .finally(() => {
         setIsLoadingQuota(false);
@@ -238,24 +242,68 @@ export function AdminLiteraClient() {
                 <span className="text-xs font-black uppercase tracking-wider text-[#3F3766]">
                   Status Kuota Penerbit & Saldo Kredit (Litera Protocol)
                 </span>
-                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[9px] font-bold text-emerald-800 border border-emerald-300">
-                  Live S2S
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold border ${
+                    hasApiKey && quotaData
+                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                      : "bg-amber-100 text-amber-800 border-amber-300"
+                  }`}
+                >
+                  {hasApiKey && quotaData ? "Live S2S Terhubung" : "Konfigurasi API Key"}
                 </span>
               </div>
               <p className="text-[11px] text-[#3F3766]/65 mt-0.5">
-                Kuota pencetakan otomatis (auto-minting) dan kredit aktif akun penerbit Let Me Hear You
+                {quotaData?.publisherWallet
+                  ? `Wallet Penerbit: ${quotaData.publisherWallet}`
+                  : "Kuota pencetakan otomatis (auto-minting) dan kredit aktif akun penerbit Let Me Hear You"}
               </p>
             </div>
 
-            <a
-              href="https://literaa.xyz"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-xl bg-[#F5E7C6] px-3.5 py-2 text-xs font-black text-[#3F3766] border-2 border-[#3F3766]/20 hover:border-[#3F3766] transition shadow-sm w-fit"
-            >
-              Top Up di Litera →
-            </a>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLoadingQuota(true);
+                  getAdminLiteraQuotaAction()
+                    .then((res) => {
+                      setQuotaData(res.quota);
+                      setHasApiKey(res.hasApiKey);
+                      setQuotaError(res.error || null);
+                    })
+                    .finally(() => {
+                      setIsLoadingQuota(false);
+                    });
+                }}
+                disabled={isLoadingQuota}
+                className="inline-flex items-center justify-center rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#3F3766] border-2 border-[#3F3766]/20 hover:border-[#3F3766] transition shadow-sm disabled:opacity-50"
+                title="Muat ulang status kuota dari server Litera"
+              >
+                {isLoadingQuota ? "Memuat..." : "Refresh"}
+              </button>
+              <a
+                href="https://literaa.xyz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-xl bg-[#F5E7C6] px-3.5 py-2 text-xs font-black text-[#3F3766] border-2 border-[#3F3766]/20 hover:border-[#3F3766] transition shadow-sm w-fit"
+              >
+                Top Up di Litera →
+              </a>
+            </div>
           </div>
+
+          {!hasApiKey ? (
+            <div className="mt-4 rounded-2xl bg-amber-50 border-2 border-amber-300 p-4 text-xs font-semibold text-amber-900 space-y-1">
+              <p className="font-bold">LITERA_API_KEY belum terkonfigurasi di server environment.</p>
+              <p className="text-[11px] text-amber-800">
+                Silakan tambahkan <strong>LITERA_API_KEY</strong> di file <code>.env</code> lokal atau di menu <strong>Settings → Environment Variables</strong> Vercel untuk menghubungkan kuota penerbit secara realtime.
+              </p>
+            </div>
+          ) : quotaError && !quotaData ? (
+            <div className="mt-4 rounded-2xl bg-red-50 border-2 border-red-300 p-4 text-xs font-semibold text-red-900 space-y-1">
+              <p className="font-bold">Gagal mengambil data kuota dari server Litera:</p>
+              <p className="text-[11px] text-red-800">{quotaError}</p>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
             {/* 1. FREE KUOTA */}
