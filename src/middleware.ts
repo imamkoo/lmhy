@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 const ROOT_DOMAINS = [
   "letmehearyou.id",
   "www.letmehearyou.id",
-  "letmehearyou.my.id",
-  "www.letmehearyou.my.id",
-  "letme-hearyou.netlify.app",
   "localhost:3000",
   "localhost:3001",
 ];
@@ -29,8 +26,6 @@ export function middleware(req: NextRequest) {
   if (!isRootDomain) {
     if (hostname.includes(".letmehearyou.id")) {
       subdomain = hostname.replace(".letmehearyou.id", "").split(":")[0];
-    } else if (hostname.includes(".letmehearyou.my.id")) {
-      subdomain = hostname.replace(".letmehearyou.my.id", "").split(":")[0];
     } else if (hostname.includes(".localhost")) {
       subdomain = hostname.replace(".localhost", "").split(":")[0];
     }
