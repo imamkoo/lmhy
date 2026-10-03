@@ -7,6 +7,7 @@ import {
   saveAdminTokenomicsConfig,
 } from "@/lib/admin-tokenomics-storage";
 import { literaClient, LiteraPublisherQuota } from "@/lib/litera";
+import { getLiteraApiKeyStatus } from "@/lib/litera-runtime";
 
 export async function verifyAdminPin(pin: string): Promise<boolean> {
   const DEFAULT_PIN = "123456";
@@ -74,8 +75,8 @@ export interface AdminLiteraQuotaResult {
 }
 
 export async function getAdminLiteraQuotaAction(): Promise<AdminLiteraQuotaResult> {
-  const hasApiKey = Boolean(process.env.LITERA_API_KEY && process.env.LITERA_API_KEY.trim());
-  if (!hasApiKey) {
+  const apiKeyStatus = getLiteraApiKeyStatus(process.env.LITERA_API_KEY);
+  if (apiKeyStatus === "MISSING_API_KEY") {
     return {
       quota: null,
       hasApiKey: false,
@@ -89,4 +90,8 @@ export async function getAdminLiteraQuotaAction(): Promise<AdminLiteraQuotaResul
     hasApiKey: true,
     error: quota ? undefined : "Kunci API Litera tidak valid atau kuota gagal dimuat dari server Litera.",
   };
+}
+
+export async function getAdminLiteraTokenomicsAction() {
+  return await literaClient.getPublisherTokenomics();
 }

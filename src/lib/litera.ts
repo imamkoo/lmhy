@@ -61,6 +61,21 @@ export interface LiteraPublisherQuota {
   totalRemaining: number;
 }
 
+export interface LiteraPublisherTokenomics {
+  publisherWallet: string;
+  price: number;
+  feeEnabled: boolean;
+  maxMinted: number;
+  userReward: number;
+  creatorMintReward: number;
+  creatorApproveReward: number;
+  autoMint: boolean;
+  defaultCollectionName: string | null;
+  allowArticleOverride: boolean;
+  maxAllowedPrice: number;
+  maxAllowedMinted: number;
+}
+
 export interface LiteraRegisterArticleResponse {
   success: boolean;
   registered: boolean;
@@ -270,6 +285,33 @@ class LiteraClient {
       return result.data || result;
     } catch (err) {
       console.warn("[Litera S2S] Failed to create collection:", err);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch current publisher tokenomics policy from Litera API
+   */
+  async getPublisherTokenomics(): Promise<LiteraPublisherTokenomics | null> {
+    if (!this.apiKey) {
+      return null;
+    }
+
+    try {
+      const res = await fetch(`${this.baseUrl}/cms/tokenomics`, {
+        method: "GET",
+        headers: this.headers,
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const raw = await res.json();
+      return (raw?.data || raw) as LiteraPublisherTokenomics;
+    } catch (err) {
+      console.warn("[Litera S2S] Failed to fetch tokenomics:", err);
       return null;
     }
   }
