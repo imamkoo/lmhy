@@ -290,11 +290,23 @@ class LiteraClient {
       });
 
       if (!res.ok) {
+        const errText = await res.text();
+        console.warn(`[Litera S2S] Quota API error (${res.status}):`, errText);
         return null;
       }
 
-      const data = await res.json();
-      return (data?.data || data) as LiteraPublisherQuota;
+      const raw = await res.json();
+      const data = raw?.data || raw;
+      return {
+        publisherWallet: data.publisherWallet || "",
+        freeQuota: Number(data.freeQuota) || 0,
+        usedFreeQuota: Number(data.usedFreeQuota) || 0,
+        freeRemaining: Number(data.freeRemaining ?? (data.freeQuota - data.usedFreeQuota)) || 0,
+        paidCredits: Number(data.paidCredits) || 0,
+        usedPaidCredits: Number(data.usedPaidCredits) || 0,
+        creditsRemaining: Number(data.creditsRemaining ?? (data.paidCredits - data.usedPaidCredits)) || 0,
+        totalRemaining: Number(data.totalRemaining ?? ((data.freeRemaining ?? 0) + (data.creditsRemaining ?? 0))) || 0,
+      };
     } catch (err) {
       console.warn("[Litera S2S] Failed to fetch quota:", err);
       return null;

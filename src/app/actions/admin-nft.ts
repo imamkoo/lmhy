@@ -67,6 +67,26 @@ export async function saveTokenomicsConfigAction(
   };
 }
 
-export async function getAdminLiteraQuotaAction(): Promise<LiteraPublisherQuota | null> {
-  return await literaClient.getPublisherQuota();
+export interface AdminLiteraQuotaResult {
+  quota: LiteraPublisherQuota | null;
+  hasApiKey: boolean;
+  error?: string;
+}
+
+export async function getAdminLiteraQuotaAction(): Promise<AdminLiteraQuotaResult> {
+  const hasApiKey = Boolean(process.env.LITERA_API_KEY && process.env.LITERA_API_KEY.trim());
+  if (!hasApiKey) {
+    return {
+      quota: null,
+      hasApiKey: false,
+      error: "LITERA_API_KEY belum dikonfigurasi di Environment Variables server.",
+    };
+  }
+
+  const quota = await literaClient.getPublisherQuota();
+  return {
+    quota,
+    hasApiKey: true,
+    error: quota ? undefined : "Kunci API Litera tidak valid atau kuota gagal dimuat dari server Litera.",
+  };
 }
