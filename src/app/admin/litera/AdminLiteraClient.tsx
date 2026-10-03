@@ -4,11 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   verifyAdminPin,
-  getTokenomicsConfigAction,
-  saveTokenomicsConfigAction,
   getAdminLiteraQuotaAction,
+  getAdminLiteraTokenomicsAction,
 } from "@/app/actions/admin-nft";
-import { LiteraPublisherQuota } from "@/lib/litera";
+import { LiteraPublisherQuota, LiteraPublisherTokenomics } from "@/lib/litera";
 
 export function AdminLiteraClient() {
   // 1. PIN Security Gate (Default: 123456)
@@ -17,39 +16,18 @@ export function AdminLiteraClient() {
   const [pinError, setPinError] = useState<string | null>(null);
   const [isCheckingPin, setIsCheckingPin] = useState(false);
 
-  // 2. Tokenomics & Deposit State (Matching Image 1 Exactly)
-  const [userReward, setUserReward] = useState<number>(0);
-  const [creatorReward, setCreatorReward] = useState<number>(0);
-  const [creatorApproveReward, setCreatorApproveReward] = useState<number>(0);
-  const [maxMint, setMaxMint] = useState<number>(100);
-  const [mintingFeeEnabled, setMintingFeeEnabled] = useState<boolean>(false);
-  const [priceLite, setPriceLite] = useState<number>(0);
-  const [isDepositConfirmed, setIsDepositConfirmed] = useState<boolean>(false);
-
-  // 3. UI Status State
-  const [isSaving, setIsSaving] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  // 4. Litera Quota & Credits State (Free Kuota & Paid Credits)
+  // 2. Litera Quota & Credits State (Free Kuota & Paid Credits)
   const [quotaData, setQuotaData] = useState<LiteraPublisherQuota | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isLoadingQuota, setIsLoadingQuota] = useState(true);
 
-  // Load existing tokenomics config & Litera quota on mount
-  useEffect(() => {
-    getTokenomicsConfigAction().then((cfg) => {
-      if (cfg) {
-        setUserReward(cfg.userReward);
-        setCreatorReward(cfg.creatorReward);
-        setCreatorApproveReward(cfg.creatorApproveReward);
-        setMaxMint(cfg.maxMint);
-        setMintingFeeEnabled(cfg.mintingFeeEnabled);
-        setPriceLite(cfg.priceLite);
-        setIsDepositConfirmed(cfg.isDepositConfirmed);
-      }
-    });
+  // 3. Litera Single Source of Truth Tokenomics Policy State
+  const [tokenomicsData, setTokenomicsData] = useState<LiteraPublisherTokenomics | null>(null);
+  const [isLoadingTokenomics, setIsLoadingTokenomics] = useState(true);
 
+  // Load Litera quota & Tokenomics policy on mount
+  useEffect(() => {
     getAdminLiteraQuotaAction()
       .then((res) => {
         setQuotaData(res.quota);
@@ -59,13 +37,15 @@ export function AdminLiteraClient() {
       .finally(() => {
         setIsLoadingQuota(false);
       });
-  }, []);
 
-  // Realtime Total Deposit LITE Calculation
-  const totalDeposit =
-    (Number(userReward) || 0) * (Number(maxMint) || 0) +
-    (Number(creatorReward) || 0) * (Number(maxMint) || 0) +
-    (Number(creatorApproveReward) || 0);
+    getAdminLiteraTokenomicsAction()
+      .then((data) => {
+        setTokenomicsData(data);
+      })
+      .finally(() => {
+        setIsLoadingTokenomics(false);
+      });
+  }, []);
 
   // Handle PIN verification
   const handleVerifyPin = async (e: React.FormEvent) => {
@@ -87,56 +67,9 @@ export function AdminLiteraClient() {
     }
   };
 
-  // Handle Save Configuration
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatusMessage(null);
-
-    if (totalDeposit > 0 && !isDepositConfirmed) {
-      setStatusMessage({
-        type: "error",
-        text: "Terdapat alokasi deposit LITE. Anda wajib mencentang konfirmasi deposit Non-Refundable.",
-      });
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const res = await saveTokenomicsConfigAction({
-        userReward: Number(userReward) || 0,
-        creatorReward: Number(creatorReward) || 0,
-        creatorApproveReward: Number(creatorApproveReward) || 0,
-        maxMint: Number(maxMint) || 100,
-        mintingFeeEnabled,
-        priceLite: mintingFeeEnabled ? Number(priceLite) || 0 : 0,
-        isDepositConfirmed,
-      });
-
-      if (res.success) {
-        setStatusMessage({
-          type: "success",
-          text: res.message || "Konfigurasi tokenomics berhasil disimpan.",
-        });
-      } else {
-        setStatusMessage({
-          type: "error",
-          text: res.message || "Gagal menyimpan konfigurasi tokenomics.",
-        });
-      }
-    } catch (err) {
-      setStatusMessage({
-        type: "error",
-        text: err instanceof Error ? err.message : "Terjadi kesalahan saat menyimpan.",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#F5E7C6] text-[#3F3766] flex flex-col font-sans">
-      {/* 0. PIN GATE SECURITY MODAL (DEFAULT PIN: 123456) */}
+      {/* 0. PIN GATE SECURITY MODAL */}
       {!isAuthenticated && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/75 backdrop-blur-md p-4">
           <div className="w-full max-w-sm rounded-3xl border-4 border-[#3F3766] bg-[#F5E7C6] p-6 sm:p-8 shadow-[0_20px_60px_rgba(63,55,102,0.4)] text-center">
@@ -147,7 +80,7 @@ export function AdminLiteraClient() {
               Akses Admin Litera
             </h2>
             <p className="mt-1 text-xs text-[#3F3766]/70 leading-relaxed">
-              Masukkan PIN Admin untuk mengonfigurasi parameter tokenomics platform.
+              Masukkan PIN Admin untuk memantau status kuota dan kebijakan tokenomics platform.
             </p>
 
             <form onSubmit={handleVerifyPin} className="mt-6 space-y-4">
@@ -174,7 +107,7 @@ export function AdminLiteraClient() {
                 disabled={isCheckingPin}
                 className="w-full py-3.5 rounded-2xl bg-[#F7ABC5] text-[#3F3766] border-2 border-[#3F3766] text-xs font-black uppercase tracking-wider shadow-[0_4px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all disabled:opacity-50"
               >
-                {isCheckingPin ? "Memverifikasi..." : "Buka Pengaturan"}
+                {isCheckingPin ? "Memverifikasi..." : "Buka Portal"}
               </button>
             </form>
           </div>
@@ -195,14 +128,14 @@ export function AdminLiteraClient() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black tracking-wider uppercase text-[#3F3766]">
-                  Pengaturan Tokenomics Platform (Admin Setting)
+                  Status Integrasi & Tokenomics Litera
                 </span>
                 <span className="inline-flex items-center rounded-full bg-[#3F3766] px-2 py-0.5 text-[9px] font-bold text-[#F7ABC5]">
-                  Litera Protocol
+                  Single Source of Truth
                 </span>
               </div>
               <p className="text-[11px] text-[#3F3766]/70">
-                Konfigurasi ekonomi digital terpusat yang otomatis diterapkan ke setiap artikel yang diterbitkan pengguna
+                Let Me Hear You otomatis menerapkan konfigurasi tokenomics dan kuota resmi dari Dashboard Litera
               </p>
             </div>
           </div>
@@ -218,24 +151,11 @@ export function AdminLiteraClient() {
         </div>
       </header>
 
-      {/* 2. MAIN CONTENT (MATCHING IMAGE 1 EXACTLY) */}
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
+      {/* 2. MAIN CONTENT */}
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 space-y-6">
         
-        {/* NOTIFICATION STATUS BANNER */}
-        {statusMessage && (
-          <div
-            className={`mb-6 rounded-2xl border-2 p-4 text-xs font-bold shadow-sm leading-relaxed ${
-              statusMessage.type === "success"
-                ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                : "border-red-500 bg-red-50 text-red-900"
-            }`}
-          >
-            {statusMessage.text}
-          </div>
-        )}
-
         {/* INFORMASI FREE KUOTA & KREDIT PUBLISHER LITERA */}
-        <div className="mb-6 rounded-3xl bg-white p-6 sm:p-7 border-2 border-[#3F3766]/15 shadow-[0_8px_0_0_#3F3766]/10">
+        <div className="rounded-3xl bg-white p-6 sm:p-7 border-2 border-[#3F3766]/15 shadow-[0_8px_0_0_#3F3766]/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#3F3766]/10 pb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -264,29 +184,31 @@ export function AdminLiteraClient() {
                 type="button"
                 onClick={() => {
                   setIsLoadingQuota(true);
+                  setIsLoadingTokenomics(true);
                   getAdminLiteraQuotaAction()
                     .then((res) => {
                       setQuotaData(res.quota);
                       setHasApiKey(res.hasApiKey);
                       setQuotaError(res.error || null);
                     })
-                    .finally(() => {
-                      setIsLoadingQuota(false);
-                    });
+                    .finally(() => setIsLoadingQuota(false));
+                  getAdminLiteraTokenomicsAction()
+                    .then((data) => setTokenomicsData(data))
+                    .finally(() => setIsLoadingTokenomics(false));
                 }}
                 disabled={isLoadingQuota}
                 className="inline-flex items-center justify-center rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#3F3766] border-2 border-[#3F3766]/20 hover:border-[#3F3766] transition shadow-sm disabled:opacity-50"
-                title="Muat ulang status kuota dari server Litera"
+                title="Muat ulang status dari server Litera"
               >
-                {isLoadingQuota ? "Memuat..." : "Refresh"}
+                {isLoadingQuota ? "Memuat..." : "Refresh Status"}
               </button>
               <a
-                href="https://literaa.xyz"
+                href="https://literaa.xyz/publisher/integrasi"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-xl bg-[#F5E7C6] px-3.5 py-2 text-xs font-black text-[#3F3766] border-2 border-[#3F3766]/20 hover:border-[#3F3766] transition shadow-sm w-fit"
               >
-                Top Up di Litera →
+                Buka Dashboard Litera ↗
               </a>
             </div>
           </div>
@@ -362,190 +284,137 @@ export function AdminLiteraClient() {
           </div>
         </div>
 
-        <form onSubmit={handleSaveConfig} className="space-y-6">
-          
-          {/* PENGATURAN TOKENOMICS & DEPOSIT (REWARD LITE) - [IMAGE 1] */}
-          <div className="rounded-3xl bg-white p-6 sm:p-8 border-2 border-[#3F3766]/15 shadow-[0_8px_0_0_#3F3766]/10 space-y-6">
-            <div className="border-b border-[#3F3766]/10 pb-3 flex items-center justify-between">
-              <div>
+        {/* KEBIJAKAN TOKENOMICS AKTIF DARI LITERA (READ ONLY - SOURCE OF TRUTH) */}
+        <div className="rounded-3xl bg-white p-6 sm:p-8 border-2 border-[#3F3766]/15 shadow-[0_8px_0_0_#3F3766]/10 space-y-6">
+          <div className="border-b border-[#3F3766]/10 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-[#3F3766]">
-                  Pengaturan Tokenomics & Deposit (Reward LITE)
+                  Kebijakan Tokenomics & Royalti Aktif (Terhubung S2S)
                 </span>
-                <p className="text-[11px] text-[#3F3766]/65 mt-0.5">
-                  Struktur insentif pembaca, royalti kreator, dan alokasi deposit smart contract
-                </p>
-              </div>
-              <span className="text-[10px] font-bold text-[#3F3766] bg-[#F7ABC5] px-2.5 py-0.5 rounded-full border border-[#3F3766]/20">
-                Admin Managed
-              </span>
-            </div>
-
-            {/* 3-COLUMN INPUT GRID (IMAGE 1) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
-              {/* USER REWARD */}
-              <div className="p-4 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-1.5">
-                <label className="block text-xs font-black uppercase tracking-wider text-[#3F3766]">
-                  User Reward
-                </label>
-                <p className="text-[10px] text-[#3F3766]/65 leading-tight">
-                  Cashback untuk pembaca per mint
-                </p>
-                <input
-                  type="number"
-                  min={0}
-                  value={userReward}
-                  onChange={(e) => setUserReward(Number(e.target.value))}
-                  className="w-full text-base font-bold font-mono px-3.5 py-2.5 rounded-xl border-2 border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
-                />
-              </div>
-
-              {/* CREATOR REWARD */}
-              <div className="p-4 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-1.5">
-                <label className="block text-xs font-black uppercase tracking-wider text-[#3F3766]">
-                  Creator Reward
-                </label>
-                <p className="text-[10px] text-[#3F3766]/65 leading-tight">
-                  Royalti untuk creator per NFT terjual
-                </p>
-                <input
-                  type="number"
-                  min={0}
-                  value={creatorReward}
-                  onChange={(e) => setCreatorReward(Number(e.target.value))}
-                  className="w-full text-base font-bold font-mono px-3.5 py-2.5 rounded-xl border-2 border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
-                />
-              </div>
-
-              {/* CREATOR APPROVE REWARD */}
-              <div className="p-4 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-1.5">
-                <label className="block text-xs font-black uppercase tracking-wider text-[#3F3766]">
-                  Creator Approve Reward
-                </label>
-                <p className="text-[10px] text-[#3F3766]/65 leading-tight">
-                  Pembayaran awal ke creator (sekali saat publish)
-                </p>
-                <input
-                  type="number"
-                  min={0}
-                  value={creatorApproveReward}
-                  onChange={(e) => setCreatorApproveReward(Number(e.target.value))}
-                  className="w-full text-base font-bold font-mono px-3.5 py-2.5 rounded-xl border-2 border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
-                />
-              </div>
-            </div>
-
-            {/* MAX MINT (IMAGE 1) */}
-            <div className="p-4 rounded-2xl bg-white border-2 border-[#3F3766]/15 space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-black uppercase tracking-wider text-[#3F3766]">
-                  Max Mint (Batas Kuota NFT) *
-                </label>
-                <span className="text-[11px] font-bold text-amber-700">
-                  Semakin besar Max Mint, semakin besar kebutuhan deposit LITE.
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                  Dikelola Terpusat di Litera
                 </span>
               </div>
-              <input
-                type="number"
-                min={2}
-                value={maxMint}
-                onChange={(e) => setMaxMint(Number(e.target.value))}
-                required
-                className="w-full text-base font-bold font-mono px-4 py-3 rounded-xl border-2 border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766] shadow-inner"
-              />
-              <p className="text-[10px] text-[#3F3766]/60">
-                Batas maksimal total suplai NFT yang bisa dicetak (1 NFT pertama otomatis masuk ke dompet Creator).
+              <p className="text-[11px] text-[#3F3766]/65 mt-1 leading-relaxed">
+                Parameter di bawah ini diterapkan secara otomatis ke setiap artikel yang diterbitkan oleh pengguna tanpa perlu konfigurasi lokal berulang.
               </p>
             </div>
-
-            {/* MINTING FEE (IMAGE 1) */}
-            <div className="p-5 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-black uppercase tracking-wider text-[#3F3766] block">
-                    Minting Fee
-                  </span>
-                  <span className="text-[11px] text-[#3F3766]/70">
-                    Aktifkan biaya untuk pembaca (Gratis jika toggle dinonaktifkan)
-                  </span>
-                </div>
-
-                {/* Toggle Switch */}
-                <button
-                  type="button"
-                  onClick={() => setMintingFeeEnabled(!mintingFeeEnabled)}
-                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-[#3F3766] transition-colors duration-200 ease-in-out focus:outline-none ${
-                    mintingFeeEnabled ? "bg-[#F7ABC5]" : "bg-[#3F3766]/20"
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white border border-[#3F3766] shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition duration-200 ease-in-out mt-[2px] ml-[2px] ${
-                      mintingFeeEnabled ? "translate-x-6" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {mintingFeeEnabled && (
-                <div className="pt-2">
-                  <div className="relative flex items-center">
-                    <input
-                      type="number"
-                      min={0}
-                      value={priceLite}
-                      onChange={(e) => setPriceLite(Number(e.target.value))}
-                      placeholder="0"
-                      className="w-full text-base font-bold font-mono px-4 py-3 rounded-xl border-2 border-[#3F3766]/20 bg-white pr-16 focus:outline-none focus:border-[#3F3766]"
-                    />
-                    <span className="absolute right-4 font-mono font-black text-xs text-[#3F3766]/60">
-                      LITE
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* KALKULASI DEPOSIT SMART CONTRACT & NON-REFUNDABLE CHECKBOX (IMAGE 1) */}
-            <div className="rounded-2xl bg-[#3F3766] text-[#F5E7C6] p-5 space-y-3 shadow-md">
-              <div className="flex items-center justify-between border-b border-white/15 pb-2.5">
-                <span className="text-xs font-black uppercase tracking-wider text-[#F7ABC5]">
-                  Kalkulasi Deposit Smart Contract
-                </span>
-                <span className="text-sm font-black font-mono">
-                  {totalDeposit} LITE
-                </span>
-              </div>
-              <p className="text-[11px] text-[#F5E7C6]/75 leading-relaxed">
-                Total Kebutuhan Deposit = (User Reward × Max Mint) + (Creator Reward × Max Mint) + Creator Approve Reward.
-              </p>
-
-              <label className="flex items-start gap-3 pt-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isDepositConfirmed}
-                  onChange={(e) => setIsDepositConfirmed(e.target.checked)}
-                  className="h-4 w-4 mt-0.5 rounded border-white/30 text-[#F7ABC5] focus:ring-[#F7ABC5]"
-                />
-                <span className="text-xs font-bold leading-snug">
-                  Konfirmasi Deposit Non-Refundable: Saya menyetujui bahwa sisa deposit reward LITE terkunci permanen di smart contract dan tidak dapat ditarik kembali.
-                </span>
-              </label>
-            </div>
-
-            {/* TOMBOL SIMPAN KONFIGURASI TOKENOMICS */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="w-full py-4 rounded-2xl bg-[#F7ABC5] border-2 border-[#3F3766] text-sm font-black uppercase tracking-wider text-[#3F3766] shadow-[0_6px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[4px] active:shadow-none transition-all disabled:opacity-50"
-              >
-                {isSaving ? "Menyimpan Konfigurasi..." : "Simpan Konfigurasi Tokenomics"}
-              </button>
-            </div>
-
+            <a
+              href="https://literaa.xyz/publisher/integrasi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-xl bg-[#F7ABC5] border-2 border-[#3F3766] px-4 py-2 text-xs font-black text-[#3F3766] shadow-[0_3px_0_0_#3F3766] hover:translate-y-[2px] transition self-start sm:self-auto shrink-0"
+            >
+              Ubah Kebijakan di Litera ↗
+            </a>
           </div>
 
-        </form>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#3F3766]/70 block">
+                User Reward (Cashback)
+              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black font-mono text-[#3F3766]">
+                  {isLoadingTokenomics ? "..." : (tokenomicsData?.userReward ?? 0)}
+                </span>
+                <span className="text-xs font-bold text-[#3F3766]/60">LITE</span>
+              </div>
+              <p className="text-[10px] text-[#3F3766]/60">Diberikan ke pembaca per mint</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#3F3766]/70 block">
+                Creator Mint Reward
+              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black font-mono text-[#3F3766]">
+                  {isLoadingTokenomics ? "..." : (tokenomicsData?.creatorMintReward ?? 0)}
+                </span>
+                <span className="text-xs font-bold text-[#3F3766]/60">LITE</span>
+              </div>
+              <p className="text-[10px] text-[#3F3766]/60">Royalti penulis per NFT terjual</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#3F3766]/70 block">
+                Creator Approve Reward
+              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black font-mono text-[#3F3766]">
+                  {isLoadingTokenomics ? "..." : (tokenomicsData?.creatorApproveReward ?? 0)}
+                </span>
+                <span className="text-xs font-bold text-[#3F3766]/60">LITE</span>
+              </div>
+              <p className="text-[10px] text-[#3F3766]/60">Bonus penerbitan pertama kali</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <div className="p-4 rounded-2xl bg-white border-2 border-[#3F3766]/15 space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#3F3766]/70 block">
+                Batas Suplai (Max Mint)
+              </span>
+              <span className="text-xl font-black font-mono text-[#3F3766]">
+                {isLoadingTokenomics ? "..." : (tokenomicsData?.maxMinted ?? 100)}
+              </span>
+              <p className="text-[10px] text-[#3F3766]/60">Total edisi NFT per artikel</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white border-2 border-[#3F3766]/15 space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#3F3766]/70 block">
+                Biaya Minting (Price)
+              </span>
+              <span className="text-xl font-black font-mono text-[#3F3766]">
+                {isLoadingTokenomics
+                  ? "..."
+                  : tokenomicsData?.feeEnabled
+                  ? `${tokenomicsData?.price ?? 0} LITE`
+                  : "Gratis (Free Mint)"}
+              </span>
+              <p className="text-[10px] text-[#3F3766]/60">Biaya yang dibayar pembaca</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white border-2 border-[#3F3766]/15 space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#3F3766]/70 block">
+                Koleksi Default
+              </span>
+              <span className="text-sm font-black text-[#3F3766] truncate block">
+                {isLoadingTokenomics
+                  ? "..."
+                  : tokenomicsData?.defaultCollectionName || "Default Platform"}
+              </span>
+              <p className="text-[10px] text-[#3F3766]/60">Wadah otomatis artikel baru</p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#3F3766] text-[#F5E7C6] flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🛡️</span>
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-[#F7ABC5] block">
+                  Status Fleksibilitas (Allow Article Override)
+                </span>
+                <p className="text-[11px] text-[#F5E7C6]/75">
+                  {tokenomicsData?.allowArticleOverride
+                    ? "Publisher mengizinkan artikel tertentu menentukan royalti kustom."
+                    : "Terkunci Ketat: Semua artikel 100% wajib mematuhi parameter standar di atas."}
+                </p>
+              </div>
+            </div>
+            <span
+              className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${
+                tokenomicsData?.allowArticleOverride
+                  ? "bg-amber-100 text-amber-900 border-amber-300"
+                  : "bg-emerald-100 text-emerald-900 border-emerald-300"
+              }`}
+            >
+              {tokenomicsData?.allowArticleOverride ? "Fleksibel" : "Terkunci (Ketat)"}
+            </span>
+          </div>
+        </div>
+
       </main>
     </div>
   );

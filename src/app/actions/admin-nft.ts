@@ -91,3 +91,7 @@ export async function getAdminLiteraQuotaAction(): Promise<AdminLiteraQuotaResul
     error: quota ? undefined : "Kunci API Litera tidak valid atau kuota gagal dimuat dari server Litera.",
   };
 }
+
+export async function getAdminLiteraTokenomicsAction() {
+  return await literaClient.getPublisherTokenomics();
+}

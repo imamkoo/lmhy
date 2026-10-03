@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { literaClient, LiteraQuizInput } from "@/lib/litera";
 import { saveTenantArticle, TenantArticle } from "@/lib/tenant-storage";
-import { getAdminTokenomicsConfig } from "@/lib/admin-tokenomics-storage";
 
 export interface PublishArticleInput {
   username: string;
@@ -96,10 +95,8 @@ export async function publishTenantArticle(
       `${username}.letmehearyou.id`,
     ]);
 
-    // 2. Fetch centralized Admin Tokenomics settings
-    const adminTokenomics = getAdminTokenomicsConfig();
-
-    // 3. Register article intent to Litera S2S CMS API merging User Content & Admin Tokenomics
+    // 2. Register article intent to Litera S2S CMS API
+    // Litera automatically resolves and applies centralized publisher tokenomics defaults
     const regRes = await literaClient.registerArticle({
       articleUrl: fullArticleUrl,
       title: article.title,
@@ -110,12 +107,6 @@ export async function publishTenantArticle(
       unlockableUrl,
       mediaType,
       mediaUrl: article.mediaUrl,
-      userReward: adminTokenomics.userReward,
-      creatorReward: adminTokenomics.creatorReward,
-      creatorApproveReward: adminTokenomics.creatorApproveReward,
-      maxMint: adminTokenomics.maxMint,
-      mintingFeeEnabled: adminTokenomics.mintingFeeEnabled,
-      priceLite: adminTokenomics.priceLite,
       quiz,
     });
 
