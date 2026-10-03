@@ -94,7 +94,6 @@ export async function publishTenantArticle(
     // 1. Auto-register subdomain to Litera CORS allowlist
     await literaClient.registerDomains([
       `${username}.letmehearyou.id`,
-      `${username}.letmehearyou.my.id`,
     ]);
 
     // 2. Fetch centralized Admin Tokenomics settings

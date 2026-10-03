@@ -57,9 +57,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
 
   const [activeBaseDomain] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return window.location.hostname.includes("letmehearyou.my.id")
-        ? "letmehearyou.my.id"
-        : "letmehearyou.id";
+      return "letmehearyou.id";
     }
     return "letmehearyou.id";
   });
