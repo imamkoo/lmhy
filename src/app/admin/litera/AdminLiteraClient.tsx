@@ -6,7 +6,9 @@ import {
   verifyAdminPin,
   getTokenomicsConfigAction,
   saveTokenomicsConfigAction,
+  getAdminLiteraQuotaAction,
 } from "@/app/actions/admin-nft";
+import { LiteraPublisherQuota } from "@/lib/litera";
 
 export function AdminLiteraClient() {
   // 1. PIN Security Gate (Default: 123456)
@@ -28,7 +30,11 @@ export function AdminLiteraClient() {
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Load existing tokenomics config on mount
+  // 4. Litera Quota & Credits State (Free Kuota & Paid Credits)
+  const [quotaData, setQuotaData] = useState<LiteraPublisherQuota | null>(null);
+  const [isLoadingQuota, setIsLoadingQuota] = useState(true);
+
+  // Load existing tokenomics config & Litera quota on mount
   useEffect(() => {
     getTokenomicsConfigAction().then((cfg) => {
       if (cfg) {
@@ -41,6 +47,14 @@ export function AdminLiteraClient() {
         setIsDepositConfirmed(cfg.isDepositConfirmed);
       }
     });
+
+    getAdminLiteraQuotaAction()
+      .then((res) => {
+        setQuotaData(res);
+      })
+      .finally(() => {
+        setIsLoadingQuota(false);
+      });
   }, []);
 
   // Realtime Total Deposit LITE Calculation
@@ -215,6 +229,90 @@ export function AdminLiteraClient() {
             {statusMessage.text}
           </div>
         )}
+
+        {/* INFORMASI FREE KUOTA & KREDIT PUBLISHER LITERA */}
+        <div className="mb-6 rounded-3xl bg-white p-6 sm:p-7 border-2 border-[#3F3766]/15 shadow-[0_8px_0_0_#3F3766]/10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#3F3766]/10 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-[#3F3766]">
+                  Status Kuota Penerbit & Saldo Kredit (Litera Protocol)
+                </span>
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[9px] font-bold text-emerald-800 border border-emerald-300">
+                  Live S2S
+                </span>
+              </div>
+              <p className="text-[11px] text-[#3F3766]/65 mt-0.5">
+                Kuota pencetakan otomatis (auto-minting) dan kredit aktif akun penerbit Let Me Hear You
+              </p>
+            </div>
+
+            <a
+              href="https://literaa.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-xl bg-[#F5E7C6] px-3.5 py-2 text-xs font-black text-[#3F3766] border-2 border-[#3F3766]/20 hover:border-[#3F3766] transition shadow-sm w-fit"
+            >
+              Top Up di Litera →
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+            {/* 1. FREE KUOTA */}
+            <div className="p-4 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-1">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]/70 block">
+                Free Kuota Tersisa
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black font-mono text-[#3F3766]">
+                  {isLoadingQuota ? "..." : (quotaData?.freeRemaining ?? 0)}
+                </span>
+                <span className="text-[10px] font-bold text-[#3F3766]/60">
+                  / {quotaData?.freeQuota ?? 0} artikel gratis
+                </span>
+              </div>
+              <p className="text-[10px] text-[#3F3766]/60 leading-tight pt-1">
+                Terpakai: {quotaData?.usedFreeQuota ?? 0} artikel
+              </p>
+            </div>
+
+            {/* 2. PAID CREDITS */}
+            <div className="p-4 rounded-2xl bg-[#F5E7C6]/30 border-2 border-[#3F3766]/15 space-y-1">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]/70 block">
+                Saldo Kredit (Credits)
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black font-mono text-[#3F3766]">
+                  {isLoadingQuota ? "..." : (quotaData?.creditsRemaining ?? 0)}
+                </span>
+                <span className="text-[10px] font-bold text-[#3F3766]/60">
+                  Kredit Aktif
+                </span>
+              </div>
+              <p className="text-[10px] text-[#3F3766]/60 leading-tight pt-1">
+                Total Top Up: {quotaData?.paidCredits ?? 0} | Terpakai: {quotaData?.usedPaidCredits ?? 0}
+              </p>
+            </div>
+
+            {/* 3. TOTAL KUOTA TERSEDIA */}
+            <div className="p-4 rounded-2xl bg-[#3F3766] text-[#F5E7C6] space-y-1 shadow-inner">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#F7ABC5] block">
+                Total Kapasitas Terbit
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black font-mono text-white">
+                  {isLoadingQuota ? "..." : (quotaData?.totalRemaining ?? 0)}
+                </span>
+                <span className="text-[10px] font-bold text-[#F5E7C6]/75">
+                  Slot Artikel Siap Mint
+                </span>
+              </div>
+              <p className="text-[10px] text-[#F5E7C6]/70 leading-tight pt-1">
+                Kombinasi Free Kuota + Paid Credits
+              </p>
+            </div>
+          </div>
+        </div>
 
         <form onSubmit={handleSaveConfig} className="space-y-6">
           

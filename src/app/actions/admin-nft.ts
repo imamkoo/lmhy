@@ -6,6 +6,7 @@ import {
   getAdminTokenomicsConfig,
   saveAdminTokenomicsConfig,
 } from "@/lib/admin-tokenomics-storage";
+import { literaClient, LiteraPublisherQuota } from "@/lib/litera";
 
 export async function verifyAdminPin(pin: string): Promise<boolean> {
   const DEFAULT_PIN = "123456";
@@ -64,4 +65,8 @@ export async function saveTokenomicsConfigAction(
     message: "Konfigurasi Tokenomics berhasil disimpan dan aktif untuk seluruh artikel.",
     config: saved,
   };
+}
+
+export async function getAdminLiteraQuotaAction(): Promise<LiteraPublisherQuota | null> {
+  return await literaClient.getPublisherQuota();
 }
