@@ -50,6 +50,17 @@ export interface LiteraDomainResponse {
   message?: string;
 }
 
+export interface LiteraPublisherQuota {
+  publisherWallet: string;
+  freeQuota: number;
+  usedFreeQuota: number;
+  freeRemaining: number;
+  paidCredits: number;
+  usedPaidCredits: number;
+  creditsRemaining: number;
+  totalRemaining: number;
+}
+
 export interface LiteraRegisterArticleResponse {
   success: boolean;
   registered: boolean;
@@ -259,6 +270,33 @@ class LiteraClient {
       return result.data || result;
     } catch (err) {
       console.warn("[Litera S2S] Failed to create collection:", err);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch current publisher quota & credits from Litera API
+   */
+  async getPublisherQuota(): Promise<LiteraPublisherQuota | null> {
+    if (!this.apiKey) {
+      return null;
+    }
+
+    try {
+      const res = await fetch(`${this.baseUrl}/cms/quota`, {
+        method: "GET",
+        headers: this.headers,
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const data = await res.json();
+      return (data?.data || data) as LiteraPublisherQuota;
+    } catch (err) {
+      console.warn("[Litera S2S] Failed to fetch quota:", err);
       return null;
     }
   }
