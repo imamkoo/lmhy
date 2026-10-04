@@ -301,7 +301,11 @@ export function AdminLiteraClient() {
               </p>
             </div>
             <a
-              href="https://literaa.xyz/publisher/integrasi"
+              href={
+                quotaData?.publisherWallet
+                  ? `https://literaa.xyz/publisher/integration?publisher=${quotaData.publisherWallet}`
+                  : "https://literaa.xyz/publisher/integration"
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center rounded-xl bg-[#F7ABC5] border-2 border-[#3F3766] px-4 py-2 text-xs font-black text-[#3F3766] shadow-[0_3px_0_0_#3F3766] hover:translate-y-[2px] transition self-start sm:self-auto shrink-0"
