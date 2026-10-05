@@ -45,7 +45,7 @@ export default async function TenantArticlePage({
             ← Kembali ke profil @{username}
           </Link>
           <Link
-            href="/write"
+            href={`/builder?username=${username}`}
             className="text-xs font-semibold text-slate-500 hover:text-[#d07954]"
           >
             + Tulis Baru
