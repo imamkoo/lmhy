@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import type { Database } from "@/lib/supabase/types";
 
 const ROOT_DOMAINS = [
   "letmehearyou.id",
@@ -22,6 +24,8 @@ const ROOT_ROUTES = [
   "/creator",
   "/admin",
   "/login",
+  "/onboarding",
+  "/auth",
 ];
 
 /**
@@ -32,7 +36,7 @@ const ROOT_ROUTES = [
 const REDIRECT_TENANT_HOSTS = ["letmehearyou.id", "www.letmehearyou.id"];
 
 /** Username subdomain harus aman dipakai sebagai label hostname. */
-const SAFE_USERNAME = /^[A-Za-z0-9_-]+$/;
+const SAFE_USERNAME = /^[a-z0-9-]+$/;
 
 function matchesRootRoute(pathname: string): boolean {
   return ROOT_ROUTES.some(
@@ -40,7 +44,7 @@ function matchesRootRoute(pathname: string): boolean {
   );
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const hostname = req.headers.get("host") || "";
 
@@ -90,6 +94,72 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/builder", req.url), 308);
   }
 
+  // (2) Supabase Session & Onboarding Gate Inspection
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  let sessionResponse = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  });
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const supabase = createServerClient<Database>(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+          cookies: {
+            getAll() {
+              return req.cookies.getAll();
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value }) =>
+                req.cookies.set(name, value)
+              );
+              sessionResponse = NextResponse.next({
+                request: {
+                  headers: req.headers,
+                },
+              });
+              cookiesToSet.forEach(({ name, value, options }) =>
+                sessionResponse.cookies.set(name, value, options)
+              );
+            },
+          },
+        }
+      );
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const isAuthOrOnboardingPath =
+          url.pathname.startsWith("/onboarding") ||
+          url.pathname.startsWith("/auth") ||
+          url.pathname.startsWith("/login");
+
+        if (!isAuthOrOnboardingPath) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (!profile?.username) {
+            const onboardingUrl = new URL("/onboarding", req.url);
+            return NextResponse.redirect(onboardingUrl);
+          }
+        }
+      }
+    } catch (authError) {
+      console.error("Middleware auth check error:", authError);
+    }
+  }
+
+  // (3) Subdomain routing
   if (subdomain && subdomain !== "www") {
     // Legacy /write di subdomain diarahkan ke Web Builder dengan username
     if (url.pathname === "/write" || url.pathname === "/write/") {
@@ -99,9 +169,9 @@ export function middleware(req: NextRequest) {
       );
     }
 
-    // (2) Route root menang: biarkan dilayani route root, jangan di-rewrite.
+    // Route root menang: biarkan dilayani route root, jangan di-rewrite.
     if (matchesRootRoute(url.pathname)) {
-      return NextResponse.next();
+      return sessionResponse;
     }
 
     return NextResponse.rewrite(
@@ -109,7 +179,7 @@ export function middleware(req: NextRequest) {
     );
   }
 
-  return NextResponse.next();
+  return sessionResponse;
 }
 
 export const config = {
