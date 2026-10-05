@@ -82,29 +82,6 @@ export async function getArticlesByUsername(username: string): Promise<Article[]
     (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
   );
 
-  // If brand new user with no articles anywhere, return a starter welcome article
-  if (allArticles.length === 0) {
-    return [
-      {
-        id: `welcome_${normalizedUser}`,
-        author_id: '00000000-0000-0000-0000-000000000000',
-        username: normalizedUser,
-        slug: 'selamat-datang-di-ruang-refleksi',
-        title: `Selamat Datang di Jurnal Digital @${normalizedUser}`,
-        excerpt:
-          'Ini adalah artikel pertama di subdomain personal Anda. Tulisan di sini terhubung langsung dengan jaringan sertifikat digital Litera.',
-        content: `Halo dan selamat datang di ruang refleksi digital @${normalizedUser}. Di sini Anda dapat menuliskan perjalanan pikiran, kesehatan mental, dan wawasan berharga Anda. Setiap artikel dapat dikoleksi oleh pembaca sebagai sertifikat digital resmi di blockchain Polygon.`,
-        tags: ['Refleksi', 'Jurnal', 'Web3'],
-        media_type: 'IMAGE',
-        media_url: '/assets/sapiens.png',
-        register_litera: true,
-        creator_wallet: null,
-        published_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-  }
-
   return allArticles;
 }
 
@@ -145,27 +122,6 @@ export async function getArticleBySlug(
 
   if (defaultMatch) {
     return convertTenantArticleToArticle(defaultMatch);
-  }
-
-  // Welcome starter article fallback
-  if (normalizedSlug === 'selamat-datang-di-ruang-refleksi') {
-    return {
-      id: `welcome_${normalizedUser}`,
-      author_id: '00000000-0000-0000-0000-000000000000',
-      username: normalizedUser,
-      slug: 'selamat-datang-di-ruang-refleksi',
-      title: `Selamat Datang di Jurnal Digital @${normalizedUser}`,
-      excerpt:
-        'Ini adalah artikel pertama di subdomain personal Anda. Tulisan di sini terhubung langsung dengan jaringan sertifikat digital Litera.',
-      content: `Halo dan selamat datang di ruang refleksi digital @${normalizedUser}. Di sini Anda dapat menuliskan perjalanan pikiran, kesehatan mental, dan wawasan berharga Anda. Setiap artikel dapat dikoleksi oleh pembaca sebagai sertifikat digital resmi di blockchain Polygon.`,
-      tags: ['Refleksi', 'Jurnal', 'Web3'],
-      media_type: 'IMAGE',
-      media_url: '/assets/sapiens.png',
-      register_litera: true,
-      creator_wallet: null,
-      published_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
   }
 
   return null;

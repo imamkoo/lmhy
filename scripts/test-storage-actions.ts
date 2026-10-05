@@ -7,10 +7,8 @@ import {
 import {
   getArticlesByUsername,
   getArticleBySlug,
-  convertTenantArticleToArticle,
 } from '../src/lib/article-storage';
 import { publishTenantArticle } from '../src/app/actions/tenant';
-import { DEFAULT_TENANT_ARTICLES } from '../src/lib/tenant-storage';
 
 async function runTests() {
   console.log('--- Starting Storage & Authorization Unit Tests ---');
@@ -31,33 +29,21 @@ async function runTests() {
   console.log('✓ Profile storage safe fallbacks verified');
 
   // 2. Article Storage Tests
-  console.log('\n[2] Testing Article Storage Functions & Fallbacks...');
+  console.log('\n[2] Testing Article Storage Functions & Clean States...');
   const emptyArticles = await getArticlesByUsername('');
   assert.deepStrictEqual(emptyArticles, [], 'Empty username must return empty list');
 
   const axaaArticles = await getArticlesByUsername('axaa');
-  assert.ok(axaaArticles.length >= 2, 'axaa should have at least 2 default seeded articles');
-  assert.strictEqual(axaaArticles[0].username, 'axaa');
-  console.log(`✓ axaa articles found: ${axaaArticles.length} items`);
+  assert.strictEqual(axaaArticles.length, 0, 'axaa should have 0 articles in clean unseeded database');
+  console.log(`✓ Clean profile verified: 0 dummy articles for @axaa`);
 
-  const axaaArticle1 = await getArticleBySlug('axaa', 'mengenali-tanda-burnout');
-  assert.ok(axaaArticle1, 'Article "mengenali-tanda-burnout" should be found');
-  assert.strictEqual(axaaArticle1.title, 'Mengenali Tanda Burnout Sebelum Terlambat');
-  assert.strictEqual(axaaArticle1.media_type, 'IMAGE');
-  console.log('✓ Article by slug verified');
-
-  const unknownSlug = await getArticleBySlug('axaa', 'random-nonexistent-slug');
-  assert.strictEqual(unknownSlug, null, 'Non-existent slug should return null');
+  const unknownSlug = await getArticleBySlug('axaa', 'mengenali-tanda-burnout');
+  assert.strictEqual(unknownSlug, null, 'Non-existent / clean slug should return null');
+  console.log('✓ Clean article query verified: non-existent returns null');
 
   const newCreatorArticles = await getArticlesByUsername('newcreator');
-  assert.strictEqual(newCreatorArticles.length, 1);
-  assert.strictEqual(newCreatorArticles[0].slug, 'selamat-datang-di-ruang-refleksi');
-  console.log('✓ New creator welcome article fallback verified');
-
-  const converted = convertTenantArticleToArticle(DEFAULT_TENANT_ARTICLES[0], 'test-author-id');
-  assert.strictEqual(converted.author_id, 'test-author-id');
-  assert.strictEqual(converted.slug, DEFAULT_TENANT_ARTICLES[0].slug);
-  console.log('✓ TenantArticle to Article conversion verified');
+  assert.strictEqual(newCreatorArticles.length, 0, 'New creator starts with clean 0 articles');
+  console.log('✓ Clean new creator state verified: 0 articles');
 
   // 3. Publishing Authorization Tests
   console.log('\n[3] Testing publishTenantArticle Authorization...');

@@ -31,12 +31,12 @@
 | ID | Skenario | Langkah Uji | Hasil yang Diharapkan |
 |---|---|---|---|
 | **R-01** | Subdomain root profile | Buka `http://axaa.localhost:3000/` | Profil @axaa tampil (internal rewrite ke `/tenant/axaa`), URL browser tetap `axaa.localhost:3000` |
-| **R-02** | Subdomain article | Buka `http://axaa.localhost:3000/mengenali-tanda-burnout` | Halaman artikel "Mengenali Tanda Burnout Sebelum Terlambat" |
+| **R-02** | Subdomain article | Buka `http://axaa.localhost:3000/judul-artikel-baru` (setelah publish) | Halaman artikel yang diterbitkan |
 | **R-03** | Root route di subdomain | Buka `http://axaa.localhost:3000/builder` | **Studio Canvas** tampil langsung, bukan artikel placeholder |
 | **R-04** | Root routes lain di subdomain | Buka `/blog`, `/creator`, `/admin`, `/login`, `/onboarding`, `/auth` di subdomain | Mengakses route asli aplikasi tanpa di-rewrite ke `/tenant/...` |
 | **R-05** | Subdomain legacy write redirect | Buka `http://axaa.localhost:3000/write` | **308 Permanent Redirect** ke `/builder?username=axaa` |
 | **R-06** | Root domain tenant canonical | Buka `http://localhost:3000/tenant/axaa` | **308 Permanent Redirect** ke `http://axaa.localhost:3000/` (di prod: `https://axaa.letmehearyou.id/`) |
-| **R-07** | Root domain tenant article canonical | Buka `http://localhost:3000/tenant/axaa/mengenali-tanda-burnout` | **308 Permanent Redirect** ke `http://axaa.localhost:3000/mengenali-tanda-burnout` |
+| **R-07** | Root domain tenant article canonical | Buka `http://localhost:3000/tenant/axaa/judul-artikel-baru` | **308 Permanent Redirect** ke `http://axaa.localhost:3000/judul-artikel-baru` |
 | **R-08** | Root domain legacy write | Buka `http://localhost:3000/write` | **308 Permanent Redirect** ke `/builder` |
 | **R-09** | Username berbahaya | Buka `http://localhost:3000/tenant/ax%3Aaa` | Tidak diarahkan ke hostname cacat; dilayani aman via safe regex guard |
 | **R-10** | Assets & API Passthrough | Akses `/_next/...`, `/assets/...`, `/favicon.ico`, `/api/...` | Langsung disajikan tanpa intervensi rewrite middleware |
