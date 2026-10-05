@@ -17,7 +17,7 @@ export interface TenantArticle {
 }
 
 // Initial sample articles for tenant demonstration
-const DEFAULT_TENANT_ARTICLES: TenantArticle[] = [
+export const DEFAULT_TENANT_ARTICLES: TenantArticle[] = [
   {
     id: "art_1",
     username: "axaa",
