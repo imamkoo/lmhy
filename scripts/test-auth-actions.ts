@@ -4,6 +4,8 @@ import {
   MIN_USERNAME_LENGTH,
   MAX_USERNAME_LENGTH,
   RESERVED_USERNAMES,
+} from '../src/lib/auth-constants';
+import {
   checkUsernameAvailabilityAction,
   completeOnboardingAction,
   signInWithGoogleAction,

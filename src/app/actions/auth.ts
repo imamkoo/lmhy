@@ -2,49 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
-
-export const USERNAME_REGEX = /^[a-z0-9-]+$/;
-export const MIN_USERNAME_LENGTH = 3;
-export const MAX_USERNAME_LENGTH = 30;
-
-export const RESERVED_USERNAMES = new Set([
-  'admin',
-  'api',
-  'app',
-  'assets',
-  'auth',
-  'blog',
-  'builder',
-  'creator',
-  'dashboard',
-  'dev',
-  'help',
-  'letmehearyou',
-  'login',
-  'logout',
-  'mail',
-  'my',
-  'null',
-  'onboarding',
-  'profile',
-  'public',
-  'register',
-  'root',
-  'settings',
-  'signin',
-  'signup',
-  'static',
-  'status',
-  'support',
-  'tenant',
-  'test',
-  'undefined',
-  'user',
-  'users',
-  'web',
-  'write',
-  'www',
-]);
+import {
+  USERNAME_REGEX,
+  MIN_USERNAME_LENGTH,
+  MAX_USERNAME_LENGTH,
+  RESERVED_USERNAMES,
+} from '@/lib/auth-constants';
 
 export interface AuthActionResult {
   success: boolean;

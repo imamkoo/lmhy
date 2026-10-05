@@ -6,10 +6,19 @@ import Image from "next/image";
 import { REFLECTION_TEMPLATES, ReflectionTemplate } from "@/lib/builder-templates";
 import { publishTenantArticle } from "@/app/actions/tenant";
 import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
+import { createClient } from "@/lib/supabase/client";
 
 const STORAGE_KEY = "lmhy_builder_draft_v2";
 
 export function WebBuilderClient({ initialUsername }: { initialUsername?: string }) {
+  // 0. Auth & Session State
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authUser, setAuthUser] = useState<{ id: string; email?: string } | null>(null);
+  const [authProfile, setAuthProfile] = useState<{ username: string; display_name: string } | null>(null);
+  const [showPublishSuccessModal, setShowPublishSuccessModal] = useState(false);
+  const [publishedData, setPublishedData] = useState<{ url: string; slug: string; title: string } | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
   // 1. Subdomain State & Lock Management
   const [username, setUsername] = useState(initialUsername || "");
   const [tempUsername, setTempUsername] = useState(initialUsername || "");
@@ -69,6 +78,36 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       .replace(/[^a-z0-9-]/g, "")
       .slice(0, 32);
   };
+
+  // Check Supabase session on mount
+  useEffect(() => {
+    const supabase = createClient();
+    async function checkAuth() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setAuthUser(user);
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username, display_name")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (profile?.username) {
+            setAuthProfile(profile);
+            setUsername(profile.username);
+            setTempUsername(profile.username);
+            setIsSubdomainConfirmed(true);
+          }
+        }
+      } catch (err) {
+        console.warn("Error checking auth status:", err);
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+    checkAuth();
+  }, []);
 
   // 6. Local Storage Persistence (Restore on Mount)
   useEffect(() => {
@@ -301,17 +340,175 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         }
       }
 
-      // Redirect to newly published blog page
       const targetUrl = `https://${cleanUser}.${activeBaseDomain}/${res.slug}`;
-      window.location.href = targetUrl;
+      setPublishedData({
+        url: targetUrl,
+        slug: res.slug || "",
+        title: title || "Refleksi Baru",
+      });
+      setShowPublishSuccessModal(true);
+      setIsSubmitting(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan saat mempublikasikan.");
       setIsSubmitting(false);
     }
   };
 
+  const handleShareToFacebook = (url: string) => {
+    const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    window.open(fbShareUrl, "_blank", "noopener,noreferrer,width=600,height=500");
+  };
+
+  const handleShareToWhatsApp = (url: string, articleTitle: string) => {
+    const text = `Baca refleksi "${articleTitle}" di Let Me Hear You:\n${url}`;
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleCopyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    } catch {
+      // fallback
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen relative">
+      {/* 0A. AUTHENTICATION REQUIRED MODAL (FOR CREATORS) */}
+      {!authLoading && !authUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] p-6 sm:p-8 shadow-[0_20px_60px_rgba(63,55,102,0.4)] text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#d07954]/15 border-2 border-[#d07954]/30 text-3xl">
+              ✍️
+            </div>
+            <span className="inline-block rounded-full bg-[#d07954]/15 px-3 py-1 text-xs font-bold text-[#d07954] mb-2">
+              Studio Web Builder
+            </span>
+            <h2 className="text-xl font-black text-[#3F3766] tracking-tight">
+              Masuk untuk Mulai Menulis
+            </h2>
+            <p className="mt-2 text-xs text-[#3F3766]/70 leading-relaxed">
+              Daftar atau masuk ke akun Anda untuk menerbitkan refleksi di subdomain pribadi Anda (<span className="font-mono font-bold text-[#d07954]">nama.letmehearyou.id</span>) dan mengamankan sertifikat digital Litera Web3.
+            </p>
+
+            <div className="mt-6 space-y-3">
+              <Link
+                href="/login?next=/builder"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#d07954] py-3.5 text-sm font-bold text-white shadow-[0_4px_0_0_#b86644] hover:bg-[#b86644] transition active:translate-y-1"
+              >
+                Masuk / Buat Akun Kreator
+              </Link>
+              <Link
+                href="/"
+                className="block text-xs font-semibold text-[#3F3766]/60 hover:text-[#3F3766] transition py-1"
+              >
+                Kembali ke Beranda
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 0B. CELEBRATORY POST-PUBLISH MODAL WITH FACEBOOK SHARE */}
+      {showPublishSuccessModal && publishedData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/85 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-lg rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] p-6 sm:p-8 shadow-[0_24px_70px_rgba(63,55,102,0.5)] text-center relative">
+            <button
+              onClick={() => setShowPublishSuccessModal(false)}
+              className="absolute top-4 right-4 text-xs font-bold text-[#3F3766]/50 hover:text-[#3F3766] p-2"
+              aria-label="Tutup modal"
+            >
+              ✕
+            </button>
+
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 border-2 border-emerald-500 text-3xl">
+              🎉
+            </div>
+
+            <span className="inline-block rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-300 mb-2">
+              Berhasil Diterbitkan
+            </span>
+            <h2 className="text-2xl font-black text-[#3F3766] tracking-tight">
+              Refleksi Anda Kini Live!
+            </h2>
+            <p className="mt-1 text-xs text-[#3F3766]/70">
+              Artikel & sertifikat digital Litera telah tercatat secara permanen.
+            </p>
+
+            {/* Live Link Card */}
+            <div className="mt-5 rounded-2xl border-2 border-[#3F3766]/15 bg-white p-3.5 text-left flex items-center justify-between gap-2 shadow-inner">
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/50 block">
+                  Link Publikasi
+                </span>
+                <p className="font-mono text-xs font-bold text-[#d07954] truncate">
+                  {publishedData.url}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCopyLink(publishedData.url)}
+                className="shrink-0 rounded-xl bg-[#3F3766] px-3 py-2 text-xs font-bold text-white hover:bg-[#3F3766]/80 transition"
+              >
+                {copiedLink ? "✓ Disalin" : "Salin Link"}
+              </button>
+            </div>
+
+            {/* Social Share Buttons */}
+            <div className="mt-5">
+              <span className="block text-xs font-bold text-[#3F3766]/80 mb-2.5">
+                Bagikan Refleksi Anda:
+              </span>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleShareToFacebook(publishedData.url)}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#1877F2] py-2.5 px-4 text-xs font-bold text-white shadow-sm hover:bg-[#166fe5] transition active:scale-98"
+                >
+                  <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                  <span>Bagikan ke Facebook</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleShareToWhatsApp(publishedData.url, publishedData.title)}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] py-2.5 px-4 text-xs font-bold text-white shadow-sm hover:bg-[#20ba59] transition active:scale-98"
+                >
+                  <span className="text-sm">💬</span>
+                  <span>WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Direct Links */}
+            <div className="mt-6 flex items-center justify-center gap-3 pt-4 border-t border-[#3F3766]/10">
+              <a
+                href={publishedData.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#d07954] hover:underline"
+              >
+                <span>Lihat Artikel Live ↗</span>
+              </a>
+              <span className="text-xs text-[#3F3766]/30">•</span>
+              <a
+                href={`https://${username}.${activeBaseDomain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#3F3766]/80 hover:text-[#3F3766] hover:underline"
+              >
+                <span>Lihat Profil Subdomain ↗</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 0. MANDATORY SUBDOMAIN IDENTITY MODAL (HARD GATE) */}
       {!isSubdomainConfirmed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
@@ -391,6 +588,11 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                 <span className="text-xs font-black tracking-wider uppercase text-[#3F3766]">
                   Studio Canvas
                 </span>
+                {authProfile?.display_name && (
+                  <span className="hidden sm:inline-block text-[11px] font-bold text-[#d07954]">
+                    ({authProfile.display_name})
+                  </span>
+                )}
                 <span className="inline-flex items-center rounded-full bg-[#F7ABC5]/40 px-2 py-0.5 text-[10px] font-bold text-[#3F3766] border border-[#3F3766]/20">
                   Live
                 </span>

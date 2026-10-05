@@ -13,7 +13,7 @@ import {
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextUrl = searchParams.get('next') || '/builder';
+  const nextUrl = searchParams.get('next') || searchParams.get('redirect') || '/builder';
   const errorParam = searchParams.get('error');
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');

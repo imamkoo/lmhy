@@ -7,10 +7,12 @@ import { createClient } from '@/lib/supabase/client';
 import {
   checkUsernameAvailabilityAction,
   completeOnboardingAction,
+} from '@/app/actions/auth';
+import {
   USERNAME_REGEX,
   MIN_USERNAME_LENGTH,
   MAX_USERNAME_LENGTH,
-} from '@/app/actions/auth';
+} from '@/lib/auth-constants';
 
 export default function OnboardingPage() {
   const router = useRouter();
