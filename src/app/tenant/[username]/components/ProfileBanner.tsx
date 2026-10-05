@@ -1,0 +1,291 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import type { Profile } from "@/lib/supabase/types";
+import type { ProfileStats } from "@/lib/profile-storage";
+import { toggleFollowAction } from "@/app/actions/profile";
+import { signOutAction } from "@/app/actions/auth";
+
+interface ProfileBannerProps {
+  profile: Profile;
+  stats: ProfileStats;
+  isOwnProfile: boolean;
+  initialIsFollowing?: boolean;
+  onEditClick?: () => void;
+}
+
+export function ProfileBanner({
+  profile,
+  stats,
+  isOwnProfile,
+  initialIsFollowing = false,
+  onEditClick,
+}: ProfileBannerProps) {
+  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const [followersCount, setFollowersCount] = useState(stats.followersCount);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const displayName = profile.display_name || profile.username;
+  const username = profile.username;
+  const bio =
+    profile.bio ||
+    "Kumpulan refleksi, tulisan kesehatan mental, dan edisi sertifikat digital resmi di Let Me Hear You.";
+
+  const handleToggleFollow = async () => {
+    if (!profile.id || isFollowLoading) return;
+    setIsFollowLoading(true);
+
+    try {
+      const res = await toggleFollowAction(profile.id);
+      if (res.success && typeof res.isFollowing === "boolean") {
+        setIsFollowing(res.isFollowing);
+        setFollowersCount((prev) => (res.isFollowing ? prev + 1 : Math.max(0, prev - 1)));
+      } else if (res.error) {
+        alert(res.error);
+      }
+    } catch (err: unknown) {
+      console.error("Failed to follow:", err);
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : `https://${username}.letmehearyou.id`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+    }
+  };
+
+  const handleEditClick = () => {
+    if (onEditClick) {
+      onEditClick();
+    } else if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("open-edit-profile"));
+    }
+  };
+
+  // Initials generator
+  const initials = displayName
+    ? displayName
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : username.slice(0, 2).toUpperCase();
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition">
+      {/* Cover Banner with soft gradient fallback */}
+      <div className="relative h-44 w-full sm:h-56 md:h-64 bg-gradient-to-r from-[#fae8df] via-[#f7dfd3] to-[#e8d5c8] overflow-hidden">
+        {profile.banner_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={profile.banner_url}
+            alt={`${displayName} Cover Banner`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-[radial-gradient(#d07954_1px,transparent_1px)] [background-size:16px_16px]" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+      </div>
+
+      {/* Main Profile Info Container */}
+      <div className="px-6 pb-8 pt-0 md:px-10">
+        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between">
+          {/* Avatar & Identifiers */}
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 -mt-16 sm:-mt-20">
+            {/* Avatar */}
+            <div className="relative h-28 w-28 sm:h-32 sm:w-32 shrink-0 overflow-hidden rounded-full border-4 border-white bg-[#d07954] shadow-md flex items-center justify-center text-white font-bold text-3xl select-none">
+              {profile.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.avatar_url}
+                  alt={displayName}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <span>{initials}</span>
+              )}
+            </div>
+
+            {/* Display Name & Subdomain Pill */}
+            <div className="sm:pb-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
+                  {displayName}
+                </h1>
+                {/* Verified Subdomain Pill */}
+                <div
+                  title="Subdomain Resmi Terverifikasi"
+                  className="inline-flex items-center gap-1 rounded-full bg-[#d07954]/15 px-3 py-0.5 text-xs font-semibold text-[#b86644]"
+                >
+                  <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>@{username}</span>
+                </div>
+              </div>
+
+              <p className="mt-1 text-xs text-slate-500 font-medium">
+                {username}.letmehearyou.id
+              </p>
+            </div>
+          </div>
+
+          {/* Action CTAs (Right-aligned) */}
+          <div className="mt-5 flex flex-wrap items-center gap-2.5 sm:mt-0 sm:pb-2">
+            {isOwnProfile ? (
+              <>
+                <button
+                  onClick={handleEditClick}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                >
+                  <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                  <span>Edit Profil</span>
+                </button>
+
+                <Link
+                  href={`/builder?username=${username}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#b86644]"
+                >
+                  <span>✏️</span>
+                  <span>Tulis di Web Builder</span>
+                </Link>
+
+                <form action={signOutAction} className="inline-flex">
+                  <button
+                    type="submit"
+                    title="Keluar dari akun Anda"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
+                  >
+                    <span>Keluar</span>
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleToggleFollow}
+                  disabled={isFollowLoading}
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-sm transition ${
+                    isFollowing
+                      ? "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
+                      : "bg-[#d07954] text-white hover:bg-[#b86644]"
+                  }`}
+                >
+                  {isFollowing ? (
+                    <>
+                      <span>✓ Mengikuti</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>+ Ikuti</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleShare}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  title="Salin tautan profil"
+                >
+                  {copied ? (
+                    <span className="text-emerald-600 font-bold">✓ Tersalin!</span>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                        />
+                      </svg>
+                      <span>Bagikan</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Bio */}
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+          {bio}
+        </p>
+
+        {/* Social / External Links (if any) */}
+        {(profile.website || profile.facebook_profile_url) && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+            {profile.website && (
+              <a
+                href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 hover:text-[#d07954]"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                <span>{profile.website.replace(/^https?:\/\//, "")}</span>
+              </a>
+            )}
+            {profile.facebook_profile_url && (
+              <a
+                href={profile.facebook_profile_url.startsWith("http") ? profile.facebook_profile_url : `https://${profile.facebook_profile_url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 hover:text-[#d07954]"
+              >
+                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                <span>Facebook</span>
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Stats Row */}
+        <div className="mt-6 flex items-center gap-6 border-t border-slate-100 pt-5 text-sm">
+          <div>
+            <span className="font-bold text-slate-900">{stats.articlesCount}</span>{" "}
+            <span className="text-slate-500">Refleksi</span>
+          </div>
+          <div>
+            <span className="font-bold text-slate-900">{followersCount}</span>{" "}
+            <span className="text-slate-500">Pengikut</span>
+          </div>
+          <div>
+            <span className="font-bold text-slate-900">{stats.followingCount}</span>{" "}
+            <span className="text-slate-500">Mengikuti</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

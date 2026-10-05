@@ -1,10 +1,41 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ContactForm } from "./ContactForm";
 import { LandingEffects } from "./LandingEffects";
+import { createClient } from "@/lib/supabase/client";
+import { signOutAction } from "@/app/actions/auth";
 
 const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
 
 export function LandingPage() {
+  const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    async function checkUser() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username, display_name")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          setCurrentUser({
+            username: profile?.username,
+            displayName: profile?.display_name || user.email?.split("@")[0],
+          });
+        }
+      } catch {
+        // ignore
+      }
+    }
+    checkUser();
+  }, []);
+
   return (
     <div className="landing-page-wrapper">
       <LandingEffects />
@@ -48,6 +79,35 @@ export function LandingPage() {
                   </Link>
                 </li>
                 <li style={{ "--item": 6 } as React.CSSProperties}>
+                  {currentUser ? (
+                    <div className="flex items-center gap-1.5" style={{ marginTop: 4 }}>
+                      <Link
+                        href="/builder"
+                        className="inline-flex items-center gap-1 rounded-full bg-[#F7ABC5]/30 px-3 py-1 text-xs font-bold text-[#3F3766] border border-[#3F3766]/20 hover:bg-[#F7ABC5]/60 transition"
+                      >
+                        <span>👤 {currentUser.displayName || `@${currentUser.username}`}</span>
+                      </Link>
+                      <form action={signOutAction} className="inline-flex">
+                        <button
+                          type="submit"
+                          title="Keluar"
+                          className="rounded-full bg-slate-200/60 hover:bg-red-100 hover:text-red-600 text-slate-500 text-[10px] font-bold px-2 py-1 transition border border-slate-300"
+                        >
+                          Keluar
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="inline-flex items-center rounded-full bg-[#3F3766] px-3.5 py-1 text-xs font-bold text-white shadow-sm hover:bg-[#3F3766]/80 transition"
+                      style={{ marginTop: 4 }}
+                    >
+                      Masuk / Daftar
+                    </Link>
+                  )}
+                </li>
+                <li style={{ "--item": 7 } as React.CSSProperties}>
                   <a href="/mental-battery" className="learn-more" style={{ display: "inline-block", marginTop: 8 }}>
                     Cek Kondisi Sekarang
                   </a>
@@ -345,14 +405,19 @@ export function LandingPage() {
                 </ul>
               </div>
               <div className="footer-item">
-                <h3>App</h3>
+                <h3>Portal Kreator & App</h3>
                 <ul>
                   <li>
-                    <Link href="/login">Masuk Admin</Link>
+                    <Link href="/builder">Studio Web Builder</Link>
                   </li>
-                  {/* <li>
-                    <Link href="/mental-battery/quiz">Skrining Mandiri</Link>
-                  </li> */}
+                  <li>
+                    <Link href="/login">
+                      {currentUser ? "Portal Akun Kreator" : "Masuk / Daftar"}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/mental-battery">Skrining Mental Battery</Link>
+                  </li>
                 </ul>
               </div>
             </div>
