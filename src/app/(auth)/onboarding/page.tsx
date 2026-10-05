@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import {
   checkUsernameAvailabilityAction,
   completeOnboardingAction,
+  signOutAction,
 } from '@/app/actions/auth';
 import {
   USERNAME_REGEX,
@@ -391,13 +392,22 @@ export default function OnboardingPage() {
           </form>
         </div>
 
-        {/* Back Link */}
-        <div className="mt-6 text-center">
+        {/* Back Link / Sign Out */}
+        <div className="mt-6 flex items-center justify-center gap-4 text-xs font-semibold text-slate-500">
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="text-slate-500 hover:text-rose-600 transition"
+            >
+              ← Keluar / Ganti akun
+            </button>
+          </form>
+          <span>•</span>
           <Link
             href="/login"
-            className="text-xs font-semibold text-slate-500 hover:text-[#d07954] transition"
+            className="hover:text-[#d07954] transition"
           >
-            ← Kembali atau ganti akun
+            Halaman Masuk
           </Link>
         </div>
       </div>

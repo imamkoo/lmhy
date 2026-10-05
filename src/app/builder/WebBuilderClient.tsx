@@ -7,6 +7,7 @@ import { REFLECTION_TEMPLATES, ReflectionTemplate } from "@/lib/builder-template
 import { publishTenantArticle } from "@/app/actions/tenant";
 import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
 import { createClient } from "@/lib/supabase/client";
+import { signOutAction } from "@/app/actions/auth";
 
 const STORAGE_KEY = "lmhy_builder_draft_v2";
 
@@ -509,8 +510,8 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         </div>
       )}
 
-      {/* 0. MANDATORY SUBDOMAIN IDENTITY MODAL (HARD GATE) */}
-      {!isSubdomainConfirmed && (
+      {/* 0. MANDATORY SUBDOMAIN IDENTITY MODAL (HARD GATE) - Only shown when user is authenticated */}
+      {!authLoading && authUser && !isSubdomainConfirmed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md rounded-3xl border-4 border-[#3F3766] bg-[#F5E7C6] p-6 sm:p-8 shadow-[0_20px_60px_rgba(63,55,102,0.4)]">
             <div className="mb-6 text-center">
@@ -691,6 +692,18 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
             >
               {isSubmitting ? "Menerbitkan..." : "Terbitkan Blog"}
             </button>
+
+            {authUser && (
+              <form action={signOutAction} className="inline-flex">
+                <button
+                  type="submit"
+                  title="Keluar dari akun"
+                  className="rounded-xl border-2 border-[#3F3766]/20 bg-white/70 px-3 py-2 text-[11px] font-bold text-[#3F3766]/70 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition"
+                >
+                  Keluar
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </header>

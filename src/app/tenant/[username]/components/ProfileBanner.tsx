@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Profile } from "@/lib/supabase/types";
 import type { ProfileStats } from "@/lib/profile-storage";
 import { toggleFollowAction } from "@/app/actions/profile";
+import { signOutAction } from "@/app/actions/auth";
 
 interface ProfileBannerProps {
   profile: Profile;
@@ -173,6 +174,16 @@ export function ProfileBanner({
                   <span>✏️</span>
                   <span>Tulis di Web Builder</span>
                 </Link>
+
+                <form action={signOutAction} className="inline-flex">
+                  <button
+                    type="submit"
+                    title="Keluar dari akun Anda"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
+                  >
+                    <span>Keluar</span>
+                  </button>
+                </form>
               </>
             ) : (
               <>

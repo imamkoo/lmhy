@@ -225,7 +225,11 @@ export async function createComment(data: CreateCommentInput): Promise<CommentWi
     }
 
     if (error) {
-      console.warn(`[comment-storage] DB insert warning: ${error.message}. Saving to fallback cache.`);
+      console.warn(`[comment-storage] DB insert warning: ${error.message}`);
+      // If DB fails on a real UUID article (not unmigrated mock), surface the error
+      if (articleId.includes('-') && articleId.length === 36) {
+        throw new Error(`Gagal menyimpan komentar ke database: ${error.message}`);
+      }
     }
   } catch (err: unknown) {
     console.error('[comment-storage] Exception in createComment, using fallback cache:', err);

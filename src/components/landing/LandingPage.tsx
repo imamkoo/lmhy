@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ContactForm } from "./ContactForm";
 import { LandingEffects } from "./LandingEffects";
 import { createClient } from "@/lib/supabase/client";
+import { signOutAction } from "@/app/actions/auth";
 
 const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
 
@@ -79,13 +80,23 @@ export function LandingPage() {
                 </li>
                 <li style={{ "--item": 6 } as React.CSSProperties}>
                   {currentUser ? (
-                    <Link
-                      href="/builder"
-                      className="inline-flex items-center gap-1 rounded-full bg-[#F7ABC5]/30 px-3 py-1 text-xs font-bold text-[#3F3766] border border-[#3F3766]/20 hover:bg-[#F7ABC5]/60 transition"
-                      style={{ marginTop: 4 }}
-                    >
-                      <span>👤 {currentUser.displayName || `@${currentUser.username}`}</span>
-                    </Link>
+                    <div className="flex items-center gap-1.5" style={{ marginTop: 4 }}>
+                      <Link
+                        href="/builder"
+                        className="inline-flex items-center gap-1 rounded-full bg-[#F7ABC5]/30 px-3 py-1 text-xs font-bold text-[#3F3766] border border-[#3F3766]/20 hover:bg-[#F7ABC5]/60 transition"
+                      >
+                        <span>👤 {currentUser.displayName || `@${currentUser.username}`}</span>
+                      </Link>
+                      <form action={signOutAction} className="inline-flex">
+                        <button
+                          type="submit"
+                          title="Keluar"
+                          className="rounded-full bg-slate-200/60 hover:bg-red-100 hover:text-red-600 text-slate-500 text-[10px] font-bold px-2 py-1 transition border border-slate-300"
+                        >
+                          Keluar
+                        </button>
+                      </form>
+                    </div>
                   ) : (
                     <Link
                       href="/login"

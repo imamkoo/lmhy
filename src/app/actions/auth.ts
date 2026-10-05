@@ -313,13 +313,11 @@ export async function signUpWithEmailAction(
   }
 }
 
-export async function signOutAction(): Promise<AuthActionResult> {
+export async function signOutAction(): Promise<void> {
   try {
     const supabase = await createClient();
     await supabase.auth.signOut();
-    return { success: true };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Gagal keluar sesi.';
-    return { success: false, error: message };
+    console.error('[auth] Error in signOutAction:', err);
   }
 }
