@@ -100,12 +100,13 @@ echo "== Perubahan 1: www -> subdomain redirect =="
 check_status  "www /tenant/axaa                 -> 308"          308 "$WWW" "/tenant/axaa"
 check_location "  Location ke subdomain axaa"                 "https://axaa.letmehearyou.id/" "$WWW" "/tenant/axaa"
 check_status  "www /tenant/axaa/write           -> 308"          308 "$WWW" "/tenant/axaa/write"
-check_location "  Location /write di subdomain"            "https://axaa.letmehearyou.id/write" "$WWW" "/tenant/axaa/write"
+check_location "  Location /write langsung ke builder"        "builder?username=axaa" "$WWW" "/tenant/axaa/write"
 check_status  "www /tenant/axaa/<slug>          -> 308"          308 "$WWW" "/tenant/axaa/mengenali-tanda-burnout"
-check_location "  Location <slug> di subdomain"       "https://axaa.letmehearyou.id/mengenali-tanda-burnout" "$WWW" "/tenant/axaa/mengenali-tanda-burnout"
+check_location "  Location <slug> di subdomain"               "https://axaa.letmehearyou.id/mengenali-tanda-burnout" "$WWW" "/tenant/axaa/mengenali-tanda-burnout"
 check_status  "bare /tenant/axaa                -> 308"          308 "$BARE" "/tenant/axaa"
-check_location "  Location juga subdomain"                "https://axaa.letmehearyou.id/" "$BARE" "/tenant/axaa"
-check_location "  query string dipertahankan"         "foo=bar" "$WWW" "/tenant/axaa/write?foo=bar"
+check_location "  Location juga subdomain"                    "https://axaa.letmehearyou.id/" "$BARE" "/tenant/axaa"
+check_status  "www /write                       -> 308 (ke builder)" 308 "$WWW" "/write"
+check_location "  Location /write di www ke builder"          "/builder" "$WWW" "/write"
 
 echo
 echo "== Perubahan 1: route www NON-tenant TIDAK ikut ter-redirect =="
@@ -121,19 +122,15 @@ check_body_missing "/builder -> bukan artikel palsu"   "Tulis Baru" "$SUB" "/bui
 check_body_has  "/blog    -> halaman blog asli"      "Ruang untuk memahami" "$SUB" "/blog"
 check_body_missing "/blog    -> bukan artikel palsu"    "Tulis Baru" "$SUB" "/blog"
 check_body_missing "/creator -> bukan artikel palsu"    "Tulis Baru" "$SUB" "/creator"
-check_status  "/admin/litera -> 200 (sekarang 404)"   200 "$SUB" "/admin/litera"
+check_status  "/admin/litera -> 200"                 200 "$SUB" "/admin/litera"
 
 echo
-echo "== Perubahan 2: rute tenant di subdomain TIDAK boleh rusak =="
-check_body_has  "/write   -> form tulis tetap ada"    "Tulis Refleksi Baru" "$SUB" "/write"
+echo "== Perubahan 2: rute tenant di subdomain & penghapusan /write =="
+check_status  "subdomain /write -> 308 (ke builder)" 308 "$SUB" "/write"
+check_location "  Location subdomain /write ke builder" "builder?username=axaa" "$SUB" "/write"
 check_body_has  "/<slug>  -> artikel tetap ada"       "Mengenali Tanda Burnout" "$SUB" "/mengenali-tanda-burnout"
 check_body_has  "/        -> profil tetap ada"        "Ruang Refleksi" "$SUB" "/"
-check_body_has  "/write   -> punya back link"         "Kembali ke profil" "$SUB" "/write"
-
-echo
-echo "== Korelasi: setelah redirect, link '+ Tulis Baru' di artikel =="
-# Di www, artikel di-redirect ke subdomain. Di subdomain, href="/write" harus hidup.
-check_status  "subdomain /write (target link + Tulis Baru) -> 200" 200 "$SUB" "/write"
+check_body_has  "artikel  -> + Tulis Baru mengarah ke builder" "href=\"/builder?username=axaa\"" "$SUB" "/mengenali-tanda-burnout"
 
 echo
 echo "================================"

@@ -51,6 +51,13 @@ export function middleware(req: NextRequest) {
     const username = match?.[1];
     if (username && SAFE_USERNAME.test(username)) {
       const rest = match![2] || "/";
+      // Jika mengakses /tenant/<user>/write -> langsung arahkan ke builder
+      if (rest === "/write" || rest === "/write/") {
+        return NextResponse.redirect(
+          new URL(`https://${username}.letmehearyou.id/builder?username=${username}`, url),
+          308
+        );
+      }
       return NextResponse.redirect(
         new URL(`https://${username}.letmehearyou.id${rest}${url.search}`, url),
         308
@@ -78,7 +85,20 @@ export function middleware(req: NextRequest) {
     }
   }
 
+  // Jika mengakses /write langsung di root domain -> arahkan ke /builder
+  if (isRootDomain && (url.pathname === "/write" || url.pathname === "/write/")) {
+    return NextResponse.redirect(new URL("/builder", req.url), 308);
+  }
+
   if (subdomain && subdomain !== "www") {
+    // Legacy /write di subdomain diarahkan ke Web Builder dengan username
+    if (url.pathname === "/write" || url.pathname === "/write/") {
+      return NextResponse.redirect(
+        new URL(`/builder?username=${subdomain}`, req.url),
+        308
+      );
+    }
+
     // (2) Route root menang: biarkan dilayani route root, jangan di-rewrite.
     if (matchesRootRoute(url.pathname)) {
       return NextResponse.next();
