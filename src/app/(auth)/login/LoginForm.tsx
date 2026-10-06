@@ -108,15 +108,15 @@ function LoginFormContent() {
     <div className="min-h-screen bg-[#fbf8f5] text-slate-800 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#d07954]/20 selection:text-[#b86644]">
       {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
-        <Link href="/" className="inline-block group">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#d07954] block mb-1">
-            Let Me Hear You
+        <Link href="/" className="inline-block group mb-3">
+          <span className="inline-block rounded-full bg-[#d07954]/10 px-3.5 py-1 text-xs font-bold text-[#b86644] group-hover:bg-[#d07954]/20 transition">
+            Let Me Hear You • Portal Kreator
           </span>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 group-hover:text-[#d07954] transition">
-            Ruang Cerita & Refleksi
-          </h1>
         </Link>
-        <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+          Ruang Cerita & Refleksi
+        </h1>
+        <p className="mt-2 text-sm text-slate-600 max-w-sm mx-auto leading-relaxed">
           Masuk untuk menulis renungan, merawat karya, dan terhubung bersama komunitas.
         </p>
       </div>
@@ -231,12 +231,12 @@ function LoginFormContent() {
               type="button"
               onClick={handleFacebookLogin}
               disabled={isPending || oauthLoading !== null}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-blue-600 bg-[#1877F2] text-sm font-semibold text-white hover:bg-[#166fe5] transition shadow-xs focus:ring-2 focus:ring-[#1877F2]/50 focus:outline-none disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-xs focus:ring-2 focus:ring-[#1877F2]/30 focus:outline-none disabled:opacity-60"
             >
               {oauthLoading === 'facebook' ? (
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
               ) : (
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
               )}
@@ -316,12 +316,12 @@ function LoginFormContent() {
             <button
               type="submit"
               disabled={isPending || oauthLoading !== null}
-              className="w-full mt-2 rounded-xl bg-[#d07954] hover:bg-[#b86644] text-white py-2.5 px-4 text-sm font-semibold shadow-sm transition focus:ring-2 focus:ring-[#d07954]/50 focus:outline-none disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full mt-2 rounded-xl bg-[#d07954] hover:bg-[#b86644] text-white py-3 px-4 text-sm font-semibold shadow-sm transition focus:ring-2 focus:ring-[#d07954]/50 focus:outline-none disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {isPending && (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               )}
-              <span>{mode === 'signin' ? 'Masuk ke Studio' : 'Daftar Akun Penulis'}</span>
+              <span>{mode === 'signin' ? 'Masuk ke Ruang Tulis' : 'Daftar ke Ruang Tulis'}</span>
             </button>
           </form>
 
