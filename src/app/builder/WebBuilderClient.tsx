@@ -925,24 +925,24 @@ export function WebBuilderClient({
                   
                   {/* SECURITY HARDENING BANNER: PROMINENT WARNING IF WALLET NOT CONNECTED */}
                   {!creatorWallet ? (
-                    <div className="rounded-2xl border-2 border-amber-500 bg-amber-50 p-4 space-y-2.5">
+                    <div className="rounded-2xl border-2 border-[#F7ABC5] bg-[#F5E7C6]/30 p-4 space-y-2.5 shadow-sm">
                       <div className="flex items-center gap-2">
-                        <span className="h-5 w-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-black">
-                          !
+                        <span className="h-5 w-5 rounded-full bg-[#3F3766] text-[#F5E7C6] flex items-center justify-center text-xs font-black">
+                          💎
                         </span>
-                        <h4 className="text-xs font-black text-amber-900 uppercase tracking-wide">
-                          Peringatan Autentikasi Penulis
+                        <h4 className="text-xs font-bold text-[#3F3766] uppercase tracking-wide">
+                          Autentikasi Sertifikat Litera
                         </h4>
                       </div>
-                      <p className="text-[11px] text-amber-800 leading-relaxed">
-                        Penerbitan Web3 diaktifkan, namun akun Litera Anda belum terhubung. Anda wajib menghubungkan akun Litera Cloud agar hak royalti dan sertifikat NFT terdaftar atas nama Anda.
+                      <p className="text-[11px] text-[#3F3766]/80 leading-relaxed font-medium">
+                        Hubungkan akun dompet Litera agar karya Anda otomatis terdaftar sebagai sertifikat digital resmi dan hak royalti tercatat atas nama Anda.
                       </p>
                       <button
                         type="button"
                         onClick={() => setIsLoginModalOpen(true)}
-                        className="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black tracking-wide shadow transition"
+                        className="w-full py-2.5 px-4 rounded-xl bg-[#F7ABC5] hover:bg-[#f59bb9] text-[#3F3766] text-xs font-bold tracking-wide border-2 border-[#3F3766] shadow-[0_3px_0_0_#3F3766] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#3F3766] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer"
                       >
-                        Hubungkan Akun Litera Cloud Sekarang
+                        Hubungkan Akun Litera
                       </button>
                     </div>
                   ) : (

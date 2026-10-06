@@ -356,7 +356,7 @@ export function ProfileTabs({
             </div>
 
             {/* Misi & Ruang Aman */}
-            <div className="mt-8 rounded-2xl bg-[#fbf8f5] p-6 border border-amber-100/80">
+            <div className="mt-8 rounded-2xl bg-[#fbf8f5] p-6 border border-[#3F3766]/10">
               <h4 className="text-sm font-bold text-slate-800">
                 🌿 Misi & Ruang Aman Menulis
               </h4>
