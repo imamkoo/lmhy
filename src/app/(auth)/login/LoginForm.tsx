@@ -340,7 +340,7 @@ function LoginFormContent() {
             href="/"
             className="text-xs font-semibold text-[#3F3766]/70 hover:text-[#3F3766] hover:underline decoration-[#F7ABC5] decoration-2 underline-offset-4 transition"
           >
-            ← Kembali ke Beranda LMHY
+            ← Kembali ke Beranda
           </Link>
         </div>
       </div>
