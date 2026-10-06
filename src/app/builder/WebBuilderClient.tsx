@@ -382,12 +382,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       {!authLoading && !authUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] p-6 sm:p-8 shadow-[0_20px_60px_rgba(63,55,102,0.4)] text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F7ABC5]/25 border-2 border-[#F7ABC5] text-3xl shadow-[0_4px_12px_rgba(247,171,197,0.4)]">
-              ✍️
-            </div>
-            <span className="inline-block rounded-full bg-[#F7ABC5]/20 border border-[#F7ABC5] px-3 py-1 text-xs font-bold text-[#3F3766] mb-2">
-              Studio Web Builder
-            </span>
             <h2 className="text-xl font-black text-[#3F3766] tracking-tight">
               Masuk untuk Mulai Menulis
             </h2>
@@ -425,13 +419,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
               ✕
             </button>
 
-            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 border-2 border-emerald-500 text-3xl">
-              🎉
-            </div>
-
-            <span className="inline-block rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-300 mb-2">
-              Berhasil Diterbitkan
-            </span>
             <h2 className="text-2xl font-black text-[#3F3766] tracking-tight">
               Refleksi Anda Kini Live!
             </h2>

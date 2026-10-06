@@ -30,7 +30,7 @@ export function BlogCard({ post }: BlogCardProps) {
         <div className="p-6">
           <div className="mb-3 flex flex-wrap gap-2">
             {post.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="rounded-full bg-[#d07954]/10 px-3 py-1 text-[11px] font-bold text-[#b86644]">
+              <span key={tag} className="rounded-full bg-[#F7ABC5]/20 px-3 py-1 text-[11px] font-bold text-[#3F3766]">
                 {tag}
               </span>
             ))}
@@ -38,7 +38,7 @@ export function BlogCard({ post }: BlogCardProps) {
           <p className="mb-2 text-xs font-medium text-slate-500">{publishedAt}</p>
           <h2 className="text-xl font-bold leading-tight text-slate-900">{post.title}</h2>
           <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-600">{post.excerpt}</p>
-          <span className="mt-5 inline-block text-sm font-bold text-[#d07954]">Baca artikel →</span>
+          <span className="mt-5 inline-block text-sm font-bold text-[#3F3766]">Baca artikel →</span>
         </div>
       </Link>
     </article>

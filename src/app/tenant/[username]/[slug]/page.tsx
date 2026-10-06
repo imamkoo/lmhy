@@ -137,13 +137,13 @@ export default async function TenantArticlePage({
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="text-sm font-semibold text-[#b86644] hover:underline"
+            className="text-sm font-semibold text-[#3F3766] hover:underline"
           >
             ← Kembali ke profil @{normalizedUser}
           </Link>
           <Link
             href={`/builder?username=${normalizedUser}`}
-            className="text-xs font-semibold text-slate-500 hover:text-[#d07954]"
+            className="text-xs font-semibold text-slate-500 hover:text-[#3F3766]"
           >
             + Tulis Baru
           </Link>
@@ -152,7 +152,7 @@ export default async function TenantArticlePage({
         {/* Header */}
         <header className="mb-10 mt-8 border-b border-slate-200 pb-8">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-[#d07954]/10 px-3 py-1 text-xs font-bold text-[#b86644]">
+            <span className="rounded-full bg-[#F7ABC5]/20 px-3 py-1 text-xs font-bold text-[#3F3766]">
               Ruang Refleksi @{normalizedUser}
             </span>
             {tags.map((tag) => (
@@ -269,11 +269,11 @@ export default async function TenantArticlePage({
               {otherArticles.slice(0, 3).map((other) => (
                 <div
                   key={other.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-[#d07954]"
+                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-[#F7ABC5]"
                 >
                   <Link
                     href={`/${other.slug}`}
-                    className="font-semibold text-slate-800 hover:text-[#d07954]"
+                    className="font-semibold text-slate-800 hover:text-[#3F3766]"
                   >
                     {other.title}
                   </Link>

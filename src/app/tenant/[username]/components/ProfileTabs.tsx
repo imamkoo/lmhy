@@ -31,7 +31,7 @@ export function ProfileTabs({
             onClick={() => setActiveTab("articles")}
             className={`relative pb-4 text-sm font-semibold transition ${
               activeTab === "articles"
-                ? "text-[#d07954]"
+                ? "text-[#3F3766]"
                 : "text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -40,7 +40,7 @@ export function ProfileTabs({
               {articles.length}
             </span>
             {activeTab === "articles" && (
-              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#d07954] rounded-t-full" />
+              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#F7ABC5] rounded-t-full" />
             )}
           </button>
 
@@ -48,7 +48,7 @@ export function ProfileTabs({
             onClick={() => setActiveTab("nft")}
             className={`relative pb-4 text-sm font-semibold transition ${
               activeTab === "nft"
-                ? "text-[#d07954]"
+                ? "text-[#3F3766]"
                 : "text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -59,7 +59,7 @@ export function ProfileTabs({
               </span>
             </span>
             {activeTab === "nft" && (
-              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#d07954] rounded-t-full" />
+              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#F7ABC5] rounded-t-full" />
             )}
           </button>
 
@@ -67,13 +67,13 @@ export function ProfileTabs({
             onClick={() => setActiveTab("about")}
             className={`relative pb-4 text-sm font-semibold transition ${
               activeTab === "about"
-                ? "text-[#d07954]"
+                ? "text-[#3F3766]"
                 : "text-slate-500 hover:text-slate-800"
             }`}
           >
             <span>Tentang Penulis</span>
             {activeTab === "about" && (
-              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#d07954] rounded-t-full" />
+              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#F7ABC5] rounded-t-full" />
             )}
           </button>
         </nav>
@@ -84,10 +84,7 @@ export function ProfileTabs({
         <div className="mt-8 space-y-6">
           {articles.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-300 bg-white/50 p-12 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#d07954]/10 text-3xl">
-                ✍️
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-slate-800">
+              <h3 className="text-lg font-bold text-slate-800">
                 Belum ada refleksi yang diterbitkan
               </h3>
               <p className="mt-1.5 text-sm text-slate-500">
@@ -96,7 +93,7 @@ export function ProfileTabs({
               <div className="mt-6">
                 <Link
                   href={`/builder?username=${username}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b86644]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
                 >
                   <span>Mulai Tulis Sekarang</span>
                   <span>→</span>
@@ -112,7 +109,7 @@ export function ProfileTabs({
               return (
                 <article
                   key={art.id}
-                  className="group relative flex flex-col justify-between gap-6 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition hover:border-[#d07954]/40 hover:shadow-md sm:flex-row sm:items-center"
+                  className="group relative flex flex-col justify-between gap-6 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition hover:border-[#F7ABC5] hover:shadow-md sm:flex-row sm:items-center"
                 >
                   <div className="flex-1">
                     {/* Tags & Badges */}
@@ -134,7 +131,7 @@ export function ProfileTabs({
                     </div>
 
                     {/* Article Title */}
-                    <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-900 group-hover:text-[#d07954] transition sm:text-2xl">
+                    <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-900 group-hover:text-[#3F3766] transition sm:text-2xl">
                       <Link href={`/${art.slug}`}>
                         {art.title}
                       </Link>
@@ -159,7 +156,7 @@ export function ProfileTabs({
                       <span>•</span>
                       <Link
                         href={`/${art.slug}`}
-                        className="font-bold text-[#d07954] transition hover:text-[#b86644] hover:underline"
+                        className="font-bold text-[#3F3766] transition hover:text-[#3F3766] hover:underline"
                       >
                         Baca selengkapnya →
                       </Link>
@@ -229,7 +226,7 @@ export function ProfileTabs({
               <div className="mt-6">
                 <Link
                   href={`/builder?username=${username}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b86644]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
                 >
                   <span>Terbitkan Artikel NFT</span>
                   <span>→</span>
@@ -241,7 +238,7 @@ export function ProfileTabs({
               {literaArticles.map((art) => (
                 <div
                   key={art.id}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-purple-200/80 bg-white p-6 shadow-sm transition hover:border-[#d07954] hover:shadow-md"
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-purple-200/80 bg-white p-6 shadow-sm transition hover:border-[#F7ABC5] hover:shadow-md"
                 >
                   <div>
                     <div className="flex items-center justify-between text-xs text-slate-500">
@@ -254,7 +251,7 @@ export function ProfileTabs({
                       </span>
                     </div>
 
-                    <h4 className="mt-3 text-lg font-bold text-slate-900 group-hover:text-[#d07954] transition">
+                    <h4 className="mt-3 text-lg font-bold text-slate-900 group-hover:text-[#3F3766] transition">
                       <Link href={`/${art.slug}`}>
                         {art.title}
                       </Link>
@@ -271,7 +268,7 @@ export function ProfileTabs({
                     </span>
                     <Link
                       href={`/${art.slug}`}
-                      className="font-bold text-[#d07954] transition hover:text-[#b86644] hover:underline"
+                      className="font-bold text-[#3F3766] transition hover:text-[#3F3766] hover:underline"
                     >
                       Koleksi & Buka Akses →
                     </Link>
@@ -331,7 +328,7 @@ export function ProfileTabs({
                     href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-[#d07954] hover:underline"
+                    className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-[#3F3766] hover:underline"
                   >
                     <span>{profile.website}</span>
                     <span>↗</span>
@@ -348,7 +345,7 @@ export function ProfileTabs({
                     href={profile.facebook_profile_url.startsWith("http") ? profile.facebook_profile_url : `https://${profile.facebook_profile_url}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-[#d07954] hover:underline"
+                    className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-[#3F3766] hover:underline"
                   >
                     <span>{profile.facebook_profile_url}</span>
                     <span>↗</span>

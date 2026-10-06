@@ -133,7 +133,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
               onChange={(e) => setDisplayName(e.target.value)}
               required
               placeholder="Contoh: Budi Santoso"
-              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
             />
           </div>
 
@@ -151,7 +151,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
               maxLength={300}
               rows={3}
               placeholder="Ceritakan minat menulis, perjalanan batin, atau ruang aman yang Anda bagikan..."
-              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
             />
           </div>
 
@@ -181,7 +181,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 value={avatarUrl}
                 onChange={(e) => setAvatarUrl(e.target.value)}
                 placeholder="https://images.unsplash.com/... atau link foto"
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
               />
             </div>
           </div>
@@ -197,7 +197,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 value={bannerUrl}
                 onChange={(e) => setBannerUrl(e.target.value)}
                 placeholder="https://images.unsplash.com/... atau link banner gambar lebar"
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
               />
               {bannerUrl && (
                 <div className="relative h-20 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
@@ -226,7 +226,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://website-anda.com"
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
               />
             </div>
 
@@ -239,7 +239,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 value={facebookUrl}
                 onChange={(e) => setFacebookUrl(e.target.value)}
                 placeholder="https://facebook.com/username-anda"
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
               />
             </div>
           </div>
@@ -257,7 +257,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b86644] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-6 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px] disabled:opacity-50"
             >
               {loading ? (
                 <>

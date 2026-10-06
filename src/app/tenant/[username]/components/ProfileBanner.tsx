@@ -93,7 +93,7 @@ export function ProfileBanner({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-[radial-gradient(#d07954_1px,transparent_1px)] [background-size:16px_16px]" />
+          <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-[radial-gradient(#F7ABC5_1px,transparent_1px)] [background-size:16px_16px]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
       </div>
@@ -104,7 +104,7 @@ export function ProfileBanner({
           {/* Avatar & Identifiers */}
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 -mt-16 sm:-mt-20">
             {/* Avatar */}
-            <div className="relative h-28 w-28 sm:h-32 sm:w-32 shrink-0 overflow-hidden rounded-full border-4 border-white bg-[#d07954] shadow-md flex items-center justify-center text-white font-bold text-3xl select-none">
+            <div className="relative h-28 w-28 sm:h-32 sm:w-32 shrink-0 overflow-hidden rounded-full border-4 border-white bg-[#F7ABC5] shadow-md flex items-center justify-center text-[#3F3766] font-bold text-3xl select-none">
               {profile.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -129,7 +129,7 @@ export function ProfileBanner({
                 {/* Verified Subdomain Pill */}
                 <div
                   title="Subdomain Resmi Terverifikasi"
-                  className="inline-flex items-center gap-1 rounded-full bg-[#d07954]/15 px-3 py-0.5 text-xs font-semibold text-[#b86644]"
+                  className="inline-flex items-center gap-1 rounded-full bg-[#F7ABC5]/20 px-3 py-0.5 text-xs font-semibold text-[#3F3766]"
                 >
                   <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 20 20">
                     <path
@@ -169,7 +169,7 @@ export function ProfileBanner({
 
                 <Link
                   href={`/builder?username=${username}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#b86644]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-4 py-2.5 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
                 >
                   <span>✏️</span>
                   <span>Tulis di Web Builder</span>
@@ -193,7 +193,7 @@ export function ProfileBanner({
                   className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-sm transition ${
                     isFollowing
                       ? "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
-                      : "bg-[#d07954] text-white hover:bg-[#b86644]"
+                      : "bg-[#F7ABC5] text-[#3F3766] hover:bg-[#F5E7C6]"
                   }`}
                 >
                   {isFollowing ? (
@@ -246,7 +246,7 @@ export function ProfileBanner({
                 href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 hover:text-[#d07954]"
+                className="inline-flex items-center gap-1 hover:text-[#3F3766]"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -259,7 +259,7 @@ export function ProfileBanner({
                 href={profile.facebook_profile_url.startsWith("http") ? profile.facebook_profile_url : `https://${profile.facebook_profile_url}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 hover:text-[#d07954]"
+                className="inline-flex items-center gap-1 hover:text-[#3F3766]"
               >
                 <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>

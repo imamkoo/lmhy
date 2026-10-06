@@ -50,9 +50,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   return (
     <main className="min-h-screen bg-[#fbf8f5] px-5 py-12 text-slate-900 md:px-10">
       <article className="mx-auto max-w-3xl">
-        <Link href="/blog" className="text-sm font-semibold text-[#b86644]">← Semua artikel</Link>
+        <Link href="/blog" className="text-sm font-semibold text-[#3F3766]">← Semua artikel</Link>
         <header className="mb-10 mt-10">
-          <div className="mb-4 flex flex-wrap gap-2">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-[#d07954]/10 px-3 py-1 text-xs font-bold text-[#b86644]">{tag}</span>)}</div>
+          <div className="mb-4 flex flex-wrap gap-2">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-[#F7ABC5]/20 px-3 py-1 text-xs font-bold text-[#3F3766]">{tag}</span>)}</div>
           <h1 className="text-4xl font-bold tracking-tight md:text-6xl">{post.title}</h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-600">{post.excerpt}</p>
           <p className="mt-4 text-sm text-slate-500">{post.author} · {new Date(post.date).toLocaleDateString("id-ID", { dateStyle: "long" })}</p>

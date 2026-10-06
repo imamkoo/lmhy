@@ -103,7 +103,7 @@ export function CommentSection({
         {currentUser ? (
           <form onSubmit={handlePostComment} className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#d07954] text-xs font-bold text-white">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#F7ABC5] text-xs font-bold text-[#3F3766]">
                 {currentUser.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -135,7 +135,7 @@ export function CommentSection({
               onChange={(e) => setNewContent(e.target.value)}
               placeholder="Tuliskan refleksi, tanggapan mendalam, atau kesan yang Anda rasakan setelah membaca tulisan ini..."
               maxLength={2000}
-              className="w-full resize-y rounded-2xl border border-slate-200 p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#d07954] focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+              className="w-full resize-y rounded-2xl border border-slate-200 p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
             />
 
             {feedbackError && (
@@ -151,7 +151,7 @@ export function CommentSection({
               <button
                 type="submit"
                 disabled={isSubmitting || !newContent.trim()}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#b86644] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2 text-xs font-bold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isSubmitting ? (
                   <>
@@ -190,7 +190,7 @@ export function CommentSection({
             </div>
             <Link
               href={`/login?next=${typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname) : ''}`}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#d07954] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#b86644]"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-xs font-bold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
             >
               <span>Masuk untuk Berkomentar</span>
               <span>→</span>
@@ -237,14 +237,14 @@ export function CommentSection({
                 key={comment.id}
                 className={`rounded-2xl border p-4.5 transition sm:p-5 ${
                   isCreator
-                    ? 'border-[#d07954]/40 bg-[#fbf5f1]/60'
+                    ? 'border-[#F7ABC5] bg-[#F5E7C6]/40'
                     : 'border-slate-200/90 bg-white shadow-2xs'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     {/* Commenter Avatar */}
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#d07954] text-xs font-bold text-white select-none">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#F7ABC5] text-xs font-bold text-[#3F3766] select-none">
                       {author?.avatar_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -269,7 +269,7 @@ export function CommentSection({
                           </span>
                         )}
                         {isCreator && (
-                          <span className="inline-flex items-center rounded-full bg-[#d07954]/15 px-2 py-0.5 text-[10px] font-bold text-[#b86644]">
+                          <span className="inline-flex items-center rounded-full bg-[#F7ABC5]/20 px-2 py-0.5 text-[10px] font-bold text-[#3F3766]">
                             Penulis
                           </span>
                         )}

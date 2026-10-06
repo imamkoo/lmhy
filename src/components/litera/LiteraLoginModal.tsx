@@ -106,7 +106,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#d07954] text-white font-bold shadow-md shadow-[#d07954]/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#F7ABC5] text-[#3F3766] font-bold shadow-md shadow-[#F7ABC5]/30">
               💎
             </div>
             <div>
@@ -140,7 +140,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
             type="button"
             onClick={openLiteraCloudAuth}
             disabled={popupActive}
-            className="w-full flex items-center justify-between rounded-2xl border-2 border-[#d07954] bg-[#d07954]/5 p-4 text-left transition hover:bg-[#d07954]/10 disabled:opacity-50"
+            className="w-full flex items-center justify-between rounded-2xl border-2 border-[#F7ABC5] bg-[#F7ABC5]/10 p-4 text-left transition hover:bg-[#F7ABC5]/20 disabled:opacity-50"
           >
             <div>
               <span className="block text-sm font-bold text-slate-900">
@@ -150,7 +150,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
                 Mudah tanpa instal aplikasi, dibuatkan otomatis via Privy
               </span>
             </div>
-            <span className="text-xs font-bold text-[#d07954]">
+            <span className="text-xs font-bold text-[#3F3766]">
               {popupActive ? "⏳ Membuka..." : "Buka →"}
             </span>
           </button>
