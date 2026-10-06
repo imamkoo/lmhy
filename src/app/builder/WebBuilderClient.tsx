@@ -1383,7 +1383,7 @@ export function WebBuilderClient({
           onStage={setStagedTemplateId}
           onApply={handleApplyStagedTemplate}
           onClose={() => setShowTemplatePicker(false)}
-          preview={renderPreviewMockup(getDesignTemplate(stagedTemplateId))}
+          renderPreview={renderPreviewMockup}
         />
       )}
 

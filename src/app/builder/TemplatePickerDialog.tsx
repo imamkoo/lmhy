@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { WebDesignTemplate } from "@/lib/design-templates";
 
@@ -11,7 +11,7 @@ interface TemplatePickerDialogProps {
   onStage: (id: string) => void;
   onApply: () => void;
   onClose: () => void;
-  preview: ReactNode;
+  renderPreview: (tmpl: WebDesignTemplate) => ReactNode;
 }
 
 export function TemplatePickerDialog({
@@ -21,8 +21,17 @@ export function TemplatePickerDialog({
   onStage,
   onApply,
   onClose,
-  preview,
+  renderPreview,
 }: TemplatePickerDialogProps) {
+  const [isMobile, setIsMobile] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 639px)").matches
+  );
+
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const carouselInitialized = useRef(false);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -30,6 +39,45 @@ export function TemplatePickerDialog({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handleChange);
+    return () => mq.removeEventListener("change", handleChange);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isMobile || carouselInitialized.current) return;
+    const el = carouselRef.current;
+    if (!el) return;
+    carouselInitialized.current = true;
+    const idx = templates.findIndex((t) => t.id === stagedId);
+    const slide = el.children[idx] as HTMLElement | undefined;
+    if (slide) {
+      el.scrollLeft = slide.offsetLeft - (el.clientWidth - slide.offsetWidth) / 2;
+    }
+  }, [isMobile, stagedId, templates]);
+
+  const handleCarouselScroll = () => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const mid = el.scrollLeft + el.clientWidth / 2;
+    let bestIndex = 0;
+    let bestDistance = Infinity;
+    Array.from(el.children).forEach((child, i) => {
+      const slide = child as HTMLElement;
+      const distance = Math.abs(
+        slide.offsetLeft + slide.offsetWidth / 2 - mid
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = i;
+      }
+    });
+    const tmpl = templates[bestIndex];
+    if (tmpl && tmpl.id !== stagedId) onStage(tmpl.id);
+  };
 
   const staged = templates.find((t) => t.id === stagedId) ?? templates[0];
   const isUnchanged = stagedId === activeId;
@@ -53,7 +101,7 @@ export function TemplatePickerDialog({
               Pilih Desain Tampilan Web
             </h2>
             <p className="text-[10px] leading-relaxed text-[#3F3766]/70 sm:text-[11px]">
-              Telusuri tema di bawah, lihat pratinjau langsung, lalu tekan Terapkan.
+              Telusuri tema, lihat pratinjau langsung, lalu tekan Terapkan.
               Bisa diganti kapan saja.
             </p>
           </div>
@@ -67,7 +115,7 @@ export function TemplatePickerDialog({
           </button>
         </div>
 
-        {/* BODY: STAGE + ROSTER */}
+        {/* BODY: PREVIEW STAGE (MOBILE CAROUSEL) + ROSTER (DESKTOP) */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row sm:gap-5 sm:p-4">
           {/* LIVE PREVIEW STAGE */}
           <div className="flex min-h-0 flex-1 flex-col gap-2 sm:w-[54%] sm:max-w-[54%]">
@@ -78,11 +126,33 @@ export function TemplatePickerDialog({
                 boxShadow: `0 0 0 3px ${staged.accentColor}44, 0 0 28px ${staged.accentColor}55`,
               }}
             >
-              <div className="h-full overflow-y-auto overscroll-contain p-3">
-                <div className="pointer-events-none select-none">
-                  {preview}
+              {isMobile ? (
+                <div
+                  ref={carouselRef}
+                  onScroll={handleCarouselScroll}
+                  tabIndex={0}
+                  role="group"
+                  aria-label={`Pratinjau tema — geser untuk memilih. Tema saat ini: ${staged.name}`}
+                  className="flex h-full snap-x snap-mandatory overflow-auto overscroll-contain"
+                >
+                  {templates.map((tmpl) => (
+                    <div
+                      key={tmpl.id}
+                      className="w-[86%] shrink-0 snap-center p-3"
+                    >
+                      <div className="pointer-events-none select-none">
+                        {renderPreview(tmpl)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <div className="h-full overflow-y-auto overscroll-contain p-3">
+                  <div className="pointer-events-none select-none">
+                    {renderPreview(staged)}
+                  </div>
+                </div>
+              )}
 
               {/* ARCADE NAME PLATE */}
               <div className="pointer-events-none absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border-2 border-[#3F3766] bg-white/95 px-3 py-1 shadow-[0_3px_0_0_#3F3766]">
@@ -95,14 +165,43 @@ export function TemplatePickerDialog({
                 </span>
               </div>
             </div>
+
+            {/* MOBILE: CAROUSEL POSITION DOTS + HOW-TO HINT */}
+            <div className="flex shrink-0 flex-col items-center gap-1.5 sm:hidden">
+              <div className="flex items-center gap-1.5" aria-hidden="true">
+                {templates.map((tmpl) => (
+                  <span
+                    key={tmpl.id}
+                    className={`h-1.5 rounded-full border transition-all ${
+                      tmpl.id === stagedId
+                        ? "w-5 border-[#3F3766]/30"
+                        : "w-1.5 border-transparent bg-[#3F3766]/25"
+                    }`}
+                    style={
+                      tmpl.id === stagedId
+                        ? { backgroundColor: staged.accentColor }
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+              <p className="text-center text-[10px] leading-relaxed text-[#3F3766]/60">
+                Geser pratinjau ke samping untuk ganti tema — tekan{" "}
+                <span className="font-black text-[#3F3766]">
+                  Terapkan Tema
+                </span>{" "}
+                saat sudah cocok
+              </p>
+            </div>
+
             <p className="hidden text-center text-[10px] text-[#3F3766]/50 sm:block">
               Pratinjau langsung dengan tema terpilih — gulir untuk melihat seluruh artikel
             </p>
           </div>
 
-          {/* CHARACTER ROSTER */}
-          <div className="min-h-0 shrink-0 sm:flex-1 sm:overflow-y-auto">
-            <div className="flex snap-x gap-3.5 overflow-x-auto px-4 pb-3 sm:grid sm:grid-cols-2 sm:gap-3.5 sm:overflow-visible sm:px-0 sm:pb-0">
+          {/* CHARACTER ROSTER (DESKTOP ONLY) */}
+          <div className="hidden min-h-0 shrink-0 sm:block sm:flex-1 sm:overflow-y-auto">
+            <div className="grid grid-cols-2 gap-3.5">
               {templates.map((tmpl) => {
                 const isStaged = tmpl.id === stagedId;
                 const isActive = tmpl.id === activeId;
@@ -113,7 +212,7 @@ export function TemplatePickerDialog({
                     aria-pressed={isStaged}
                     aria-label={`Pilih tema ${tmpl.name}`}
                     onClick={() => onStage(tmpl.id)}
-                    className={`flex w-[46vw] max-w-[200px] shrink-0 snap-start flex-col rounded-2xl border-2 p-4 text-left transition-all sm:w-auto sm:max-w-none ${
+                    className={`flex flex-col rounded-2xl border-2 p-4 text-left transition-all ${
                       isStaged
                         ? "border-[#3F3766] bg-white"
                         : "border-[#3F3766]/15 bg-white/70 hover:border-[#3F3766]/40 hover:bg-white"
