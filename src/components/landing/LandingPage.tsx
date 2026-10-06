@@ -78,7 +78,7 @@ export function LandingPage() {
                     Ruang Tulis
                   </Link>
                 </li>
-                <li style={{ "--item": 6, padding: "4px 16px 20px" } as React.CSSProperties}>
+                <li style={{ "--item": 6, padding: "8px 20px 24px" } as React.CSSProperties}>
                   {currentUser ? (
                     <div className="flex items-center justify-center gap-1.5" style={{ marginTop: 4 }}>
                       <Link
@@ -100,13 +100,11 @@ export function LandingPage() {
                   ) : (
                     <Link
                       href="/login"
-                      className="learn-more"
+                      className="learn-more text-center"
                       style={{
-                        display: "block",
-                        margin: "4px auto 0",
-                        padding: "0.6em 1.25em",
-                        fontSize: "12px",
-                        textAlign: "center",
+                        display: "inline-block",
+                        padding: "0.8em 1.8em",
+                        fontSize: "13px",
                       }}
                     >
                       Gabung
