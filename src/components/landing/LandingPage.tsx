@@ -100,17 +100,12 @@ export function LandingPage() {
                   ) : (
                     <Link
                       href="/login"
-                      className="inline-flex items-center rounded-full bg-[#3F3766] px-3.5 py-1 text-xs font-bold text-white shadow-sm hover:bg-[#3F3766]/80 transition"
-                      style={{ marginTop: 4 }}
+                      className="learn-more"
+                      style={{ display: "inline-block", marginTop: 8 }}
                     >
-                      Masuk / Daftar
+                      Gabung
                     </Link>
                   )}
-                </li>
-                <li style={{ "--item": 7 } as React.CSSProperties}>
-                  <a href="/mental-battery" className="learn-more" style={{ display: "inline-block", marginTop: 8 }}>
-                    Cek Kondisi Sekarang
-                  </a>
                 </li>
               </ul>
             </nav>
