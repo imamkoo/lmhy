@@ -105,15 +105,15 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbf8f5] text-slate-800 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#d07954]/20 selection:text-[#b86644]">
+    <div className="min-h-screen bg-[#FBF8F5] text-slate-800 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#F7ABC5]/20 selection:text-[#3F3766]">
       {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
         <Link href="/" className="inline-block group mb-3">
-          <span className="inline-block rounded-full bg-[#d07954]/10 px-3.5 py-1 text-xs font-bold text-[#b86644] group-hover:bg-[#d07954]/20 transition">
-            Let Me Hear You • Portal Kreator
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F7ABC5]/20 px-3 py-1 text-xs font-bold text-[#3F3766]/80 border border-[#F7ABC5] group-hover:bg-[#F7ABC5]/40 transition">
+            Let Me Hear You
           </span>
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3F3766]">
           Ruang Cerita & Refleksi
         </h1>
         <p className="mt-2 text-sm text-slate-600 max-w-sm mx-auto leading-relaxed">
@@ -123,9 +123,9 @@ function LoginFormContent() {
 
       {/* Main Card */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 sm:px-10 shadow-sm border border-[#f0ebe4] rounded-3xl">
+        <div className="rounded-3xl bg-white p-8 sm:p-10 shadow-[0_8px_30px_0_rgba(63,55,102,0.08)] border border-[#eadecf]/80">
           {/* Mode Tabs */}
-          <div className="flex rounded-xl bg-[#f7f3ee] p-1 mb-6">
+          <div className="mb-6 grid grid-cols-2 gap-1.5 rounded-xl bg-[#F5E7C6]/40 p-1">
             <button
               type="button"
               onClick={() => {
@@ -133,9 +133,9 @@ function LoginFormContent() {
                 setErrorMessage(null);
                 setSuccessNotice(null);
               }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition ${
+              className={`py-2 text-sm font-semibold rounded-lg transition ${
                 mode === 'signin'
-                  ? 'bg-white text-slate-900 shadow-xs'
+                  ? 'bg-white text-[#3F3766] shadow-[0_2px_0_0_#F7ABC5] ring-2 ring-[#F7ABC5]/30'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -148,9 +148,9 @@ function LoginFormContent() {
                 setErrorMessage(null);
                 setSuccessNotice(null);
               }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition ${
+              className={`py-2 text-sm font-semibold rounded-lg transition ${
                 mode === 'signup'
-                  ? 'bg-white text-slate-900 shadow-xs'
+                  ? 'bg-white text-[#3F3766] shadow-[0_2px_0_0_#F7ABC5] ring-2 ring-[#F7ABC5]/30'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -200,12 +200,12 @@ function LoginFormContent() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={isPending || oauthLoading !== null}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-xs focus:ring-2 focus:ring-[#d07954]/50 focus:outline-none disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-[#F7ABC5]/30 bg-white text-sm font-semibold text-[#3F3766]/90 hover:bg-[#F5E7C6]/60 hover:shadow-[0_2px_0_0_#F7ABC5] hover:translate-y-[2px] active:shadow-[0_4px_0_0_#F7ABC5] active:translate-y-0 transition shadow-[0_4px_0_0_#F7ABC5] focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none disabled:opacity-60 disabled:hover:shadow-[0_4px_0_0_#F7ABC5] disabled:hover:translate-y-0"
             >
               {oauthLoading === 'google' ? (
                 <div className="h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
               ) : (
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -224,33 +224,33 @@ function LoginFormContent() {
                   />
                 </svg>
               )}
-              <span>Lanjutkan dengan Google</span>
+              <span>Masuk dengan Google</span>
             </button>
 
             <button
               type="button"
               onClick={handleFacebookLogin}
               disabled={isPending || oauthLoading !== null}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-xs focus:ring-2 focus:ring-[#1877F2]/30 focus:outline-none disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-[#F7ABC5]/30 bg-white text-sm font-semibold text-[#3F3766]/90 hover:bg-[#F5E7C6]/60 hover:shadow-[0_2px_0_0_#F7ABC5] hover:translate-y-[2px] active:shadow-[0_4px_0_0_#F7ABC5] active:translate-y-0 transition shadow-[0_4px_0_0_#F7ABC5] focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none disabled:opacity-60 disabled:hover:shadow-[0_4px_0_0_#F7ABC5] disabled:hover:translate-y-0"
             >
               {oauthLoading === 'facebook' ? (
                 <div className="h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
               ) : (
-                <svg className="w-4 h-4 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
               )}
-              <span>Lanjutkan dengan Facebook</span>
+              <span>Masuk dengan Facebook</span>
             </button>
           </div>
 
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
+              <div className="w-full border-t border-[#F7ABC5]/40" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-3 text-slate-400 font-medium">atau dengan email</span>
+              <span className="bg-white px-3 text-[#3F3766]/70 font-medium">atau dengan email</span>
             </div>
           </div>
 
@@ -260,7 +260,7 @@ function LoginFormContent() {
               <div>
                 <label
                   htmlFor="displayName"
-                  className="block text-xs font-semibold text-slate-700 mb-1"
+                  className="block text-xs font-semibold text-[#3F3766]/80 mb-1"
                 >
                   Nama Tampilan / Nama Pena
                 </label>
@@ -268,18 +268,22 @@ function LoginFormContent() {
                   id="displayName"
                   type="text"
                   required
+                  maxLength={60}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Misal: Budi Santoso"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20 focus:outline-none transition"
+                  className="w-full rounded-xl border border-[#3F3766]/10 bg-[#F5E7C6]/10 px-3.5 py-2.5 text-sm text-[#3F3766] placeholder-[#3F3766]/60 focus:border-[#F7ABC5] focus:bg-white focus:ring-2 focus:ring-[#F7ABC5]/20 focus:outline-none transition"
                 />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Nama yang akan muncul di tajuk artikel dan profil Anda.
+                </p>
               </div>
             )}
 
             <div>
               <label
                 htmlFor="email"
-                className="block text-xs font-semibold text-slate-700 mb-1"
+                className="block text-xs font-semibold text-[#3F3766]/80 mb-1"
               >
                 Alamat Email
               </label>
@@ -290,14 +294,14 @@ function LoginFormContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@email.com"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20 focus:outline-none transition"
+                className="w-full rounded-xl border border-[#3F3766]/10 bg-[#F5E7C6]/10 px-3.5 py-2.5 text-sm text-[#3F3766] placeholder-[#3F3766]/60 focus:border-[#F7ABC5] focus:bg-white focus:ring-2 focus:ring-[#F7ABC5]/20 focus:outline-none transition"
               />
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="block text-xs font-semibold text-slate-700 mb-1"
+                className="block text-xs font-semibold text-[#3F3766]/80 mb-1"
               >
                 Kata Sandi
               </label>
@@ -309,17 +313,20 @@ function LoginFormContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimal 6 karakter"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20 focus:outline-none transition"
+                className="w-full rounded-xl border border-[#3F3766]/10 bg-[#F5E7C6]/10 px-3.5 py-2.5 text-sm text-[#3F3766] placeholder-[#3F3766]/60 focus:border-[#F7ABC5] focus:bg-white focus:ring-2 focus:ring-[#F7ABC5]/20 focus:outline-none transition"
               />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Gunakan minimal 6 karakter, termasuk huruf dan angka.
+              </p>
             </div>
 
             <button
               type="submit"
               disabled={isPending || oauthLoading !== null}
-              className="w-full mt-2 rounded-xl bg-[#d07954] hover:bg-[#b86644] text-white py-3 px-4 text-sm font-semibold shadow-sm transition focus:ring-2 focus:ring-[#d07954]/50 focus:outline-none disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full mt-2 rounded-xl bg-[#F7ABC5] hover:bg-[#F5E7C6] text-[#3F3766] py-3 px-4 text-sm font-black shadow-[0_6px_0_0_#3F3766] hover:shadow-[0_4px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[5px] transition focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none disabled:opacity-60 disabled:hover:shadow-[0_6px_0_0_#3F3766] disabled:hover:translate-y-0 flex items-center justify-center gap-2"
             >
               {isPending && (
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 border-2 border-[#3F3766]/30 border-t-[#3F3766] rounded-full animate-spin" />
               )}
               <span>{mode === 'signin' ? 'Masuk ke Ruang Tulis' : 'Daftar ke Ruang Tulis'}</span>
             </button>
@@ -336,7 +343,7 @@ function LoginFormContent() {
         <div className="mt-6 text-center">
           <Link
             href="/"
-            className="text-xs font-semibold text-slate-500 hover:text-[#d07954] transition"
+            className="text-xs font-semibold text-[#3F3766]/70 hover:text-[#3F3766] hover:underline decoration-[#F7ABC5] decoration-2 underline-offset-4 transition"
           >
             ← Kembali ke Beranda LMHY
           </Link>
@@ -350,8 +357,8 @@ export default function LoginForm() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#fbf8f5] flex items-center justify-center">
-          <div className="h-6 w-6 border-2 border-[#d07954] border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen bg-[#FBF8F5] flex items-center justify-center">
+          <div className="h-6 w-6 border-2 border-[#3F3766]/30 border-t-[#3F3766] rounded-full animate-spin" />
         </div>
       }
     >
