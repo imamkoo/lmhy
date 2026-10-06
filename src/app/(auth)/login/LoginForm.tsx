@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, Suspense } from 'react';
+import React, { useState, useEffect, useTransition, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -15,18 +15,41 @@ function LoginFormContent() {
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get('next') || searchParams.get('redirect') || '/builder';
   const errorParam = searchParams.get('error');
+  const expiredParam = searchParams.get('expired');
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    errorParam ? 'Autentikasi gagal atau dibatalkan. Silakan coba kembali.' : null
+    expiredParam
+      ? 'Sesi Anda telah berakhir (batas 24 jam). Silakan masuk kembali.'
+      : errorParam
+      ? 'Autentikasi gagal atau dibatalkan. Silakan coba kembali.'
+      : null
   );
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
 
   const [isPending, startTransition] = useTransition();
   const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null);
+
+  // Countdown timer untuk rate limiting / DDoS cooldown
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setCooldownSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setErrorMessage(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cooldownSeconds]);
 
   const handleGoogleLogin = () => {
     setErrorMessage(null);
@@ -70,6 +93,8 @@ function LoginFormContent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (cooldownSeconds > 0) return;
+
     setErrorMessage(null);
     setSuccessNotice(null);
 
@@ -78,6 +103,9 @@ function LoginFormContent() {
         const res = await signInWithEmailAction({ email, password });
         if (!res.success) {
           setErrorMessage(res.error || 'Email atau kata sandi tidak cocok.');
+          if (res.retryAfterSeconds) {
+            setCooldownSeconds(res.retryAfterSeconds);
+          }
           return;
         }
 
@@ -317,13 +345,19 @@ function LoginFormContent() {
 
             <button
               type="submit"
-              disabled={isPending || oauthLoading !== null}
+              disabled={isPending || oauthLoading !== null || cooldownSeconds > 0}
               className="w-full mt-2 rounded-xl bg-[#F7ABC5] hover:bg-[#F5E7C6] text-[#3F3766] py-3 px-4 text-sm font-black shadow-[0_6px_0_0_#3F3766] hover:shadow-[0_4px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[5px] transition focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none disabled:opacity-60 disabled:hover:shadow-[0_6px_0_0_#3F3766] disabled:hover:translate-y-0 flex items-center justify-center gap-2"
             >
               {isPending && (
                 <div className="h-4 w-4 border-2 border-[#3F3766]/30 border-t-[#3F3766] rounded-full animate-spin" />
               )}
-              <span>{mode === 'signin' ? 'Masuk ke Ruang Tulis' : 'Daftar ke Ruang Tulis'}</span>
+              <span>
+                {cooldownSeconds > 0
+                  ? `Tunggu ${cooldownSeconds}s...`
+                  : mode === 'signin'
+                  ? 'Masuk ke Ruang Tulis'
+                  : 'Daftar ke Ruang Tulis'}
+              </span>
             </button>
           </form>
 

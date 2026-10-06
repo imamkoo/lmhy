@@ -9,8 +9,21 @@ import { signOutAction } from "@/app/actions/auth";
 
 const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
 
-export function LandingPage() {
-  const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(null);
+export function LandingPage({
+  initialUser,
+  initialProfile,
+}: {
+  initialUser?: { id: string; email?: string } | null;
+  initialProfile?: { username: string; display_name: string } | null;
+} = {}) {
+  const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(
+    initialUser
+      ? {
+          username: initialProfile?.username,
+          displayName: initialProfile?.display_name || initialUser.email?.split("@")[0],
+        }
+      : null
+  );
 
   useEffect(() => {
     const supabase = createClient();
@@ -28,13 +41,38 @@ export function LandingPage() {
             username: profile?.username,
             displayName: profile?.display_name || user.email?.split("@")[0],
           });
+        } else if (!initialUser) {
+          setCurrentUser(null);
         }
       } catch {
         // ignore
       }
     }
     checkUser();
-  }, []);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username, display_name")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        setCurrentUser({
+          username: profile?.username,
+          displayName: profile?.display_name || session.user.email?.split("@")[0],
+        });
+      } else if (event === "SIGNED_OUT") {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initialUser]);
 
   return (
     <div className="landing-page-wrapper">
