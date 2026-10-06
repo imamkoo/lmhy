@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import {
   USERNAME_REGEX,
   MIN_USERNAME_LENGTH,
@@ -320,4 +321,5 @@ export async function signOutAction(): Promise<void> {
   } catch (err: unknown) {
     console.error('[auth] Error in signOutAction:', err);
   }
+  redirect('/login');
 }
