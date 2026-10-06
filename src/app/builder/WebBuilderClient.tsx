@@ -11,19 +11,28 @@ import { signOutAction } from "@/app/actions/auth";
 
 const STORAGE_KEY = "lmhy_builder_draft_v2";
 
-export function WebBuilderClient({ initialUsername }: { initialUsername?: string }) {
+export function WebBuilderClient({
+  initialUsername,
+  initialUser,
+  initialProfile,
+}: {
+  initialUsername?: string;
+  initialUser?: { id: string; email?: string } | null;
+  initialProfile?: { username: string; display_name: string } | null;
+}) {
   // 0. Auth & Session State
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authUser, setAuthUser] = useState<{ id: string; email?: string } | null>(null);
-  const [authProfile, setAuthProfile] = useState<{ username: string; display_name: string } | null>(null);
+  const [authLoading, setAuthLoading] = useState(!initialUser);
+  const [authUser, setAuthUser] = useState<{ id: string; email?: string } | null>(initialUser || null);
+  const [authProfile, setAuthProfile] = useState<{ username: string; display_name: string } | null>(initialProfile || null);
   const [showPublishSuccessModal, setShowPublishSuccessModal] = useState(false);
   const [publishedData, setPublishedData] = useState<{ url: string; slug: string; title: string } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // 1. Subdomain State & Lock Management
-  const [username, setUsername] = useState(initialUsername || "");
-  const [tempUsername, setTempUsername] = useState(initialUsername || "");
-  const [isSubdomainConfirmed, setIsSubdomainConfirmed] = useState(Boolean(initialUsername && initialUsername.trim()));
+  const defaultUser = initialProfile?.username || initialUsername || "";
+  const [username, setUsername] = useState(defaultUser);
+  const [tempUsername, setTempUsername] = useState(defaultUser);
+  const [isSubdomainConfirmed, setIsSubdomainConfirmed] = useState(Boolean(defaultUser.trim()));
   const [subdomainModalError, setSubdomainModalError] = useState<string | null>(null);
   const [isEditingUsernameInStudio, setIsEditingUsernameInStudio] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
@@ -80,9 +89,10 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       .slice(0, 32);
   };
 
-  // Check Supabase session on mount
+  // Check Supabase session on mount & subscribe to auth state changes
   useEffect(() => {
     const supabase = createClient();
+
     async function checkAuth() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -100,6 +110,8 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
             setTempUsername(profile.username);
             setIsSubdomainConfirmed(true);
           }
+        } else if (!initialUser) {
+          setAuthUser(null);
         }
       } catch (err) {
         console.warn("Error checking auth status:", err);
@@ -107,8 +119,25 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         setAuthLoading(false);
       }
     }
+
     checkAuth();
-  }, []);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setAuthUser(session.user);
+        setAuthLoading(false);
+      } else if (event === "SIGNED_OUT") {
+        setAuthUser(null);
+        setAuthProfile(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initialUser]);
 
   // 6. Local Storage Persistence (Restore on Mount)
   useEffect(() => {

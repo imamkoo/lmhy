@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
-import { getSessionCookieOptions } from "@/lib/supabase/cookie";
+import { getSessionCookieOptions, SESSION_MAX_AGE } from "@/lib/supabase/cookie";
 
 const ROOT_DOMAINS = [
   "letmehearyou.id",
@@ -142,6 +142,20 @@ export async function middleware(req: NextRequest) {
       } = await supabase.auth.getUser();
 
       if (user) {
+        // Enforce 24-hour session expiration hardening
+        const lastSignInAt = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : 0;
+        const now = Date.now();
+        const isSessionExpired = lastSignInAt > 0 && (now - lastSignInAt) > (SESSION_MAX_AGE * 1000);
+
+        if (isSessionExpired) {
+          await supabase.auth.signOut();
+          const expiredRedirect = NextResponse.redirect(new URL("/login?expired=1", req.url));
+          req.cookies.getAll().forEach((c) => {
+            expiredRedirect.cookies.delete(c.name);
+          });
+          return expiredRedirect;
+        }
+
         // Hanya gate rute studio/kreator (/builder) yang mewajibkan profil kreator & username.
         // Halaman umum seperti landing page (/), blog (/blog), dll TIDAK boleh membajak pengunjung ke /onboarding.
         const isBuilderPath = url.pathname.startsWith("/builder");

@@ -1,8 +1,7 @@
 /**
- * Helper untuk menentukan domain cookie sesi Supabase.
- * Di production (domain letmehearyou.id), cookie di-set dengan wildcard `.letmehearyou.id`
- * agar sesi login pengguna aktif di seluruh subdomain (*.letmehearyou.id).
- * Di localhost / preview vercel non-custom domain, domain cookie dibiarkan undefined.
+ * Helper untuk menentukan domain dan opsi cookie sesi Supabase.
+ * - Wildcard domain `.letmehearyou.id` agar login terbawa di semua subdomain.
+ * - Max-Age 24 jam (86.400 detik) untuk auto-logout timeout.
  */
 export function getSessionCookieDomain(hostname?: string): string | undefined {
   const host =
@@ -16,10 +15,13 @@ export function getSessionCookieDomain(hostname?: string): string | undefined {
   return undefined;
 }
 
+export const SESSION_MAX_AGE = 24 * 60 * 60; // 24 Jam (dalam detik)
+
 export function getSessionCookieOptions(hostname?: string) {
   const domain = getSessionCookieDomain(hostname);
   return {
     path: "/",
+    maxAge: SESSION_MAX_AGE,
     sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production" || !!domain,
     ...(domain ? { domain } : {}),

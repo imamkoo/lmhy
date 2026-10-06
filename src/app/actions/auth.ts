@@ -9,6 +9,11 @@ import {
   MAX_USERNAME_LENGTH,
   RESERVED_USERNAMES,
 } from '@/lib/auth-constants';
+import {
+  checkLoginRateLimit,
+  recordFailedLoginAttempt,
+  resetLoginAttempts,
+} from '@/lib/rate-limit';
 
 export interface AuthActionResult {
   success: boolean;
@@ -17,6 +22,7 @@ export interface AuthActionResult {
   needsConfirmation?: boolean;
   needsOnboarding?: boolean;
   username?: string;
+  retryAfterSeconds?: number;
 }
 
 export interface AvailabilityResult {
@@ -229,6 +235,20 @@ export async function signInWithEmailAction(
     return { success: false, error: 'Email dan password wajib diisi.' };
   }
 
+  // Rate Limiting & Cooldown Protection (Anti-Bruteforce / DDoS)
+  const headerStore = await headers();
+  const clientIp = headerStore.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown-ip';
+  const rateLimitKey = `${clientIp}:${email.toLowerCase()}`;
+
+  const rateCheck = checkLoginRateLimit(rateLimitKey);
+  if (!rateCheck.allowed) {
+    return {
+      success: false,
+      error: `Terlalu banyak percobaan gagal. Silakan tunggu ${rateCheck.retryAfterSeconds} detik sebelum mencoba kembali.`,
+      retryAfterSeconds: rateCheck.retryAfterSeconds,
+    };
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -237,12 +257,26 @@ export async function signInWithEmailAction(
     });
 
     if (error) {
-      return { success: false, error: error.message };
+      const record = recordFailedLoginAttempt(rateLimitKey);
+      if (record.blocked) {
+        return {
+          success: false,
+          error: `Percobaan login gagal 3 kali. Akun ditangguhkan sementara selama ${record.retryAfterSeconds} detik.`,
+          retryAfterSeconds: record.retryAfterSeconds,
+        };
+      }
+      return {
+        success: false,
+        error: `${error.message} (Sisa percobaan: ${record.attemptsLeft})`,
+      };
     }
 
     if (!data.user) {
       return { success: false, error: 'Gagal mengautentikasi pengguna.' };
     }
+
+    // Login sukses: reset failed attempts
+    resetLoginAttempts(rateLimitKey);
 
     // Check if user already completed onboarding
     const { data: profile } = await supabase
