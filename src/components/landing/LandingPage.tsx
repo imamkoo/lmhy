@@ -14,13 +14,13 @@ export function LandingPage({
   initialProfile,
 }: {
   initialUser?: { id: string; email?: string } | null;
-  initialProfile?: { username: string; display_name: string } | null;
+  initialProfile?: { username?: string; display_name?: string } | null;
 } = {}) {
   const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(
     initialUser
       ? {
           username: initialProfile?.username,
-          displayName: initialProfile?.display_name || initialUser.email?.split("@")[0],
+          displayName: initialProfile?.display_name || initialProfile?.username || initialUser.email?.split("@")[0],
         }
       : null
   );
@@ -37,9 +37,13 @@ export function LandingPage({
             .eq("id", user.id)
             .maybeSingle();
 
-          setCurrentUser({
-            username: profile?.username,
-            displayName: profile?.display_name || user.email?.split("@")[0],
+          setCurrentUser((prev) => {
+            const resolvedUsername = profile?.username || prev?.username;
+            const resolvedDisplayName = profile?.display_name || prev?.displayName || resolvedUsername || user.email?.split("@")[0];
+            return {
+              username: resolvedUsername,
+              displayName: resolvedDisplayName,
+            };
           });
         } else if (!initialUser) {
           setCurrentUser(null);
@@ -60,9 +64,13 @@ export function LandingPage({
           .eq("id", session.user.id)
           .maybeSingle();
 
-        setCurrentUser({
-          username: profile?.username,
-          displayName: profile?.display_name || session.user.email?.split("@")[0],
+        setCurrentUser((prev) => {
+          const resolvedUsername = profile?.username || prev?.username;
+          const resolvedDisplayName = profile?.display_name || prev?.displayName || resolvedUsername || session.user.email?.split("@")[0];
+          return {
+            username: resolvedUsername,
+            displayName: resolvedDisplayName,
+          };
         });
       } else if (event === "SIGNED_OUT") {
         setCurrentUser(null);
@@ -124,21 +132,22 @@ export function LandingPage({
                         className="learn-more text-center"
                         style={{
                           display: "inline-block",
-                          padding: "0.8em 1.4em",
+                          padding: "0.75em 1.25em",
                           fontSize: "12px",
                           letterSpacing: "0.02em",
                           border: "2px solid #b18597",
                           borderRadius: "0.75em",
-                          lineHeight: "1.2",
-                          color: "#382b22",
-                          maxWidth: "160px",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
                         }}
-                        title={currentUser.displayName || `@${currentUser.username || "kreator"}`}
+                        title={currentUser.username ? `@${currentUser.username}` : `@${currentUser.displayName || "kreator"}`}
                       >
-                        {currentUser.username ? `@${currentUser.username}` : (currentUser.displayName || "Kreator")}
+                        <span
+                          className="relative z-10 block truncate font-bold text-[#382b22]"
+                          style={{ maxWidth: "130px", pointerEvents: "none" }}
+                        >
+                          {currentUser.username
+                            ? `@${currentUser.username}`
+                            : (currentUser.displayName ? `@${currentUser.displayName}` : "@kreator")}
+                        </span>
                       </Link>
                       <form action={signOutAction} className="w-full flex justify-center">
                         <button
@@ -159,7 +168,7 @@ export function LandingPage({
                         fontSize: "13px",
                       }}
                     >
-                      Gabung
+                      <span className="relative z-10 block font-bold text-[#382b22]">Gabung</span>
                     </Link>
                   )}
                 </li>
