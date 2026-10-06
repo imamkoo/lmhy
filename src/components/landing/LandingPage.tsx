@@ -121,12 +121,20 @@ export function LandingPage({
                     <div className="flex flex-col items-center gap-2" style={{ marginTop: 2 }}>
                       <Link
                         href="/builder"
-                        className="learn-more text-center truncate max-w-full"
+                        className="learn-more text-center"
                         style={{
                           display: "inline-block",
-                          padding: "0.7em 1.4em",
+                          padding: "0.8em 1.4em",
                           fontSize: "12px",
                           letterSpacing: "0.02em",
+                          border: "2px solid #b18597",
+                          borderRadius: "0.75em",
+                          lineHeight: "1.2",
+                          color: "#382b22",
+                          maxWidth: "160px",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
                         }}
                         title={currentUser.displayName || `@${currentUser.username || "kreator"}`}
                       >
@@ -135,7 +143,7 @@ export function LandingPage({
                       <form action={signOutAction} className="w-full flex justify-center">
                         <button
                           type="submit"
-                          className="w-full text-center text-xs font-semibold text-[#3F3766]/70 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg py-1.5 px-3 transition"
+                          className="w-full text-center text-xs font-semibold text-[#3F3766]/70 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg py-1 px-2 transition"
                         >
                           Keluar dari Akun
                         </button>
