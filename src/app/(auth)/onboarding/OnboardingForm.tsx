@@ -148,13 +148,13 @@ export default function OnboardingForm({
   const safePreviewUser = trimmedUsername || 'nama-anda';
 
   return (
-    <div className="min-h-screen bg-[#fbf8f5] text-slate-800 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#d07954]/20 selection:text-[#b86644]">
+    <div className="min-h-screen bg-[#FBF8F5] text-slate-800 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#F7ABC5]/20 selection:text-[#3F3766]">
       {/* Brand & Introduction Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center mb-8">
-        <span className="inline-block rounded-full bg-[#d07954]/10 px-3.5 py-1 text-xs font-bold text-[#b86644] mb-3">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F7ABC5]/20 px-3.5 py-1 text-xs font-bold text-[#3F3766] mb-3 border border-[#F7ABC5]">
           Langkah Terakhir • Gerbang Identitas
         </span>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3F3766]">
           Pilih Subdomain & Nama Pena Anda
         </h1>
         <p className="mt-2 text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
@@ -165,15 +165,15 @@ export default function OnboardingForm({
 
       {/* Main Card */}
       <div className="sm:mx-auto sm:w-full sm:max-w-lg">
-        <div className="bg-white py-8 px-6 sm:px-10 shadow-sm border border-[#f0ebe4] rounded-3xl">
+        <div className="rounded-3xl bg-white p-8 sm:p-10 shadow-[0_8px_30px_0_rgba(63,55,102,0.08)] border border-[#eadecf]/80">
           {/* Subdomain Visual Preview Banner */}
           <div className="mb-6 rounded-2xl bg-gradient-to-br from-[#fcf9f6] to-[#f7f2eb] border border-[#eadecf] p-4 text-center">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
               Pratinjau Alamat Publik Anda
             </span>
-            <div className="font-mono text-xs sm:text-sm font-semibold text-slate-800 select-all inline-flex items-center justify-center max-w-full overflow-x-auto whitespace-nowrap px-3 py-1.5 rounded-xl bg-white/70 border border-[#eadecf]/80 shadow-xs">
-              <span className="text-[#d07954] shrink-0">https://</span>
-              <span className="underline decoration-[#d07954] decoration-2 underline-offset-4 text-slate-900 font-bold shrink-0">
+            <div className="font-mono text-xs sm:text-sm font-semibold text-[#3F3766] select-all inline-flex items-center justify-center max-w-full overflow-x-auto whitespace-nowrap px-3 py-1.5 rounded-xl bg-white/70 border border-[#eadecf]/80 shadow-xs">
+              <span className="text-[#F7ABC5] shrink-0">https://</span>
+              <span className="underline decoration-[#F7ABC5] decoration-2 underline-offset-4 text-[#3F3766] font-bold shrink-0">
                 {safePreviewUser}
               </span>
               <span className="text-slate-500 shrink-0">.letmehearyou.id</span>
@@ -206,7 +206,7 @@ export default function OnboardingForm({
             <div>
               <label
                 htmlFor="displayName"
-                className="block text-xs font-semibold text-slate-700 mb-1"
+                className="block text-xs font-semibold text-[#3F3766]/80 mb-1"
               >
                 Nama Tampilan / Nama Pena Publik
               </label>
@@ -218,7 +218,7 @@ export default function OnboardingForm({
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Misal: Budi Santoso"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20 focus:outline-none transition"
+                className="w-full rounded-xl border border-[#3F3766]/10 bg-[#F5E7C6]/10 px-3.5 py-2.5 text-sm text-[#3F3766] placeholder-[#3F3766]/60 focus:border-[#F7ABC5] focus:bg-white focus:ring-2 focus:ring-[#F7ABC5]/20 focus:outline-none transition"
               />
               <p className="text-[11px] text-slate-400 mt-1">
                 Nama yang akan muncul di tajuk artikel dan profil Anda.
@@ -229,7 +229,7 @@ export default function OnboardingForm({
             <div>
               <label
                 htmlFor="username"
-                className="block text-xs font-semibold text-slate-700 mb-1"
+                className="block text-xs font-semibold text-[#3F3766]/80 mb-1"
               >
                 Pilihan Username Subdomain
               </label>
@@ -241,14 +241,14 @@ export default function OnboardingForm({
                   value={username}
                   onChange={handleUsernameChange}
                   placeholder="contoh: budi-santoso"
-                  className={`w-full rounded-xl border px-3.5 py-2.5 pr-28 text-sm font-mono text-slate-900 placeholder-slate-400 focus:outline-none transition ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 pr-28 text-sm font-mono text-[#3F3766] placeholder-[#3F3766]/60 focus:outline-none transition ${
                     trimmedUsername
                       ? isAvailable
                         ? 'border-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
                         : localError || (serverAvailability && !serverAvailability.available)
                         ? 'border-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
-                        : 'border-slate-200 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20'
-                      : 'border-slate-200 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20'
+                        : 'border-[#3F3766]/20 focus:border-[#F7ABC5] focus:ring-2 focus:ring-[#F7ABC5]/20'
+                      : 'border-[#3F3766]/20 focus:border-[#F7ABC5] focus:ring-2 focus:ring-[#F7ABC5]/20'
                   }`}
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-xs">
@@ -308,10 +308,10 @@ export default function OnboardingForm({
             <button
               type="submit"
               disabled={isPending || isChecking || !isAvailable}
-              className="w-full mt-4 rounded-xl bg-[#d07954] hover:bg-[#b86644] text-white py-3 px-4 text-sm font-semibold shadow-sm transition focus:ring-2 focus:ring-[#d07954]/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full mt-4 rounded-xl bg-[#F7ABC5] hover:bg-[#F5E7C6] text-[#3F3766] py-3 px-4 text-sm font-black shadow-[0_6px_0_0_#3F3766] hover:shadow-[0_4px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[5px] transition focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[0_6px_0_0_#3F3766] disabled:hover:translate-y-0 flex items-center justify-center gap-2"
             >
               {isPending && (
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 border-2 border-[#3F3766]/30 border-t-[#3F3766] rounded-full animate-spin" />
               )}
               <span>Konfirmasi & Mulai Menulis</span>
             </button>
@@ -323,7 +323,7 @@ export default function OnboardingForm({
           <form action={signOutAction} className="inline-block">
             <button
               type="submit"
-              className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition"
+              className="text-xs font-semibold text-[#3F3766]/70 hover:text-rose-600 transition"
             >
               ← Keluar / Ganti akun
             </button>
