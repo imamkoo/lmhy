@@ -6,14 +6,15 @@ import {
   DEFAULT_TEMPLATE_ID,
 } from "../lib/design-templates";
 
-test("Design Templates Registry contains all 5 curated templates", () => {
-  assert.equal(DESIGN_TEMPLATES.length, 5);
+test("Design Templates Registry contains all 6 curated templates", () => {
+  assert.equal(DESIGN_TEMPLATES.length, 6);
   const ids = DESIGN_TEMPLATES.map((t) => t.id);
   assert.deepEqual(ids, [
     "warm-sanctuary",
     "neo-brutalism",
     "glassmorphism",
     "editorial-zen",
+    "claymorphism",
     "midnight-serenity",
   ]);
 });
@@ -36,6 +37,10 @@ test("getDesignTemplate returns correct template for valid IDs", () => {
 
   const zen = getDesignTemplate("editorial-zen");
   assert.equal(zen.id, "editorial-zen");
+
+  const clay = getDesignTemplate("claymorphism");
+  assert.equal(clay.id, "claymorphism");
+  assert.equal(clay.accentColor, "#B8A9F0");
 
   const dark = getDesignTemplate("midnight-serenity");
   assert.equal(dark.id, "midnight-serenity");
