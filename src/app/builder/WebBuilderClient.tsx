@@ -45,10 +45,10 @@ export function WebBuilderClient({
 
   // 2. Template & Article Content State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
-  const [title, setTitle] = useState(REFLECTION_TEMPLATES[0].defaultTitle);
-  const [excerpt, setExcerpt] = useState(REFLECTION_TEMPLATES[0].defaultExcerpt);
-  const [content, setContent] = useState(REFLECTION_TEMPLATES[0].content);
-  const [tags, setTags] = useState(REFLECTION_TEMPLATES[0].defaultTags);
+  const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [content, setContent] = useState("");
+  const [tags, setTags] = useState("");
 
   // 3. Preview Device & Mobile View Tabs ("editor" vs "preview")
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
@@ -803,36 +803,37 @@ export function WebBuilderClient({
                     <button
                       key={tmpl.id}
                       type="button"
+                      aria-pressed={isSelected}
                       onClick={() => handleSelectTemplate(tmpl.id)}
-                      className={`flex flex-col text-left p-3 rounded-2xl border-2 transition-all relative overflow-hidden group ${
+                      className={`group flex h-full flex-col rounded-2xl border-2 p-3 text-left transition-all ${
                         isSelected
                           ? "border-[#3F3766] bg-[#F7ABC5]/25 shadow-[0_4px_0_0_#3F3766]"
                           : "border-[#3F3766]/15 bg-white hover:border-[#3F3766]/40 hover:bg-[#F5E7C6]/20"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1 w-full mb-1">
-                        <span className="text-xs font-black text-[#3F3766] truncate">
-                          {tmpl.name}
-                        </span>
+                      <span className="flex items-start justify-between gap-1.5 text-xs font-black leading-snug text-[#3F3766]">
+                        <span className="min-w-0 break-words">{tmpl.name}</span>
                         <span
-                          className="h-3 w-3 rounded-full shrink-0 border border-black/20"
+                          className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-black/20"
                           style={{ backgroundColor: tmpl.accentColor }}
                           title={`Warna Aksen: ${tmpl.accentColor}`}
                         />
-                      </div>
-                      <span className="text-[10px] text-[#3F3766]/70 line-clamp-2 leading-tight">
+                      </span>
+                      <span className="mt-1 line-clamp-2 text-[10px] leading-snug text-[#3F3766]/70">
                         {tmpl.tagline}
                       </span>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-[#3F3766]/60 bg-[#3F3766]/5 px-1.5 py-0.5 rounded">
+                      <span className="mt-auto flex items-center justify-between gap-1 pt-2">
+                        <span className="rounded bg-[#3F3766]/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#3F3766]/60">
                           {tmpl.badge}
                         </span>
-                        {isSelected && (
-                          <span className="text-[10px] font-black text-[#3F3766]">
-                            ✓ Aktif
-                          </span>
-                        )}
-                      </div>
+                        <span
+                          className={`text-[10px] font-black ${
+                            isSelected ? "text-[#3F3766]" : "text-[#3F3766]/40"
+                          }`}
+                        >
+                          {isSelected ? "✓ Aktif" : "Pilih →"}
+                        </span>
+                      </span>
                     </button>
                   );
                 })}
@@ -841,20 +842,20 @@ export function WebBuilderClient({
               {/* QUICK PROMPT INSPIRATION HELPER */}
               <div className="pt-3 border-t border-[#3F3766]/10">
                 <details className="group">
-                  <summary className="flex items-center justify-between cursor-pointer text-[11px] font-bold text-[#3F3766]/75 hover:text-[#3F3766] select-none list-none">
+                  <summary className="flex items-center justify-between cursor-pointer rounded-xl text-[11px] font-bold text-[#3F3766]/75 hover:text-[#3F3766] select-none list-none py-1">
                     <span>💡 Butuh inspirasi contoh teks refleksi?</span>
                     <span className="text-xs group-open:rotate-180 transition-transform">▼</span>
                   </summary>
-                  <div className="mt-2.5 grid grid-cols-2 gap-2">
+                  <div className="mt-2 space-y-1.5">
                     {REFLECTION_TEMPLATES.map((promptTmpl) => (
                       <button
                         key={promptTmpl.id}
                         type="button"
                         onClick={() => handleApplyReflectionPrompt(promptTmpl)}
-                        className="text-left p-2 rounded-xl border border-[#3F3766]/15 bg-[#F5E7C6]/20 hover:bg-[#F5E7C6]/50 text-[10px] text-[#3F3766] transition"
+                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#3F3766]/15 bg-[#F5E7C6]/20 px-3 py-2 text-left text-[10px] text-[#3F3766] transition hover:bg-[#F5E7C6]/50"
                       >
-                        <p className="font-bold truncate">{promptTmpl.name}</p>
-                        <p className="text-[9px] text-[#3F3766]/60 truncate mt-0.5">Muat Teks</p>
+                        <span className="min-w-0 flex-1 leading-snug">{promptTmpl.name}</span>
+                        <span className="shrink-0 font-bold text-[#3F3766]/60">Muat →</span>
                       </button>
                     ))}
                   </div>
@@ -1194,16 +1195,16 @@ export function WebBuilderClient({
               mobileActiveTab === "editor" ? "hidden lg:block" : "block"
             }`}
           >
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center lg:h-[calc(100vh-7rem)]">
               <div
-                className={`w-full transition-all duration-300 ${
+                className={`w-full transition-all duration-300 lg:flex lg:h-full lg:flex-col ${
                   previewDevice === "mobile" ? "max-w-sm" : "max-w-full"
                 }`}
               >
-                <div className="rounded-[32px] border-4 border-[#3F3766] bg-white shadow-[0_16px_40px_rgba(63,55,102,0.18),0_0_24px_rgba(247,171,197,0.3)] overflow-hidden transition-all">
-                  
+                <div className="rounded-[32px] border-4 border-[#3F3766] bg-white shadow-[0_16px_40px_rgba(63,55,102,0.18),0_0_24px_rgba(247,171,197,0.3)] overflow-hidden transition-all flex flex-col lg:min-h-0 lg:flex-1">
+
                   {/* SIMULATED BROWSER TOP BAR */}
-                  <div className="bg-[#3F3766] px-4 py-3 flex items-center justify-between gap-3 border-b-2 border-[#3F3766]">
+                  <div className="shrink-0 bg-[#3F3766] px-4 py-3 flex items-center justify-between gap-3 border-b-2 border-[#3F3766]">
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-black/20"></span>
                       <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-black/20"></span>
@@ -1223,7 +1224,7 @@ export function WebBuilderClient({
 
                   {/* SIMULATED TENANT BLOG PAGE CONTENT WITH DYNAMIC TEMPLATE STYLING */}
                   <div
-                    className={`p-6 sm:p-8 min-h-[460px] max-h-[640px] overflow-y-auto space-y-6 transition-colors ${activeTemplate.previewClass.container}`}
+                    className={`p-6 sm:p-8 min-h-[460px] lg:min-h-0 lg:flex-1 overflow-y-auto space-y-6 transition-colors ${activeTemplate.previewClass.container}`}
                   >
                     
                     {/* Simulated Header */}
@@ -1337,7 +1338,7 @@ export function WebBuilderClient({
 
                         {/* Card Title */}
                         <h3 className="text-sm sm:text-base font-bold leading-snug truncate max-w-xs mx-auto">
-                          {title || "Mengenali Tanda Burnout"}
+                          {title || "Judul Artikel Anda"}
                         </h3>
 
                         {/* Action CTA Button */}
@@ -1366,7 +1367,7 @@ export function WebBuilderClient({
                   </div>
                 </div>
 
-                <div className="mx-auto h-2 w-3/4 rounded-full bg-[#3F3766]/10 blur-sm mt-3"></div>
+                <div className="mx-auto h-2 w-3/4 shrink-0 rounded-full bg-[#3F3766]/10 blur-sm mt-3"></div>
               </div>
             </div>
           </div>
