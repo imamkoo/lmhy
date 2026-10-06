@@ -75,12 +75,12 @@ export function LandingPage() {
                 </li>
                 <li style={{ "--item": 5 } as React.CSSProperties}>
                   <Link href="/builder" className="font-semibold text-[#b86644] hover:text-[#d07954]">
-                    ✍️ Web Builder
+                    Ruang Tulis
                   </Link>
                 </li>
-                <li style={{ "--item": 6 } as React.CSSProperties}>
+                <li style={{ "--item": 6, padding: "4px 16px 20px" } as React.CSSProperties}>
                   {currentUser ? (
-                    <div className="flex items-center gap-1.5" style={{ marginTop: 4 }}>
+                    <div className="flex items-center justify-center gap-1.5" style={{ marginTop: 4 }}>
                       <Link
                         href="/builder"
                         className="inline-flex items-center gap-1 rounded-full bg-[#F7ABC5]/30 px-3 py-1 text-xs font-bold text-[#3F3766] border border-[#3F3766]/20 hover:bg-[#F7ABC5]/60 transition"
@@ -101,7 +101,13 @@ export function LandingPage() {
                     <Link
                       href="/login"
                       className="learn-more"
-                      style={{ display: "inline-block", marginTop: 8 }}
+                      style={{
+                        display: "block",
+                        margin: "4px auto 0",
+                        padding: "0.6em 1.25em",
+                        fontSize: "12px",
+                        textAlign: "center",
+                      }}
                     >
                       Gabung
                     </Link>
@@ -403,11 +409,11 @@ export function LandingPage() {
                 <h3>Portal Kreator & App</h3>
                 <ul>
                   <li>
-                    <Link href="/builder">Studio Web Builder</Link>
+                    <Link href="/builder">Ruang Tulis</Link>
                   </li>
                   <li>
                     <Link href="/login">
-                      {currentUser ? "Portal Akun Kreator" : "Masuk / Daftar"}
+                      {currentUser ? "Portal Akun Kreator" : "Gabung"}
                     </Link>
                   </li>
                   <li>
