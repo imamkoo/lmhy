@@ -92,7 +92,7 @@ export function TemplatePickerDialog({
         aria-modal="true"
         aria-label="Pilih desain tampilan web"
         onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-4xl max-h-[96vh] flex-col overflow-hidden rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] shadow-[0_24px_70px_rgba(63,55,102,0.5)]"
+        className="flex w-full max-w-4xl h-[96vh] flex-col overflow-hidden rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] shadow-[0_24px_70px_rgba(63,55,102,0.5)]"
       >
         {/* DIALOG HEADER */}
         <div className="flex shrink-0 items-start justify-between gap-3 border-b-2 border-[#3F3766]/10 bg-white px-4 py-3 sm:px-5">
@@ -133,12 +133,12 @@ export function TemplatePickerDialog({
                   tabIndex={0}
                   role="group"
                   aria-label={`Pratinjau tema — geser untuk memilih. Tema saat ini: ${staged.name}`}
-                  className="flex h-full snap-x snap-mandatory overflow-auto overscroll-contain"
+                  className="flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-contain"
                 >
                   {templates.map((tmpl) => (
                     <div
                       key={tmpl.id}
-                      className="w-[86%] shrink-0 snap-center p-3"
+                      className="w-[86%] shrink-0 snap-center overflow-y-auto overscroll-contain p-3"
                     >
                       <div className="pointer-events-none select-none">
                         {renderPreview(tmpl)}
