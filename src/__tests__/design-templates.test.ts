@@ -4,7 +4,6 @@ import {
   DESIGN_TEMPLATES,
   getDesignTemplate,
   DEFAULT_TEMPLATE_ID,
-  WebDesignTemplate,
 } from "../lib/design-templates";
 
 test("Design Templates Registry contains all 5 curated templates", () => {
