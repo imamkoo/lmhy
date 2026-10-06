@@ -218,7 +218,7 @@ export default function OnboardingForm({
                 maxLength={60}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Misal: Budi Santoso atau Rarasati"
+                placeholder="Misal: Budi Santoso"
                 className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20 focus:outline-none transition"
               />
               <p className="text-[11px] text-slate-400 mt-1">
@@ -241,7 +241,7 @@ export default function OnboardingForm({
                   required
                   value={username}
                   onChange={handleUsernameChange}
-                  placeholder="contoh: axaa"
+                  placeholder="contoh: budi-santoso"
                   className={`w-full rounded-xl border px-3.5 py-2.5 pr-28 text-sm font-mono text-slate-900 placeholder-slate-400 focus:outline-none transition ${
                     trimmedUsername
                       ? isAvailable

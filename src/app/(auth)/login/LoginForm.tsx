@@ -270,7 +270,7 @@ function LoginFormContent() {
                   required
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Misal: Rarasati Jiwa"
+                  placeholder="Misal: Budi Santoso"
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20 focus:outline-none transition"
                 />
               </div>
@@ -289,7 +289,7 @@ function LoginFormContent() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@domain.com"
+                placeholder="nama@email.com"
                 className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#d07954] focus:ring-2 focus:ring-[#d07954]/20 focus:outline-none transition"
               />
             </div>
