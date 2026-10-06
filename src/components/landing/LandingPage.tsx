@@ -126,7 +126,7 @@ export function LandingPage({
                 </li>
                 <li style={{ "--item": 6, padding: "8px 16px 20px" } as React.CSSProperties}>
                   {currentUser ? (
-                    <div className="flex flex-col items-center gap-2" style={{ marginTop: 2 }}>
+                    <div className="flex flex-col items-center" style={{ marginTop: 2 }}>
                       <Link
                         href="/builder"
                         className="learn-more text-center"
@@ -137,6 +137,7 @@ export function LandingPage({
                           letterSpacing: "0.02em",
                           border: "2px solid #b18597",
                           borderRadius: "0.75em",
+                          marginBottom: "18px",
                         }}
                         title={currentUser.username ? `@${currentUser.username}` : `@${currentUser.displayName || "kreator"}`}
                       >
@@ -152,7 +153,7 @@ export function LandingPage({
                       <form action={signOutAction} className="w-full flex justify-center">
                         <button
                           type="submit"
-                          className="w-full text-center text-xs font-semibold text-[#3F3766]/70 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg py-1 px-2 transition"
+                          className="w-full text-center text-xs font-semibold text-[#3F3766]/70 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg py-1.5 px-2 transition"
                         >
                           Keluar dari Akun
                         </button>
