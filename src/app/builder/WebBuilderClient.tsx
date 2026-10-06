@@ -12,6 +12,7 @@ import {
 } from "@/lib/design-templates";
 import { publishTenantArticle } from "@/app/actions/tenant";
 import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
+import { TemplatePickerDialog } from "@/app/builder/TemplatePickerDialog";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/app/actions/auth";
 
@@ -46,6 +47,8 @@ export function WebBuilderClient({
 
   // 2. Template & Article Content State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [stagedTemplateId, setStagedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
@@ -278,6 +281,16 @@ export function WebBuilderClient({
     setSelectedTemplateId(templateId);
   };
 
+  const handleOpenTemplatePicker = () => {
+    setStagedTemplateId(selectedTemplateId);
+    setShowTemplatePicker(true);
+  };
+
+  const handleApplyStagedTemplate = () => {
+    handleSelectTemplate(stagedTemplateId);
+    setShowTemplatePicker(false);
+  };
+
   const handleApplyReflectionPrompt = (template: ReflectionTemplate) => {
     if (template.id !== "blank-canvas") {
       setTitle(template.defaultTitle);
@@ -426,7 +439,7 @@ export function WebBuilderClient({
     }
   };
 
-  const previewMockup = (
+  const renderPreviewMockup = (tmpl: WebDesignTemplate) => (
     <div className="rounded-[32px] border-4 border-[#3F3766] bg-white shadow-[0_16px_40px_rgba(63,55,102,0.18),0_0_24px_rgba(247,171,197,0.3)] overflow-hidden transition-all flex flex-col lg:min-h-0 lg:flex-1">
 
       {/* SIMULATED BROWSER TOP BAR */}
@@ -443,36 +456,36 @@ export function WebBuilderClient({
 
         <div className="shrink-0 text-right">
           <span className="text-[10px] font-mono font-bold text-[#F7ABC5] bg-white/10 px-2 py-0.5 rounded-full">
-            {activeTemplate.name}
+            {tmpl.name}
           </span>
         </div>
       </div>
 
       {/* SIMULATED TENANT BLOG PAGE CONTENT WITH DYNAMIC TEMPLATE STYLING */}
       <div
-        className={`p-6 sm:p-8 min-h-[460px] lg:min-h-0 lg:flex-1 overflow-y-auto space-y-6 transition-colors ${activeTemplate.previewClass.container}`}
+        className={`p-6 sm:p-8 min-h-[460px] lg:min-h-0 lg:flex-1 overflow-y-auto space-y-6 transition-colors ${tmpl.previewClass.container}`}
       >
         
         {/* Simulated Header */}
-        <div className={`flex items-center justify-between gap-4 ${activeTemplate.previewClass.header}`}>
+        <div className={`flex items-center justify-between gap-4 ${tmpl.previewClass.header}`}>
           <div className="flex items-center gap-2.5">
             <div
-              className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${activeTemplate.previewClass.authorAvatar}`}
+              className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${tmpl.previewClass.authorAvatar}`}
             >
               {cleanUser.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className={`text-xs ${activeTemplate.previewClass.authorName}`}>
+              <p className={`text-xs ${tmpl.previewClass.authorName}`}>
                 @{cleanUser}
               </p>
-              <p className={`text-[10px] ${activeTemplate.previewClass.authorSub}`}>
+              <p className={`text-[10px] ${tmpl.previewClass.authorSub}`}>
                 Ruang Publikasi Pribadi
               </p>
             </div>
           </div>
 
           {registerLitera && (
-            <span className={activeTemplate.previewClass.badge}>
+            <span className={tmpl.previewClass.badge}>
               Web3 Verified
             </span>
           )}
@@ -482,7 +495,7 @@ export function WebBuilderClient({
         <article className="space-y-4">
           {/* Media Header (Image or Video) */}
           {mediaPreview && (
-            <div className={activeTemplate.previewClass.mediaCard}>
+            <div className={tmpl.previewClass.mediaCard}>
               {mediaType === "VIDEO" ? (
                 <video
                   src={mediaPreview}
@@ -510,31 +523,31 @@ export function WebBuilderClient({
               .map((tag, idx) => (
                 <span
                   key={idx}
-                  className={activeTemplate.previewClass.tag}
+                  className={tmpl.previewClass.tag}
                 >
                   #{tag}
                 </span>
               ))}
           </div>
 
-          <h1 className={`text-xl sm:text-2xl leading-snug ${activeTemplate.previewClass.title}`}>
+          <h1 className={`text-xl sm:text-2xl leading-snug ${tmpl.previewClass.title}`}>
             {title || "Judul Tulisan Anda"}
           </h1>
 
           {excerpt && (
-            <p className={`text-xs sm:text-sm ${activeTemplate.previewClass.excerpt}`}>
+            <p className={`text-xs sm:text-sm ${tmpl.previewClass.excerpt}`}>
               &ldquo;{excerpt}&rdquo;
             </p>
           )}
 
-          <div className={`text-xs sm:text-sm ${activeTemplate.previewClass.content}`}>
+          <div className={`text-xs sm:text-sm ${tmpl.previewClass.content}`}>
             {content || "Tuliskan materi atau catatan refleksi Anda pada panel sebelah kiri..."}
           </div>
         </article>
 
         {/* LITERA OFFICIAL NFT EMBED CARD WITH THEME HARMONY */}
         {registerLitera ? (
-          <div className={activeTemplate.previewClass.literaCard}>
+          <div className={tmpl.previewClass.literaCard}>
             
             {/* Artwork Cover */}
             <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-[#c5baa7] flex items-center justify-center">
@@ -957,63 +970,36 @@ export function WebBuilderClient({
               </div>
             )}
 
-            {/* SECTION 1: VISUAL DESIGN TEMPLATE SELECTION (5 PRESETS) */}
-            <div className="rounded-3xl bg-white p-5 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-[11px] font-black uppercase tracking-wider text-[#3F3766] block">
-                    Pilihan Desain Tampilan Web
-                  </label>
-                  <p className="text-[10px] text-[#3F3766]/60 mt-0.5">
-                    Ganti gaya visual & tipografi artikel tanpa menghapus tulisan Anda.
-                  </p>
+            {/* SECTION 1: COMPACT TEMPLATE SUMMARY + PICKER TRIGGER */}
+            <div className="rounded-3xl bg-white p-4 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span
+                    className="h-4 w-4 shrink-0 rounded-full border border-black/20"
+                    style={{ backgroundColor: activeTemplate.accentColor }}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
+                      Desain Tampilan Web
+                    </span>
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate text-xs font-black text-[#3F3766]">
+                        {activeTemplate.name}
+                      </span>
+                      <span className="shrink-0 rounded-full border border-[#3F3766]/20 bg-[#F7ABC5] px-1.5 py-px text-[9px] font-bold text-[#3F3766]">
+                        {DESIGN_TEMPLATES.length} Gaya
+                      </span>
+                    </span>
+                  </div>
                 </div>
-                <span className="shrink-0 text-[10px] font-bold text-[#3F3766] bg-[#F7ABC5] px-2.5 py-0.5 rounded-full border border-[#3F3766]/20">
-                  {DESIGN_TEMPLATES.length} Gaya
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {DESIGN_TEMPLATES.map((tmpl) => {
-                  const isSelected = selectedTemplateId === tmpl.id;
-                  return (
-                    <button
-                      key={tmpl.id}
-                      type="button"
-                      aria-pressed={isSelected}
-                      onClick={() => handleSelectTemplate(tmpl.id)}
-                      className={`group flex h-full flex-col rounded-2xl border-2 p-3 text-left transition-all ${
-                        isSelected
-                          ? "border-[#3F3766] bg-[#F7ABC5]/25 shadow-[0_4px_0_0_#3F3766]"
-                          : "border-[#3F3766]/15 bg-white hover:border-[#3F3766]/40 hover:bg-[#F5E7C6]/20"
-                      }`}
-                    >
-                      <span className="flex items-start justify-between gap-1.5 text-xs font-black leading-snug text-[#3F3766]">
-                        <span className="min-w-0 break-words">{tmpl.name}</span>
-                        <span
-                          className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-black/20"
-                          style={{ backgroundColor: tmpl.accentColor }}
-                          title={`Warna Aksen: ${tmpl.accentColor}`}
-                        />
-                      </span>
-                      <span className="mt-1 line-clamp-2 text-[10px] leading-snug text-[#3F3766]/70">
-                        {tmpl.tagline}
-                      </span>
-                      <span className="mt-auto flex items-center justify-between gap-1 pt-2">
-                        <span className="rounded bg-[#3F3766]/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#3F3766]/60">
-                          {tmpl.badge}
-                        </span>
-                        <span
-                          className={`text-[10px] font-black ${
-                            isSelected ? "text-[#3F3766]" : "text-[#3F3766]/40"
-                          }`}
-                        >
-                          {isSelected ? "✓ Aktif" : "Pilih →"}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={handleOpenTemplatePicker}
+                  className="shrink-0 rounded-xl border-2 border-[#3F3766] bg-[#F7ABC5] px-3 py-2 text-[11px] font-black text-[#3F3766] shadow-[0_4px_0_0_#3F3766] hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[3px] transition focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none"
+                >
+                  Ganti tema ↻
+                </button>
               </div>
 
               {/* QUICK PROMPT INSPIRATION HELPER */}
@@ -1378,7 +1364,7 @@ export function WebBuilderClient({
                   previewDevice === "mobile" ? "max-w-sm" : "max-w-full"
                 }`}
               >
-                {previewMockup}
+                {renderPreviewMockup(activeTemplate)}
 
                 <div className="mx-auto h-2 w-3/4 shrink-0 rounded-full bg-[#3F3766]/10 blur-sm mt-3"></div>
               </div>
@@ -1387,6 +1373,19 @@ export function WebBuilderClient({
 
         </div>
       </div>
+
+      {/* MODAL: TEMPLATE PICKER (ARCADE CHARACTER SELECT) */}
+      {showTemplatePicker && (
+        <TemplatePickerDialog
+          templates={DESIGN_TEMPLATES}
+          activeId={selectedTemplateId}
+          stagedId={stagedTemplateId}
+          onStage={setStagedTemplateId}
+          onApply={handleApplyStagedTemplate}
+          onClose={() => setShowTemplatePicker(false)}
+          preview={renderPreviewMockup(getDesignTemplate(stagedTemplateId))}
+        />
+      )}
 
       {/* MODAL: PREVIEW & CONFIRMATION BEFORE PUBLISH */}
       {showConfirmPublishModal && (
@@ -1425,7 +1424,7 @@ export function WebBuilderClient({
             <div className="mt-4 space-y-4 overflow-y-auto pr-1">
               {/* LIVE PREVIEW OF THE FINAL ARTICLE */}
               <div className="overflow-hidden rounded-2xl border-2 border-[#3F3766]/20 bg-white">
-                {previewMockup}
+                {renderPreviewMockup(activeTemplate)}
               </div>
 
               {/* Publication Summary */}
