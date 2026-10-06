@@ -136,12 +136,11 @@ export async function middleware(req: NextRequest) {
       } = await supabase.auth.getUser();
 
       if (user) {
-        const isAuthOrOnboardingPath =
-          url.pathname.startsWith("/onboarding") ||
-          url.pathname.startsWith("/auth") ||
-          url.pathname.startsWith("/login");
+        // Hanya gate rute studio/kreator (/builder) yang mewajibkan profil kreator & username.
+        // Halaman umum seperti landing page (/), blog (/blog), dll TIDAK boleh membajak pengunjung ke /onboarding.
+        const isBuilderPath = url.pathname.startsWith("/builder");
 
-        if (!isAuthOrOnboardingPath) {
+        if (isBuilderPath) {
           const { data: profile } = await supabase
             .from("profiles")
             .select("username")
@@ -150,7 +149,11 @@ export async function middleware(req: NextRequest) {
 
           if (!profile?.username) {
             const onboardingUrl = new URL("/onboarding", req.url);
-            return NextResponse.redirect(onboardingUrl);
+            const redirectResponse = NextResponse.redirect(onboardingUrl);
+            sessionResponse.cookies.getAll().forEach((cookie) => {
+              redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+            });
+            return redirectResponse;
           }
         }
       }
