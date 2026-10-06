@@ -151,9 +151,6 @@ export default function OnboardingForm({
     <div className="min-h-screen bg-[#FBF8F5] text-slate-800 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#F7ABC5]/20 selection:text-[#3F3766]">
       {/* Brand & Introduction Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center mb-8">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F7ABC5]/20 px-3.5 py-1 text-xs font-bold text-[#3F3766] mb-3 border border-[#F7ABC5]">
-          Langkah Terakhir • Gerbang Identitas
-        </span>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3F3766]">
           Pilih Subdomain & Nama Pena Anda
         </h1>

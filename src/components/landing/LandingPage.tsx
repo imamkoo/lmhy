@@ -74,7 +74,7 @@ export function LandingPage() {
                   <a href="#contact">Contact</a>
                 </li>
                 <li style={{ "--item": 5 } as React.CSSProperties}>
-                  <Link href="/builder" className="font-semibold text-[#b86644] hover:text-[#d07954]">
+                  <Link href="/builder" className="font-semibold text-[#3F3766] hover:text-[#3F3766]">
                     Ruang Tulis
                   </Link>
                 </li>

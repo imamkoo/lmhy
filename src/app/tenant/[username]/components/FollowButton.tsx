@@ -91,10 +91,10 @@ export function FollowButton({
         onClick={handleToggle}
         disabled={isLoading}
         aria-pressed={isFollowing}
-        className={`inline-flex items-center gap-1.5 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#d07954]/50 disabled:opacity-70 ${sizeClasses} ${
+        className={`inline-flex items-center gap-1.5 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/50 disabled:opacity-70 ${sizeClasses} ${
           isFollowing
             ? 'border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200/80 hover:text-red-700 hover:border-red-200 group'
-            : 'bg-[#d07954] text-white hover:bg-[#b86644] active:scale-[0.98]'
+            : 'bg-[#F7ABC5] text-[#3F3766] hover:bg-[#F5E7C6] active:scale-[0.98]'
         } ${className}`}
       >
         {isLoading ? (
@@ -164,7 +164,7 @@ export function FollowButton({
                 const current = typeof window !== 'undefined' ? window.location.pathname : '/';
                 router.push(`/login?next=${encodeURIComponent(current)}`);
               }}
-              className="w-full rounded-xl bg-[#d07954] py-1.5 text-center text-xs font-bold text-white hover:bg-[#b86644] transition"
+              className="w-full rounded-xl bg-[#F7ABC5] py-1.5 text-center text-xs font-bold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px] transition"
             >
               Masuk Sekarang
             </button>
