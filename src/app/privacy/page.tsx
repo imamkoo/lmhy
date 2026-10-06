@@ -189,7 +189,7 @@ export default function PrivacyPage() {
           href="/"
           className="text-sm font-semibold text-[#3F3766] hover:underline"
         >
-          ← Kembali ke LMHY
+          ← Kembali ke Beranda
         </Link>
         <header className="mb-12 mt-10 max-w-2xl">
           <p className="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[#3F3766]">
