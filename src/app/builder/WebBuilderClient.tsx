@@ -563,7 +563,7 @@ export function WebBuilderClient({
             </div>
 
             {/* Card Title */}
-            <h3 className="text-sm sm:text-base font-bold leading-snug truncate max-w-xs mx-auto">
+            <h3 className="text-sm sm:text-base font-bold leading-snug truncate max-w-xs mx-auto text-inherit">
               {title || "Judul Artikel Anda"}
             </h3>
 
