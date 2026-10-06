@@ -21,6 +21,8 @@ export interface InsertArticleInput {
   registerLitera?: boolean | null;
   creator_wallet?: string | null;
   creatorWallet?: string | null;
+  template_id?: string | null;
+  templateId?: string | null;
   published_at?: string;
   publishedAt?: string;
 }
@@ -42,6 +44,7 @@ export function convertTenantArticleToArticle(ta: TenantArticle, authorId?: stri
     media_url: ta.mediaUrl ?? '/assets/sapiens.png',
     register_litera: ta.isLiteraRegistered ?? false,
     creator_wallet: null,
+    template_id: ta.templateId ?? 'warm-sanctuary',
     published_at: ta.createdAt,
     updated_at: ta.createdAt,
   };
@@ -163,6 +166,7 @@ export async function savePersistentArticle(
     media_url: data.media_url ?? data.mediaUrl ?? '/assets/sapiens.png',
     register_litera: data.register_litera ?? data.registerLitera ?? false,
     creator_wallet: data.creator_wallet ?? data.creatorWallet ?? null,
+    template_id: data.template_id ?? data.templateId ?? 'warm-sanctuary',
     published_at: data.published_at ?? data.publishedAt ?? new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };

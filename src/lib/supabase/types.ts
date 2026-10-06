@@ -73,6 +73,7 @@ export interface Database {
           media_url: string | null
           register_litera: boolean | null
           creator_wallet: string | null
+          template_id: string | null
           published_at: string
           updated_at: string
         }
@@ -89,6 +90,7 @@ export interface Database {
           media_url?: string | null
           register_litera?: boolean | null
           creator_wallet?: string | null
+          template_id?: string | null
           published_at?: string
           updated_at?: string
         }
@@ -105,6 +107,7 @@ export interface Database {
           media_url?: string | null
           register_litera?: boolean | null
           creator_wallet?: string | null
+          template_id?: string | null
           published_at?: string
           updated_at?: string
         }

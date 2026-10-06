@@ -14,6 +14,7 @@ export interface TenantArticle {
   mediaType?: "IMAGE" | "VIDEO";
   mediaUrl?: string;
   isLiteraRegistered?: boolean;
+  templateId?: string;
 }
 
 // Initial sample articles for tenant demonstration (Empty for clean DB testing)
