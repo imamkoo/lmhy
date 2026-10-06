@@ -174,8 +174,8 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
             </span>
           </button>
 
-          <div className="rounded-2xl bg-amber-50 p-3 border border-amber-200/70 text-[11px] text-amber-900 leading-relaxed">
-            🛡️ <strong>Keamanan Terjamin:</strong> Autentikasi diproses langsung di domain resmi <code>https://literaa.xyz</code>. Kunci privat Anda tersimpan aman dan terenkripsi.
+          <div className="rounded-2xl bg-[#F5E7C6]/35 p-3.5 border border-[#3F3766]/15 text-[11px] text-[#3F3766] leading-relaxed">
+            🛡️ <strong className="font-bold text-[#3F3766]">Keamanan Terjamin:</strong> Autentikasi diproses langsung di domain resmi <code className="font-mono text-[10px] bg-white/80 px-1 py-0.5 rounded border border-[#3F3766]/15">https://literaa.xyz</code>. Kunci privat Anda tersimpan aman dan terenkripsi.
           </div>
         </div>
 
