@@ -48,7 +48,7 @@ export const DESIGN_TEMPLATES: WebDesignTemplate[] = [
       content:
         "text-[#3F3766]/85 font-medium leading-relaxed whitespace-pre-wrap font-sans",
       literaCard:
-        "rounded-3xl bg-[#171d2a] p-6 text-center border border-white/10 shadow-xl",
+        "rounded-3xl bg-[#171d2a] p-6 text-center text-white border border-white/10 shadow-xl",
     },
   },
   {

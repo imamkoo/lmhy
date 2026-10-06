@@ -246,7 +246,7 @@ export default async function TenantArticlePage({
         {/* Litera NFT Widget Resmi Web3 */}
         <div className="mt-12 border-t border-current/15 pt-8">
           <div className="mb-4">
-            <h3 className="text-lg font-bold">
+            <h3 className="text-lg font-bold text-inherit">
               Sertifikat Digital & Edisi Koleksi
             </h3>
             <p className="text-sm opacity-75">
@@ -271,7 +271,7 @@ export default async function TenantArticlePage({
         {/* Rekomendasi Tulisan Lain dari Penulis Ini */}
         {otherArticles.length > 0 && (
           <section className="mt-16 border-t border-current/15 pt-8">
-            <h3 className="mb-4 text-lg font-bold">
+            <h3 className="mb-4 text-lg font-bold text-inherit">
               Tulisan Lain oleh @{normalizedUser}
             </h3>
             <div className="space-y-3">
