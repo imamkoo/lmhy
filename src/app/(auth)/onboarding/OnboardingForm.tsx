@@ -169,15 +169,15 @@ export default function OnboardingForm({
         <div className="bg-white py-8 px-6 sm:px-10 shadow-sm border border-[#f0ebe4] rounded-3xl">
           {/* Subdomain Visual Preview Banner */}
           <div className="mb-6 rounded-2xl bg-gradient-to-br from-[#fcf9f6] to-[#f7f2eb] border border-[#eadecf] p-4 text-center">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
               Pratinjau Alamat Publik Anda
             </span>
-            <div className="font-mono text-sm sm:text-base font-semibold text-slate-800 break-all select-all flex items-center justify-center gap-1">
-              <span className="text-[#d07954]">https://</span>
-              <span className="underline decoration-[#d07954] decoration-2 underline-offset-4 text-slate-900 font-bold">
+            <div className="font-mono text-xs sm:text-sm font-semibold text-slate-800 select-all inline-flex items-center justify-center max-w-full overflow-x-auto whitespace-nowrap px-3 py-1.5 rounded-xl bg-white/70 border border-[#eadecf]/80 shadow-xs">
+              <span className="text-[#d07954] shrink-0">https://</span>
+              <span className="underline decoration-[#d07954] decoration-2 underline-offset-4 text-slate-900 font-bold shrink-0">
                 {safePreviewUser}
               </span>
-              <span className="text-slate-500">.letmehearyou.id</span>
+              <span className="text-slate-500 shrink-0">.letmehearyou.id</span>
             </div>
             <p className="text-[11px] text-slate-500 mt-2">
               Alamat ini bebas dibagikan ke media sosial, resume karya, atau pembaca Anda.
