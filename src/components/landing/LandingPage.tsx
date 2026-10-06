@@ -116,22 +116,28 @@ export function LandingPage({
                     Ruang Tulis
                   </Link>
                 </li>
-                <li style={{ "--item": 6, padding: "8px 20px 24px" } as React.CSSProperties}>
+                <li style={{ "--item": 6, padding: "8px 16px 20px" } as React.CSSProperties}>
                   {currentUser ? (
-                    <div className="flex items-center justify-center gap-1.5" style={{ marginTop: 4 }}>
+                    <div className="flex flex-col items-center gap-2" style={{ marginTop: 2 }}>
                       <Link
                         href="/builder"
-                        className="inline-flex items-center gap-1 rounded-full bg-[#F7ABC5]/30 px-3 py-1 text-xs font-bold text-[#3F3766] border border-[#3F3766]/20 hover:bg-[#F7ABC5]/60 transition"
+                        className="learn-more text-center truncate max-w-full"
+                        style={{
+                          display: "inline-block",
+                          padding: "0.7em 1.4em",
+                          fontSize: "12px",
+                          letterSpacing: "0.02em",
+                        }}
+                        title={currentUser.displayName || `@${currentUser.username || "kreator"}`}
                       >
-                        <span>👤 {currentUser.displayName || `@${currentUser.username}`}</span>
+                        {currentUser.username ? `@${currentUser.username}` : (currentUser.displayName || "Kreator")}
                       </Link>
-                      <form action={signOutAction} className="inline-flex">
+                      <form action={signOutAction} className="w-full flex justify-center">
                         <button
                           type="submit"
-                          title="Keluar"
-                          className="rounded-full bg-slate-200/60 hover:bg-red-100 hover:text-red-600 text-slate-500 text-[10px] font-bold px-2 py-1 transition border border-slate-300"
+                          className="w-full text-center text-xs font-semibold text-[#3F3766]/70 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg py-1.5 px-3 transition"
                         >
-                          Keluar
+                          Keluar dari Akun
                         </button>
                       </form>
                     </div>
