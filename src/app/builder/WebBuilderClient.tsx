@@ -31,6 +31,7 @@ export function WebBuilderClient({
   const [authUser, setAuthUser] = useState<{ id: string; email?: string } | null>(initialUser || null);
   const [authProfile, setAuthProfile] = useState<{ username: string; display_name: string } | null>(initialProfile || null);
   const [showPublishSuccessModal, setShowPublishSuccessModal] = useState(false);
+  const [showConfirmPublishModal, setShowConfirmPublishModal] = useState(false);
   const [publishedData, setPublishedData] = useState<{ url: string; slug: string; title: string } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -320,6 +321,7 @@ export function WebBuilderClient({
     }
     if (!title.trim() || !content.trim()) {
       setError("Judul dan isi tulisan wajib diisi.");
+      setMobileActiveTab("editor");
       return;
     }
 
@@ -327,9 +329,15 @@ export function WebBuilderClient({
     if (registerLitera && !creatorWallet) {
       setError("Peringatan Keamanan: Penerbitan Web3 diaktifkan, namun akun Litera belum terhubung. Hubungkan akun Litera terlebih dahulu agar sertifikat NFT terbit atas nama dompet Anda, atau matikan penerbitan Web3.");
       setIsLoginModalOpen(true);
+      setMobileActiveTab("editor");
       return;
     }
 
+    setError(null);
+    setShowConfirmPublishModal(true);
+  };
+
+  const handleConfirmPublish = async () => {
     setIsSubmitting(true);
     setError(null);
 
@@ -372,6 +380,7 @@ export function WebBuilderClient({
 
       // Lock username upon successful publishing
       setIsPublished(true);
+      setShowConfirmPublishModal(false);
 
       // Clean local draft storage
       if (typeof window !== "undefined") {
@@ -416,6 +425,174 @@ export function WebBuilderClient({
       // fallback
     }
   };
+
+  const previewMockup = (
+    <div className="rounded-[32px] border-4 border-[#3F3766] bg-white shadow-[0_16px_40px_rgba(63,55,102,0.18),0_0_24px_rgba(247,171,197,0.3)] overflow-hidden transition-all flex flex-col lg:min-h-0 lg:flex-1">
+
+      {/* SIMULATED BROWSER TOP BAR */}
+      <div className="shrink-0 bg-[#3F3766] px-4 py-3 flex items-center justify-between gap-3 border-b-2 border-[#3F3766]">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-black/20"></span>
+          <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-black/20"></span>
+          <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-black/20"></span>
+        </div>
+
+        <div className="flex-1 max-w-sm mx-auto flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-mono font-medium text-[#F5E7C6] border border-white/15 truncate shadow-inner">
+          <span>https://{cleanUser}.{activeBaseDomain}</span>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <span className="text-[10px] font-mono font-bold text-[#F7ABC5] bg-white/10 px-2 py-0.5 rounded-full">
+            {activeTemplate.name}
+          </span>
+        </div>
+      </div>
+
+      {/* SIMULATED TENANT BLOG PAGE CONTENT WITH DYNAMIC TEMPLATE STYLING */}
+      <div
+        className={`p-6 sm:p-8 min-h-[460px] lg:min-h-0 lg:flex-1 overflow-y-auto space-y-6 transition-colors ${activeTemplate.previewClass.container}`}
+      >
+        
+        {/* Simulated Header */}
+        <div className={`flex items-center justify-between gap-4 ${activeTemplate.previewClass.header}`}>
+          <div className="flex items-center gap-2.5">
+            <div
+              className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${activeTemplate.previewClass.authorAvatar}`}
+            >
+              {cleanUser.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className={`text-xs ${activeTemplate.previewClass.authorName}`}>
+                @{cleanUser}
+              </p>
+              <p className={`text-[10px] ${activeTemplate.previewClass.authorSub}`}>
+                Ruang Publikasi Pribadi
+              </p>
+            </div>
+          </div>
+
+          {registerLitera && (
+            <span className={activeTemplate.previewClass.badge}>
+              Web3 Verified
+            </span>
+          )}
+        </div>
+
+        {/* Article Body */}
+        <article className="space-y-4">
+          {/* Media Header (Image or Video) */}
+          {mediaPreview && (
+            <div className={activeTemplate.previewClass.mediaCard}>
+              {mediaType === "VIDEO" ? (
+                <video
+                  src={mediaPreview}
+                  controls
+                  className="w-full max-h-56 object-cover bg-black"
+                />
+              ) : (
+                <div className="relative w-full h-48 sm:h-56 flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={mediaPreview}
+                    alt={title || "Cover Artikel"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-1.5">
+            {tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+              .map((tag, idx) => (
+                <span
+                  key={idx}
+                  className={activeTemplate.previewClass.tag}
+                >
+                  #{tag}
+                </span>
+              ))}
+          </div>
+
+          <h1 className={`text-xl sm:text-2xl leading-snug ${activeTemplate.previewClass.title}`}>
+            {title || "Judul Tulisan Anda"}
+          </h1>
+
+          {excerpt && (
+            <p className={`text-xs sm:text-sm ${activeTemplate.previewClass.excerpt}`}>
+              &ldquo;{excerpt}&rdquo;
+            </p>
+          )}
+
+          <div className={`text-xs sm:text-sm ${activeTemplate.previewClass.content}`}>
+            {content || "Tuliskan materi atau catatan refleksi Anda pada panel sebelah kiri..."}
+          </div>
+        </article>
+
+        {/* LITERA OFFICIAL NFT EMBED CARD WITH THEME HARMONY */}
+        {registerLitera ? (
+          <div className={activeTemplate.previewClass.literaCard}>
+            
+            {/* Artwork Cover */}
+            <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-[#c5baa7] flex items-center justify-center">
+              <Image
+                src="/assets/sapiens.png"
+                alt="Artwork Cover"
+                width={180}
+                height={180}
+                className="object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.3)] opacity-95"
+              />
+              <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 border border-white/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#f27438] animate-pulse"></span>
+                <span className="text-[9px] font-bold !text-white">
+                  Let Me Hear You
+                </span>
+              </div>
+            </div>
+
+            {/* Collection Pill */}
+            <div className="mt-4 mb-2 inline-flex items-center gap-1.5 rounded-full bg-black/30 border border-white/20 px-3 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+              <span>
+                {selectedCollection && selectedCollection !== "__new__"
+                  ? selectedCollection
+                  : newCollectionName || "THE EVERYDAY HUMAN"}
+              </span>
+            </div>
+
+            {/* Card Title */}
+            <h3 className="text-sm sm:text-base font-bold leading-snug truncate max-w-xs mx-auto">
+              {title || "Judul Artikel Anda"}
+            </h3>
+
+            {/* Action CTA Button */}
+            <button
+              type="button"
+              className="w-full max-w-xs mx-auto mt-4 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#cf6e3e] to-[#b8582d] !text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all"
+            >
+              Miliki Edisi Digital
+            </button>
+
+            <div className="mt-3 flex items-center justify-center gap-1.5 text-[9px] opacity-70">
+              <span>Powered by Litera Protocol</span>
+            </div>
+
+          </div>
+        ) : (
+          <div className="mt-6 rounded-xl border border-dashed border-current/20 p-3 text-center text-[11px] opacity-60">
+            Penerbitan Web3 Dinonaktifkan (Artikel diterbitkan sebagai blog standar)
+          </div>
+        )}
+
+        <div className="pt-4 border-t border-current/10 flex items-center justify-between text-[10px] opacity-60">
+          <span>Diterbitkan via Let Me Hear You</span>
+          <span className="font-mono">Hari ini</span>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen relative">
@@ -603,8 +780,8 @@ export function WebBuilderClient({
 
       {/* 1. TOP STUDIO NAVIGATION BAR */}
       <header className="sticky top-0 z-30 border-b border-[#3F3766]/15 bg-[#F5E7C6]/90 backdrop-blur-md px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border-2 border-[#3F3766]/20 shadow-sm transition hover:border-[#3F3766]"
@@ -687,7 +864,7 @@ export function WebBuilderClient({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
             {/* MOBILE ONLY SWITCHER (EDITOR VS PREVIEW) */}
             <div className="flex lg:hidden items-center rounded-xl bg-white/70 p-1 border-2 border-[#3F3766]/15 shadow-inner">
               <button
@@ -742,9 +919,9 @@ export function WebBuilderClient({
             <button
               onClick={() => handleSubmit()}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#F7ABC5] px-6 py-2.5 text-xs font-black tracking-wide text-[#3F3766] uppercase shadow-[0_4px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all border-2 border-[#3F3766] disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-xl bg-[#F7ABC5] px-4 sm:px-6 py-2.5 text-xs font-black tracking-wide text-[#3F3766] uppercase shadow-[0_4px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all border-2 border-[#3F3766] disabled:opacity-50"
             >
-              {isSubmitting ? "Menerbitkan..." : "Terbitkan Blog"}
+              {isSubmitting ? "Menerbitkan..." : "Terbitkan"}
             </button>
 
             {authUser && (
@@ -1201,171 +1378,7 @@ export function WebBuilderClient({
                   previewDevice === "mobile" ? "max-w-sm" : "max-w-full"
                 }`}
               >
-                <div className="rounded-[32px] border-4 border-[#3F3766] bg-white shadow-[0_16px_40px_rgba(63,55,102,0.18),0_0_24px_rgba(247,171,197,0.3)] overflow-hidden transition-all flex flex-col lg:min-h-0 lg:flex-1">
-
-                  {/* SIMULATED BROWSER TOP BAR */}
-                  <div className="shrink-0 bg-[#3F3766] px-4 py-3 flex items-center justify-between gap-3 border-b-2 border-[#3F3766]">
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-black/20"></span>
-                      <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-black/20"></span>
-                      <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-black/20"></span>
-                    </div>
-
-                    <div className="flex-1 max-w-sm mx-auto flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-mono font-medium text-[#F5E7C6] border border-white/15 truncate shadow-inner">
-                      <span>https://{cleanUser}.{activeBaseDomain}</span>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <span className="text-[10px] font-mono font-bold text-[#F7ABC5] bg-white/10 px-2 py-0.5 rounded-full">
-                        {activeTemplate.name}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* SIMULATED TENANT BLOG PAGE CONTENT WITH DYNAMIC TEMPLATE STYLING */}
-                  <div
-                    className={`p-6 sm:p-8 min-h-[460px] lg:min-h-0 lg:flex-1 overflow-y-auto space-y-6 transition-colors ${activeTemplate.previewClass.container}`}
-                  >
-                    
-                    {/* Simulated Header */}
-                    <div className={`flex items-center justify-between gap-4 ${activeTemplate.previewClass.header}`}>
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${activeTemplate.previewClass.authorAvatar}`}
-                        >
-                          {cleanUser.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className={`text-xs ${activeTemplate.previewClass.authorName}`}>
-                            @{cleanUser}
-                          </p>
-                          <p className={`text-[10px] ${activeTemplate.previewClass.authorSub}`}>
-                            Ruang Publikasi Pribadi
-                          </p>
-                        </div>
-                      </div>
-
-                      {registerLitera && (
-                        <span className={activeTemplate.previewClass.badge}>
-                          Web3 Verified
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Article Body */}
-                    <article className="space-y-4">
-                      {/* Media Header (Image or Video) */}
-                      {mediaPreview && (
-                        <div className={activeTemplate.previewClass.mediaCard}>
-                          {mediaType === "VIDEO" ? (
-                            <video
-                              src={mediaPreview}
-                              controls
-                              className="w-full max-h-56 object-cover bg-black"
-                            />
-                          ) : (
-                            <div className="relative w-full h-48 sm:h-56 flex items-center justify-center">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={mediaPreview}
-                                alt={title || "Cover Artikel"}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {tags
-                          .split(",")
-                          .map((t) => t.trim())
-                          .filter(Boolean)
-                          .map((tag, idx) => (
-                            <span
-                              key={idx}
-                              className={activeTemplate.previewClass.tag}
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                      </div>
-
-                      <h1 className={`text-xl sm:text-2xl leading-snug ${activeTemplate.previewClass.title}`}>
-                        {title || "Judul Tulisan Anda"}
-                      </h1>
-
-                      {excerpt && (
-                        <p className={`text-xs sm:text-sm ${activeTemplate.previewClass.excerpt}`}>
-                          &ldquo;{excerpt}&rdquo;
-                        </p>
-                      )}
-
-                      <div className={`text-xs sm:text-sm ${activeTemplate.previewClass.content}`}>
-                        {content || "Tuliskan materi atau catatan refleksi Anda pada panel sebelah kiri..."}
-                      </div>
-                    </article>
-
-                    {/* LITERA OFFICIAL NFT EMBED CARD WITH THEME HARMONY */}
-                    {registerLitera ? (
-                      <div className={activeTemplate.previewClass.literaCard}>
-                        
-                        {/* Artwork Cover */}
-                        <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-[#c5baa7] flex items-center justify-center">
-                          <Image
-                            src="/assets/sapiens.png"
-                            alt="Artwork Cover"
-                            width={180}
-                            height={180}
-                            className="object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.3)] opacity-95"
-                          />
-                          <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 border border-white/20">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#f27438] animate-pulse"></span>
-                            <span className="text-[9px] font-bold !text-white">
-                              Let Me Hear You
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Collection Pill */}
-                        <div className="mt-4 mb-2 inline-flex items-center gap-1.5 rounded-full bg-black/30 border border-white/20 px-3 py-0.5 text-[9px] font-bold uppercase tracking-wider">
-                          <span>
-                            {selectedCollection && selectedCollection !== "__new__"
-                              ? selectedCollection
-                              : newCollectionName || "THE EVERYDAY HUMAN"}
-                          </span>
-                        </div>
-
-                        {/* Card Title */}
-                        <h3 className="text-sm sm:text-base font-bold leading-snug truncate max-w-xs mx-auto">
-                          {title || "Judul Artikel Anda"}
-                        </h3>
-
-                        {/* Action CTA Button */}
-                        <button
-                          type="button"
-                          className="w-full max-w-xs mx-auto mt-4 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#cf6e3e] to-[#b8582d] !text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all"
-                        >
-                          Miliki Edisi Digital
-                        </button>
-
-                        <div className="mt-3 flex items-center justify-center gap-1.5 text-[9px] opacity-70">
-                          <span>Powered by Litera Protocol</span>
-                        </div>
-
-                      </div>
-                    ) : (
-                      <div className="mt-6 rounded-xl border border-dashed border-current/20 p-3 text-center text-[11px] opacity-60">
-                        Penerbitan Web3 Dinonaktifkan (Artikel diterbitkan sebagai blog standar)
-                      </div>
-                    )}
-
-                    <div className="pt-4 border-t border-current/10 flex items-center justify-between text-[10px] opacity-60">
-                      <span>Diterbitkan via Let Me Hear You</span>
-                      <span className="font-mono">Hari ini</span>
-                    </div>
-                  </div>
-                </div>
+                {previewMockup}
 
                 <div className="mx-auto h-2 w-3/4 shrink-0 rounded-full bg-[#3F3766]/10 blur-sm mt-3"></div>
               </div>
@@ -1374,6 +1387,126 @@ export function WebBuilderClient({
 
         </div>
       </div>
+
+      {/* MODAL: PREVIEW & CONFIRMATION BEFORE PUBLISH */}
+      {showConfirmPublishModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/85 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          onClick={() => setShowConfirmPublishModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Pratinjau dan konfirmasi penerbitan"
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-lg max-h-[92vh] flex-col rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] p-5 shadow-[0_24px_70px_rgba(63,55,102,0.5)]"
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black text-[#3F3766] tracking-tight">
+                  Pratinjau &amp; Konfirmasi Terbit
+                </h2>
+                <p className="text-[11px] text-[#3F3766]/70 leading-relaxed">
+                  Periksa tampilan artikel di bawah ini sebelum benar-benar diterbitkan.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConfirmPublishModal(false)}
+                className="rounded-lg p-2 text-xs font-bold text-[#3F3766]/50 hover:text-[#3F3766] hover:bg-white transition"
+                aria-label="Tutup pratinjau"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Preview & Notes */}
+            <div className="mt-4 space-y-4 overflow-y-auto pr-1">
+              {/* LIVE PREVIEW OF THE FINAL ARTICLE */}
+              <div className="overflow-hidden rounded-2xl border-2 border-[#3F3766]/20 bg-white">
+                {previewMockup}
+              </div>
+
+              {/* Publication Summary */}
+              <div className="space-y-1.5 rounded-2xl border-2 border-[#3F3766]/15 bg-white p-3.5">
+                <div className="flex items-start justify-between gap-3 text-[11px]">
+                  <span className="shrink-0 font-bold text-[#3F3766]/60">Alamat Artikel</span>
+                  <span className="font-mono font-bold text-[#3F3766] text-right break-all">
+                    {domainPreview}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-[11px]">
+                  <span className="shrink-0 font-bold text-[#3F3766]/60">Desain Template</span>
+                  <span className="font-bold text-[#3F3766] text-right">{activeTemplate.name}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-[11px]">
+                  <span className="shrink-0 font-bold text-[#3F3766]/60">Sertifikat Web3 Litera</span>
+                  <span className={`font-bold ${registerLitera ? "text-emerald-700" : "text-[#3F3766]/60"}`}>
+                    {registerLitera && creatorWallet
+                      ? `Aktif • ${creatorWallet.slice(0, 6)}…${creatorWallet.slice(-4)}`
+                      : "Nonaktif"}
+                  </span>
+                </div>
+              </div>
+
+              {/* IMPORTANT: DATA THAT CANNOT BE CHANGED */}
+              <div className="rounded-2xl border-2 border-[#F7ABC5] bg-[#F5E7C6]/40 p-3.5 space-y-2">
+                <p className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
+                  ⚠️ Catatan Penting — Tidak Bisa Diubah Setelah Terbit
+                </p>
+                <ul className="space-y-1.5 text-[11px] text-[#3F3766]/85 leading-relaxed list-disc pl-4">
+                  <li>
+                    <strong>Alamat subdomain dikunci.</strong> {domainPreview} tidak dapat diubah lagi
+                    setelah artikel terbit.
+                  </li>
+                  <li>
+                    <strong>URL artikel permanen.</strong> Alamat dibuat otomatis dari judul dan tidak
+                    dapat diganti.
+                  </li>
+                  {registerLitera && creatorWallet && (
+                    <li>
+                      <strong>Sertifikat Litera bersifat permanen.</strong> Tercatat di blockchain
+                      Polygon atas dompet {creatorWallet.slice(0, 6)}…{creatorWallet.slice(-4)} dan
+                      tidak dapat diedit atau dihapus.
+                    </li>
+                  )}
+                  <li>
+                    <strong>Studio terkunci.</strong> Setelah terbit, draf lokal dihapus dan panel
+                    studio terkunci — pastikan semua data sudah benar.
+                  </li>
+                </ul>
+              </div>
+
+              {error && (
+                <div className="rounded-2xl border-2 border-red-500 bg-red-50 p-3 text-[11px] font-bold text-red-800 leading-relaxed">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setShowConfirmPublishModal(false)}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl border-2 border-[#3F3766]/25 bg-white px-4 py-3 text-xs font-bold text-[#3F3766]/80 hover:bg-[#F5E7C6]/40 transition disabled:opacity-50"
+              >
+                ← Kembali Mengedit
+              </button>
+              <button
+                type="button"
+                onClick={() => handleConfirmPublish()}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl bg-[#F7ABC5] px-4 py-3 text-xs font-black uppercase tracking-wide text-[#3F3766] border-2 border-[#3F3766] shadow-[0_4px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all disabled:opacity-50"
+              >
+                {isSubmitting ? "Menerbitkan..." : "Terbitkan Sekarang"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL AUTH LITERA POPUP */}
       <LiteraLoginModal
