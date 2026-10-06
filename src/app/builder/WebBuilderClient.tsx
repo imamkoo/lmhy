@@ -382,23 +382,23 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       {!authLoading && !authUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] p-6 sm:p-8 shadow-[0_20px_60px_rgba(63,55,102,0.4)] text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#d07954]/15 border-2 border-[#d07954]/30 text-3xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F7ABC5]/25 border-2 border-[#F7ABC5] text-3xl shadow-[0_4px_12px_rgba(247,171,197,0.4)]">
               ✍️
             </div>
-            <span className="inline-block rounded-full bg-[#d07954]/15 px-3 py-1 text-xs font-bold text-[#d07954] mb-2">
+            <span className="inline-block rounded-full bg-[#F7ABC5]/20 border border-[#F7ABC5] px-3 py-1 text-xs font-bold text-[#3F3766] mb-2">
               Studio Web Builder
             </span>
             <h2 className="text-xl font-black text-[#3F3766] tracking-tight">
               Masuk untuk Mulai Menulis
             </h2>
             <p className="mt-2 text-xs text-[#3F3766]/70 leading-relaxed">
-              Daftar atau masuk ke akun Anda untuk menerbitkan refleksi di subdomain pribadi Anda (<span className="font-mono font-bold text-[#d07954]">nama.letmehearyou.id</span>) dan mengamankan sertifikat digital Litera Web3.
+              Daftar atau masuk ke akun Anda untuk menerbitkan refleksi di subdomain pribadi Anda (<span className="font-mono font-bold text-[#3F3766] underline decoration-[#F7ABC5] decoration-2 underline-offset-2">nama.letmehearyou.id</span>) dan mengamankan sertifikat digital Litera Web3.
             </p>
 
             <div className="mt-6 space-y-3">
               <Link
                 href="/login?next=/builder"
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#d07954] py-3.5 text-sm font-bold text-white shadow-[0_4px_0_0_#b86644] hover:bg-[#b86644] transition active:translate-y-1"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#F7ABC5] py-3.5 text-sm font-black text-[#3F3766] shadow-[0_6px_0_0_#3F3766] hover:bg-[#F5E7C6] hover:shadow-[0_4px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[5px] transition focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none"
               >
                 Masuk / Buat Akun Kreator
               </Link>
@@ -445,7 +445,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/50 block">
                   Link Publikasi
                 </span>
-                <p className="font-mono text-xs font-bold text-[#d07954] truncate">
+                <p className="font-mono text-xs font-bold text-[#3F3766] truncate">
                   {publishedData.url}
                 </p>
               </div>
@@ -492,7 +492,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                 href={publishedData.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#d07954] hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#3F3766] hover:text-[#3F3766]/70 hover:underline"
               >
                 <span>Lihat Artikel Live ↗</span>
               </a>
@@ -590,7 +590,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                   Studio Canvas
                 </span>
                 {authProfile?.display_name && (
-                  <span className="hidden sm:inline-block text-[11px] font-bold text-[#d07954]">
+                  <span className="hidden sm:inline-block text-[11px] font-bold text-[#3F3766]/60">
                     ({authProfile.display_name})
                   </span>
                 )}
