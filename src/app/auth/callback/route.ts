@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { getSessionCookieOptions } from '@/lib/supabase/cookie';
+import type { Database } from '@/lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +13,40 @@ export async function GET(request: Request) {
 
   if (code) {
     try {
-      const supabase = await createClient();
+      const cookieStore = await cookies();
+      const host = request.headers.get('host') || '';
+      const cookieOptions = getSessionCookieOptions(host);
+
+      // Track cookies that need to be set on the redirect response
+      const responseCookies: Array<{
+        name: string;
+        value: string;
+        options: Record<string, unknown>;
+      }> = [];
+
+      const supabase = createServerClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        {
+          cookieOptions,
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                const merged = {
+                  ...options,
+                  ...(cookieOptions.domain ? { domain: cookieOptions.domain } : {}),
+                };
+                cookieStore.set(name, value, merged);
+                responseCookies.push({ name, value, options: merged });
+              });
+            },
+          },
+        }
+      );
+
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (!error && data.user) {
@@ -21,13 +57,21 @@ export async function GET(request: Request) {
           .eq('id', data.user.id)
           .maybeSingle();
 
+        let targetUrl: string;
         if (!profile?.username) {
-          return NextResponse.redirect(`${origin}/onboarding`);
+          targetUrl = `${origin}/onboarding`;
+        } else {
+          const redirectPath = next.startsWith('/') ? next : `/${next}`;
+          targetUrl = `${origin}${redirectPath}`;
         }
 
-        // Return user to requested path
-        const redirectPath = next.startsWith('/') ? next : `/${next}`;
-        return NextResponse.redirect(`${origin}${redirectPath}`);
+        const response = NextResponse.redirect(targetUrl);
+        responseCookies.forEach(({ name, value, options }) => {
+          // Explicitly attach all session cookies to the redirect response
+          response.cookies.set(name, value, options);
+        });
+
+        return response;
       }
     } catch (err) {
       console.error('Auth callback exchange error:', err);
