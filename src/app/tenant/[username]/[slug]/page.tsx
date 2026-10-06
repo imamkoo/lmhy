@@ -6,6 +6,7 @@ import { getTenantArticleBySlug, getTenantArticles } from "@/lib/tenant-storage"
 import { getArticleBySlug } from "@/lib/article-storage";
 import { getProfileByUsername } from "@/lib/profile-storage";
 import { getCommentsByArticle, getFollowStatus } from "@/lib/comment-storage";
+import { getDesignTemplate } from "@/lib/design-templates";
 import { createClient } from "@/lib/supabase/server";
 import { SocialShareBar } from "../components/SocialShareBar";
 import { CommentSection } from "../components/CommentSection";
@@ -86,6 +87,8 @@ export default async function TenantArticlePage({
   const mediaUrl = dbArticle?.media_url || legacyArticle?.mediaUrl;
   const mediaType = dbArticle?.media_type || legacyArticle?.mediaType || "IMAGE";
   const publishedAt = dbArticle?.published_at || legacyArticle?.createdAt;
+  const templateId = dbArticle?.template_id || legacyArticle?.templateId || "warm-sanctuary";
+  const activeTemplate = getDesignTemplate(templateId);
 
   const otherArticles = getTenantArticles(normalizedUser).filter(
     (a) => a.slug !== slug
@@ -132,48 +135,53 @@ export default async function TenantArticlePage({
   const articleCanonicalUrl = `https://${normalizedUser}.letmehearyou.id/${slug}`;
 
   return (
-    <main className="min-h-screen bg-[#fbf8f5] px-6 py-12 text-slate-900 md:px-12">
+    <main className={`min-h-screen px-4 sm:px-6 py-8 sm:py-12 transition-colors ${activeTemplate.previewClass.container}`}>
       <article className="mx-auto max-w-3xl">
         {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pb-4 border-b border-current/10">
           <Link
             href="/"
-            className="text-sm font-semibold text-[#3F3766] hover:underline"
+            className="text-xs sm:text-sm font-semibold hover:underline opacity-80 hover:opacity-100 transition"
           >
             ← Kembali ke profil @{normalizedUser}
           </Link>
-          <Link
-            href={getBuilderUrl(normalizedUser)}
-            className="text-xs font-semibold text-slate-500 hover:text-[#3F3766]"
-          >
-            + Tulis Baru
-          </Link>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-block text-[10px] uppercase font-bold opacity-60">
+              Tema: {activeTemplate.name}
+            </span>
+            <Link
+              href={getBuilderUrl(normalizedUser)}
+              className="text-xs font-semibold opacity-70 hover:opacity-100 transition"
+            >
+              + Tulis Baru
+            </Link>
+          </div>
         </div>
 
         {/* Header */}
-        <header className="mb-10 mt-8 border-b border-slate-200 pb-8">
+        <header className={`mb-8 sm:mb-10 mt-6 sm:mt-8 pb-6 sm:pb-8 ${activeTemplate.previewClass.header}`}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-[#F7ABC5]/20 px-3 py-1 text-xs font-bold text-[#3F3766]">
+            <span className={activeTemplate.previewClass.badge}>
               Ruang Refleksi @{normalizedUser}
             </span>
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                className={activeTemplate.previewClass.tag}
               >
                 #{tag}
               </span>
             ))}
           </div>
 
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">
+          <h1 className={`text-2xl sm:text-4xl md:text-5xl leading-tight ${activeTemplate.previewClass.title}`}>
             {title}
           </h1>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-500">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm opacity-80">
             <div className="flex flex-wrap items-center gap-3">
-              <span>
-                Ditulis oleh <strong>@{normalizedUser}</strong>
+              <span className={activeTemplate.previewClass.authorName}>
+                Ditulis oleh @{normalizedUser}
               </span>
               {authorId && authUser?.id !== authorId && (
                 <FollowButton
@@ -186,7 +194,7 @@ export default async function TenantArticlePage({
             </div>
 
             {publishedAt && (
-              <span>
+              <span className="opacity-70">
                 {new Date(publishedAt).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "long",
@@ -199,7 +207,7 @@ export default async function TenantArticlePage({
 
         {/* Media Cover (Image or Video) */}
         {mediaUrl && (
-          <div className="mb-8 overflow-hidden rounded-3xl border-2 border-slate-200 shadow-sm">
+          <div className={`mb-8 ${activeTemplate.previewClass.mediaCard}`}>
             {mediaType === "VIDEO" ? (
               <video
                 src={mediaUrl}
@@ -207,7 +215,7 @@ export default async function TenantArticlePage({
                 className="w-full max-h-[480px] object-cover bg-black"
               />
             ) : (
-              <div className="relative w-full h-72 sm:h-96 bg-slate-100 flex items-center justify-center">
+              <div className="relative w-full h-64 sm:h-80 md:h-96 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={mediaUrl}
@@ -220,7 +228,7 @@ export default async function TenantArticlePage({
         )}
 
         {/* Konten Tulisan */}
-        <div className="prose prose-slate max-w-none text-lg leading-relaxed text-slate-700">
+        <div className={`text-base sm:text-lg leading-relaxed ${activeTemplate.previewClass.content}`}>
           {content.split("\n\n").map((paragraph, i) => (
             <p key={i} className="mb-6 whitespace-pre-line leading-relaxed">
               {paragraph}
@@ -236,12 +244,12 @@ export default async function TenantArticlePage({
         />
 
         {/* Litera NFT Widget Resmi Web3 */}
-        <div className="mt-12 border-t border-slate-200 pt-8">
+        <div className="mt-12 border-t border-current/15 pt-8">
           <div className="mb-4">
-            <h3 className="text-lg font-bold text-slate-900">
+            <h3 className="text-lg font-bold">
               Sertifikat Digital & Edisi Koleksi
             </h3>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm opacity-75">
               Dukung penulis dan simpan bukti keterlibatan Anda sebagai sertifikat digital resmi di Polygon melalui Litera.
             </p>
           </div>
@@ -262,23 +270,23 @@ export default async function TenantArticlePage({
 
         {/* Rekomendasi Tulisan Lain dari Penulis Ini */}
         {otherArticles.length > 0 && (
-          <section className="mt-16 border-t border-slate-200 pt-8">
-            <h3 className="mb-4 text-lg font-bold text-slate-900">
+          <section className="mt-16 border-t border-current/15 pt-8">
+            <h3 className="mb-4 text-lg font-bold">
               Tulisan Lain oleh @{normalizedUser}
             </h3>
             <div className="space-y-3">
               {otherArticles.slice(0, 3).map((other) => (
                 <div
                   key={other.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-[#F7ABC5]"
+                  className="flex items-center justify-between rounded-xl border border-current/15 bg-white/40 backdrop-blur-sm p-4 transition hover:border-current/40"
                 >
                   <Link
                     href={`/${other.slug}`}
-                    className="font-semibold text-slate-800 hover:text-[#3F3766]"
+                    className="font-semibold hover:underline"
                   >
                     {other.title}
                   </Link>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs opacity-60">
                     {new Date(other.createdAt).toLocaleDateString("id-ID", {
                       day: "numeric",
                       month: "short",

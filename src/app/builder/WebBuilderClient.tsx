@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { REFLECTION_TEMPLATES, ReflectionTemplate } from "@/lib/builder-templates";
+import {
+  DESIGN_TEMPLATES,
+  getDesignTemplate,
+  DEFAULT_TEMPLATE_ID,
+  WebDesignTemplate,
+} from "@/lib/design-templates";
 import { publishTenantArticle } from "@/app/actions/tenant";
 import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
 import { createClient } from "@/lib/supabase/client";
@@ -38,14 +44,15 @@ export function WebBuilderClient({
   const [isPublished, setIsPublished] = useState(false);
 
   // 2. Template & Article Content State
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("burnout-recovery");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
   const [title, setTitle] = useState(REFLECTION_TEMPLATES[0].defaultTitle);
   const [excerpt, setExcerpt] = useState(REFLECTION_TEMPLATES[0].defaultExcerpt);
   const [content, setContent] = useState(REFLECTION_TEMPLATES[0].content);
   const [tags, setTags] = useState(REFLECTION_TEMPLATES[0].defaultTags);
 
-  // 3. Preview Device
+  // 3. Preview Device & Mobile View Tabs ("editor" vs "preview")
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [mobileActiveTab, setMobileActiveTab] = useState<"editor" | "preview">("editor");
 
   // 4. Litera Web3 State (Unified & Hardened)
   const [registerLitera, setRegisterLitera] = useState(true);
@@ -266,8 +273,11 @@ export function WebBuilderClient({
     }
   };
 
-  const handleSelectTemplate = (template: ReflectionTemplate) => {
-    setSelectedTemplateId(template.id);
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+  };
+
+  const handleApplyReflectionPrompt = (template: ReflectionTemplate) => {
     if (template.id !== "blank-canvas") {
       setTitle(template.defaultTitle);
       setExcerpt(template.defaultExcerpt);
@@ -298,6 +308,7 @@ export function WebBuilderClient({
 
   const cleanUser = username.trim() || "nama-domain";
   const domainPreview = `https://${cleanUser}.${activeBaseDomain}`;
+  const activeTemplate: WebDesignTemplate = getDesignTemplate(selectedTemplateId);
 
   // Handle Form Submission with Strict Security Hardening
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -343,6 +354,7 @@ export function WebBuilderClient({
         excerpt,
         content,
         tags,
+        templateId: selectedTemplateId,
         registerLitera,
         creatorAddress: creatorWallet || undefined,
         collectionName: finalCollection,
@@ -676,6 +688,32 @@ export function WebBuilderClient({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* MOBILE ONLY SWITCHER (EDITOR VS PREVIEW) */}
+            <div className="flex lg:hidden items-center rounded-xl bg-white/70 p-1 border-2 border-[#3F3766]/15 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setMobileActiveTab("editor")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  mobileActiveTab === "editor"
+                    ? "bg-[#3F3766] text-white shadow-sm"
+                    : "text-[#3F3766]/70 hover:text-[#3F3766]"
+                }`}
+              >
+                Editor
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileActiveTab("preview")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  mobileActiveTab === "preview"
+                    ? "bg-[#3F3766] text-white shadow-sm"
+                    : "text-[#3F3766]/70 hover:text-[#3F3766]"
+                }`}
+              >
+                Pratinjau
+              </button>
+            </div>
+
             <div className="hidden md:flex items-center rounded-xl bg-white/70 p-1 border-2 border-[#3F3766]/15 shadow-inner">
               <button
                 type="button"
@@ -729,7 +767,11 @@ export function WebBuilderClient({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* PANEL KIRI: UNIFIED STREAMLINED CONTROL DECK (COL-SPAN-5) */}
-          <div className="lg:col-span-5 space-y-6">
+          <div
+            className={`lg:col-span-5 space-y-6 ${
+              mobileActiveTab === "preview" ? "hidden lg:block" : "block"
+            }`}
+          >
 
             {/* ERROR BANNER */}
             {error && (
@@ -738,40 +780,85 @@ export function WebBuilderClient({
               </div>
             )}
 
-            {/* SECTION 1: PRESET TEMPLATE SELECTION */}
+            {/* SECTION 1: VISUAL DESIGN TEMPLATE SELECTION (5 PRESETS) */}
             <div className="rounded-3xl bg-white p-5 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
-                  Pilihan Tema Refleksi
-                </label>
-                <span className="text-[10px] font-bold text-[#F7ABC5] bg-[#3F3766] px-2 py-0.5 rounded-full">
-                  Preset Siap Pakai
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-[#3F3766] block">
+                    Pilihan Desain Tampilan Web
+                  </label>
+                  <p className="text-[10px] text-[#3F3766]/60 mt-0.5">
+                    Ganti gaya visual & tipografi artikel tanpa menghapus tulisan Anda.
+                  </p>
+                </div>
+                <span className="shrink-0 text-[10px] font-bold text-[#3F3766] bg-[#F7ABC5] px-2.5 py-0.5 rounded-full border border-[#3F3766]/20">
+                  {DESIGN_TEMPLATES.length} Gaya
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                {REFLECTION_TEMPLATES.map((tmpl) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {DESIGN_TEMPLATES.map((tmpl) => {
                   const isSelected = selectedTemplateId === tmpl.id;
                   return (
                     <button
                       key={tmpl.id}
                       type="button"
-                      onClick={() => handleSelectTemplate(tmpl)}
-                      className={`flex flex-col text-left p-3 rounded-2xl border-2 transition-all relative overflow-hidden ${
+                      onClick={() => handleSelectTemplate(tmpl.id)}
+                      className={`flex flex-col text-left p-3 rounded-2xl border-2 transition-all relative overflow-hidden group ${
                         isSelected
-                          ? "border-[#3F3766] bg-[#F7ABC5]/25 shadow-[0_3px_0_0_#3F3766]"
-                          : "border-[#3F3766]/15 bg-white hover:border-[#3F3766]/40 hover:bg-[#F5E7C6]/30"
+                          ? "border-[#3F3766] bg-[#F7ABC5]/25 shadow-[0_4px_0_0_#3F3766]"
+                          : "border-[#3F3766]/15 bg-white hover:border-[#3F3766]/40 hover:bg-[#F5E7C6]/20"
                       }`}
                     >
-                      <span className="text-xs font-black text-[#3F3766] truncate w-full">
-                        {tmpl.name}
-                      </span>
-                      <span className="text-[10px] text-[#3F3766]/60 line-clamp-1 mt-0.5">
+                      <div className="flex items-center justify-between gap-1 w-full mb-1">
+                        <span className="text-xs font-black text-[#3F3766] truncate">
+                          {tmpl.name}
+                        </span>
+                        <span
+                          className="h-3 w-3 rounded-full shrink-0 border border-black/20"
+                          style={{ backgroundColor: tmpl.accentColor }}
+                          title={`Warna Aksen: ${tmpl.accentColor}`}
+                        />
+                      </div>
+                      <span className="text-[10px] text-[#3F3766]/70 line-clamp-2 leading-tight">
                         {tmpl.tagline}
                       </span>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-[#3F3766]/60 bg-[#3F3766]/5 px-1.5 py-0.5 rounded">
+                          {tmpl.badge}
+                        </span>
+                        {isSelected && (
+                          <span className="text-[10px] font-black text-[#3F3766]">
+                            ✓ Aktif
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
+              </div>
+
+              {/* QUICK PROMPT INSPIRATION HELPER */}
+              <div className="pt-3 border-t border-[#3F3766]/10">
+                <details className="group">
+                  <summary className="flex items-center justify-between cursor-pointer text-[11px] font-bold text-[#3F3766]/75 hover:text-[#3F3766] select-none list-none">
+                    <span>💡 Butuh inspirasi contoh teks refleksi?</span>
+                    <span className="text-xs group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-2.5 grid grid-cols-2 gap-2">
+                    {REFLECTION_TEMPLATES.map((promptTmpl) => (
+                      <button
+                        key={promptTmpl.id}
+                        type="button"
+                        onClick={() => handleApplyReflectionPrompt(promptTmpl)}
+                        className="text-left p-2 rounded-xl border border-[#3F3766]/15 bg-[#F5E7C6]/20 hover:bg-[#F5E7C6]/50 text-[10px] text-[#3F3766] transition"
+                      >
+                        <p className="font-bold truncate">{promptTmpl.name}</p>
+                        <p className="text-[9px] text-[#3F3766]/60 truncate mt-0.5">Muat Teks</p>
+                      </button>
+                    ))}
+                  </div>
+                </details>
               </div>
             </div>
 
@@ -1101,8 +1188,12 @@ export function WebBuilderClient({
 
           </div>
 
-          {/* PANEL KANAN: LIVE MOCKUP CANVAS WITH EXACT IMAGE 2 WIREFRAME (COL-SPAN-7) */}
-          <div className="lg:col-span-7 sticky top-20">
+          {/* PANEL KANAN: LIVE MOCKUP CANVAS (COL-SPAN-7) */}
+          <div
+            className={`lg:col-span-7 lg:sticky lg:top-20 ${
+              mobileActiveTab === "editor" ? "hidden lg:block" : "block"
+            }`}
+          >
             <div className="flex flex-col items-center">
               <div
                 className={`w-full transition-all duration-300 ${
@@ -1123,28 +1214,38 @@ export function WebBuilderClient({
                       <span>https://{cleanUser}.{activeBaseDomain}</span>
                     </div>
 
-                    <div className="w-8 shrink-0 text-right">
-                      <span className="text-[10px] font-mono font-bold text-[#F7ABC5]">LIVE</span>
+                    <div className="shrink-0 text-right">
+                      <span className="text-[10px] font-mono font-bold text-[#F7ABC5] bg-white/10 px-2 py-0.5 rounded-full">
+                        {activeTemplate.name}
+                      </span>
                     </div>
                   </div>
 
-                  {/* SIMULATED TENANT BLOG PAGE CONTENT */}
-                  <div className="p-6 sm:p-8 min-h-[460px] max-h-[640px] overflow-y-auto space-y-6 bg-gradient-to-b from-[#F5E7C6]/20 via-white to-white">
+                  {/* SIMULATED TENANT BLOG PAGE CONTENT WITH DYNAMIC TEMPLATE STYLING */}
+                  <div
+                    className={`p-6 sm:p-8 min-h-[460px] max-h-[640px] overflow-y-auto space-y-6 transition-colors ${activeTemplate.previewClass.container}`}
+                  >
                     
                     {/* Simulated Header */}
-                    <div className="border-b border-[#3F3766]/10 pb-4 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-[#F7ABC5] text-[#3F3766] flex items-center justify-center text-xs font-black shadow-sm">
+                    <div className={`flex items-center justify-between gap-4 ${activeTemplate.previewClass.header}`}>
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${activeTemplate.previewClass.authorAvatar}`}
+                        >
                           {cleanUser.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-xs font-black text-[#3F3766]">@{cleanUser}</p>
-                          <p className="text-[10px] text-[#3F3766]/60">Ruang Publikasi Pribadi</p>
+                          <p className={`text-xs ${activeTemplate.previewClass.authorName}`}>
+                            @{cleanUser}
+                          </p>
+                          <p className={`text-[10px] ${activeTemplate.previewClass.authorSub}`}>
+                            Ruang Publikasi Pribadi
+                          </p>
                         </div>
                       </div>
 
                       {registerLitera && (
-                        <span className="rounded-full bg-[#3F3766] px-2.5 py-0.5 text-[9px] font-bold text-[#F7ABC5] shadow-sm">
+                        <span className={activeTemplate.previewClass.badge}>
                           Web3 Verified
                         </span>
                       )}
@@ -1154,7 +1255,7 @@ export function WebBuilderClient({
                     <article className="space-y-4">
                       {/* Media Header (Image or Video) */}
                       {mediaPreview && (
-                        <div className="overflow-hidden rounded-2xl border-2 border-[#3F3766]/15 shadow-sm bg-[#3F3766]/5">
+                        <div className={activeTemplate.previewClass.mediaCard}>
                           {mediaType === "VIDEO" ? (
                             <video
                               src={mediaPreview}
@@ -1182,61 +1283,51 @@ export function WebBuilderClient({
                           .map((tag, idx) => (
                             <span
                               key={idx}
-                              className="rounded-lg bg-[#F7ABC5]/25 px-2 py-0.5 text-[10px] font-bold text-[#3F3766] border border-[#F7ABC5]/40"
+                              className={activeTemplate.previewClass.tag}
                             >
                               #{tag}
                             </span>
                           ))}
                       </div>
 
-                      <h1 className="text-xl sm:text-2xl font-black text-[#3F3766] leading-snug tracking-tight">
+                      <h1 className={`text-xl sm:text-2xl leading-snug ${activeTemplate.previewClass.title}`}>
                         {title || "Judul Tulisan Anda"}
                       </h1>
 
                       {excerpt && (
-                        <p className="text-xs sm:text-sm font-semibold italic text-[#3F3766]/70 border-l-2 border-[#F7ABC5] pl-3 py-0.5">
+                        <p className={`text-xs sm:text-sm ${activeTemplate.previewClass.excerpt}`}>
                           &ldquo;{excerpt}&rdquo;
                         </p>
                       )}
 
-                      <div className="text-xs sm:text-sm text-[#3F3766]/85 font-medium leading-relaxed whitespace-pre-wrap font-sans pt-2">
+                      <div className={`text-xs sm:text-sm ${activeTemplate.previewClass.content}`}>
                         {content || "Tuliskan materi atau catatan refleksi Anda pada panel sebelah kiri..."}
                       </div>
                     </article>
 
-                    {/* EXACT WIREFRAME REPLICATION OF IMAGE 2: LITERA OFFICIAL NFT EMBED CARD */}
+                    {/* LITERA OFFICIAL NFT EMBED CARD WITH THEME HARMONY */}
                     {registerLitera ? (
-                      <div className="mt-8 rounded-3xl bg-[#171d2a] p-6 sm:p-8 text-center border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center relative overflow-hidden">
+                      <div className={activeTemplate.previewClass.literaCard}>
                         
-                        {/* Subtle Background Radial Glow */}
-                        <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#d97746]/20 rounded-full blur-3xl pointer-events-none" />
-                        <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-[#3F3766]/40 rounded-full blur-3xl pointer-events-none" />
-
-                        {/* Centered Artwork Box with Warm Hue & 'Let Me Hear You' Glass Badge */}
-                        <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-[#c5baa7] flex items-center justify-center group">
-                          {/* Inner Illustration / Avatar */}
-                          <div className="relative w-full h-full flex items-center justify-center p-2">
-                            <Image
-                              src="/assets/sapiens.png"
-                              alt="Artwork Cover"
-                              width={190}
-                              height={190}
-                              className="object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.3)] opacity-95 transition-transform duration-300 group-hover:scale-105"
-                            />
-                          </div>
-
-                          {/* Floating Top-Left Glass Badge: ● Let Me Hear You */}
-                          <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 border border-white/20 shadow-sm">
-                            <span className="h-2 w-2 rounded-full bg-[#f27438] animate-pulse"></span>
-                            <span className="text-[10px] font-bold !text-white tracking-wide">
+                        {/* Artwork Cover */}
+                        <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-[#c5baa7] flex items-center justify-center">
+                          <Image
+                            src="/assets/sapiens.png"
+                            alt="Artwork Cover"
+                            width={180}
+                            height={180}
+                            className="object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.3)] opacity-95"
+                          />
+                          <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 border border-white/20">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#f27438] animate-pulse"></span>
+                            <span className="text-[9px] font-bold !text-white">
                               Let Me Hear You
                             </span>
                           </div>
                         </div>
 
-                        {/* Author / Community Pill: ● THE EVERYDAY HUMAN / Collection */}
-                        <div className="mt-5 mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-[#351918] border border-[#d97746]/40 px-3.5 py-1 text-[10px] font-black !text-[#f08554] uppercase tracking-wider shadow-sm">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#f08554]"></span>
+                        {/* Collection Pill */}
+                        <div className="mt-4 mb-2 inline-flex items-center gap-1.5 rounded-full bg-black/30 border border-white/20 px-3 py-0.5 text-[9px] font-bold uppercase tracking-wider">
                           <span>
                             {selectedCollection && selectedCollection !== "__new__"
                               ? selectedCollection
@@ -1244,40 +1335,31 @@ export function WebBuilderClient({
                           </span>
                         </div>
 
-                        {/* Article Title */}
-                        <h3 className="text-base sm:text-lg font-black !text-white leading-snug tracking-tight max-w-sm mt-1">
-                          {title || "Mengenali Tanda Burnout Sebelum Terlambat"}
+                        {/* Card Title */}
+                        <h3 className="text-sm sm:text-base font-bold leading-snug truncate max-w-xs mx-auto">
+                          {title || "Mengenali Tanda Burnout"}
                         </h3>
 
-                        {/* Subtitle */}
-                        <p className="text-xs !text-slate-300 mt-2 max-w-xs leading-relaxed">
-                          Diterbitkan resmi sebagai aset digital permanen artikel ini.
-                        </p>
-
-                        {/* Action CTA Button: Miliki Edisi Digital */}
+                        {/* Action CTA Button */}
                         <button
                           type="button"
-                          className="w-full max-w-xs mt-6 py-3 px-6 rounded-2xl bg-gradient-to-r from-[#cf6e3e] to-[#b8582d] !text-white text-xs font-black tracking-wide shadow-[0_6px_20px_rgba(207,110,62,0.45)] hover:brightness-110 active:scale-[0.98] transition-all border border-[#f08554]/30"
+                          className="w-full max-w-xs mx-auto mt-4 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#cf6e3e] to-[#b8582d] !text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all"
                         >
                           Miliki Edisi Digital
                         </button>
 
-                        {/* Footer: Ⓛ v1.4.66 • Powered by Litera */}
-                        <div className="mt-5 flex items-center justify-center gap-1.5 text-[10px] !text-slate-400 font-medium">
-                          <span className="h-3.5 w-3.5 rounded-full bg-[#cf6e3e] !text-white flex items-center justify-center text-[7px] font-black italic">
-                            L
-                          </span>
-                          <span>v1.4.66 • Powered by Litera</span>
+                        <div className="mt-3 flex items-center justify-center gap-1.5 text-[9px] opacity-70">
+                          <span>Powered by Litera Protocol</span>
                         </div>
 
                       </div>
                     ) : (
-                      <div className="mt-8 rounded-2xl border-2 border-dashed border-[#3F3766]/20 bg-[#F5E7C6]/20 p-4 text-center text-xs text-[#3F3766]/60">
+                      <div className="mt-6 rounded-xl border border-dashed border-current/20 p-3 text-center text-[11px] opacity-60">
                         Penerbitan Web3 Dinonaktifkan (Artikel diterbitkan sebagai blog standar)
                       </div>
                     )}
 
-                    <div className="pt-6 border-t border-[#3F3766]/10 flex items-center justify-between text-[10px] text-[#3F3766]/50">
+                    <div className="pt-4 border-t border-current/10 flex items-center justify-between text-[10px] opacity-60">
                       <span>Diterbitkan via Let Me Hear You</span>
                       <span className="font-mono">Hari ini</span>
                     </div>

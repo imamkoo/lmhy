@@ -13,6 +13,7 @@ export interface PublishArticleInput {
   excerpt: string;
   content: string;
   tags?: string;
+  templateId?: string;
   registerLitera?: boolean;
   creatorAddress?: string;
   collectionName?: string;
@@ -38,6 +39,7 @@ export async function publishTenantArticle(
     excerpt,
     content,
     tags,
+    templateId,
     registerLitera = true,
     creatorAddress,
     collectionName,
@@ -116,6 +118,7 @@ export async function publishTenantArticle(
       excerpt: excerpt?.trim() || content.slice(0, 160).trim() + "...",
       content: content.trim(),
       tags: parsedTags,
+      template_id: templateId || "warm-sanctuary",
       media_type: mediaType,
       media_url: mediaUrl || "/assets/sapiens.png",
       register_litera: registerLitera,
@@ -143,6 +146,7 @@ export async function publishTenantArticle(
     mediaType: savedArticle.media_type || undefined,
     mediaUrl: savedArticle.media_url || undefined,
     isLiteraRegistered: savedArticle.register_litera ?? false,
+    templateId: savedArticle.template_id || "warm-sanctuary",
   };
   saveTenantArticle(legacyArticle);
 
