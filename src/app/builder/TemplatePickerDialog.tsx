@@ -68,7 +68,7 @@ export function TemplatePickerDialog({
         </div>
 
         {/* BODY: STAGE + ROSTER */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row sm:gap-4 sm:p-4">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row sm:gap-5 sm:p-4">
           {/* LIVE PREVIEW STAGE */}
           <div className="flex min-h-0 flex-1 flex-col gap-2 sm:w-[54%] sm:max-w-[54%]">
             <div
@@ -102,7 +102,7 @@ export function TemplatePickerDialog({
 
           {/* CHARACTER ROSTER */}
           <div className="min-h-0 shrink-0 sm:flex-1 sm:overflow-y-auto">
-            <div className="flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:grid sm:grid-cols-2 sm:gap-2.5 sm:overflow-visible sm:px-0 sm:pb-0">
+            <div className="flex snap-x gap-3.5 overflow-x-auto px-4 pb-3 sm:grid sm:grid-cols-2 sm:gap-3.5 sm:overflow-visible sm:px-0 sm:pb-0">
               {templates.map((tmpl) => {
                 const isStaged = tmpl.id === stagedId;
                 const isActive = tmpl.id === activeId;
@@ -113,7 +113,7 @@ export function TemplatePickerDialog({
                     aria-pressed={isStaged}
                     aria-label={`Pilih tema ${tmpl.name}`}
                     onClick={() => onStage(tmpl.id)}
-                    className={`flex w-[46vw] max-w-[200px] shrink-0 snap-start flex-col rounded-2xl border-2 p-3 text-left transition-all sm:w-auto sm:max-w-none ${
+                    className={`flex w-[46vw] max-w-[200px] shrink-0 snap-start flex-col rounded-2xl border-2 p-4 text-left transition-all sm:w-auto sm:max-w-none ${
                       isStaged
                         ? "border-[#3F3766] bg-white"
                         : "border-[#3F3766]/15 bg-white/70 hover:border-[#3F3766]/40 hover:bg-white"
@@ -127,7 +127,7 @@ export function TemplatePickerDialog({
                         : undefined
                     }
                   >
-                    <span className="flex items-start justify-between gap-1.5 text-xs font-black leading-snug text-[#3F3766]">
+                    <span className="flex items-start justify-between gap-2 text-xs font-black leading-snug text-[#3F3766]">
                       <span className="min-w-0 break-words">{tmpl.name}</span>
                       <span
                         className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border border-black/20"
@@ -135,11 +135,11 @@ export function TemplatePickerDialog({
                         aria-hidden="true"
                       />
                     </span>
-                    <span className="mt-1 line-clamp-2 text-[10px] leading-snug text-[#3F3766]/70">
+                    <span className="mt-2 line-clamp-2 text-[10px] leading-relaxed text-[#3F3766]/70">
                       {tmpl.tagline}
                     </span>
-                    <span className="mt-auto flex items-center justify-between gap-1 pt-2">
-                      <span className="rounded bg-[#3F3766]/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#3F3766]/60">
+                    <span className="mt-auto flex items-center justify-between gap-2 pt-3">
+                      <span className="rounded bg-[#3F3766]/5 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#3F3766]/60">
                         {tmpl.badge}
                       </span>
                       <span
