@@ -51,8 +51,13 @@ cp .env.example .env.local
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
+
+> **Catatan:** cukup 2 variabel di atas. Seluruh kode di `src/` tidak merujuk
+> `SUPABASE_SERVICE_ROLE_KEY`, dan migrasi database dijalankan manual lewat
+> Supabase SQL Editor — bukan lewat kode. Service-role key adalah kunci admin
+> yang menembus Row Level Security; jangan simpan di `.env.local` / Vercel
+> tanpa kebutuhan nyata.
 
 ### Langkah Setup Database Supabase:
 1. Buat project baru di [Supabase Dashboard](https://supabase.com).

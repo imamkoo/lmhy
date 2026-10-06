@@ -8,17 +8,23 @@
 
 ## 📋 Ringkasan Prasyarat Pengujian
 
-1. Salin credential Supabase ke `.env.local`:
+1. Salin credential Supabase ke `.env.local` (**cukup 2 variabel** —
+   `SUPABASE_SERVICE_ROLE_KEY` tidak dipakai oleh kode aplikasi):
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    ```
 2. Jalankan migrasi schema di Supabase SQL Editor:
    - `supabase/migrations/20261005000000_initial_schema.sql`
-3. Konfigurasi OAuth Providers (Google & Facebook) di Supabase Dashboard dengan callback:
-   - `http://localhost:3000/auth/callback` (Dev)
-   - `https://letmehearyou.id/auth/callback` (Prod)
+   - Verifikasi: 4 tabel dan 14 policy RLS terbentuk.
+3. Konfigurasi OAuth Providers (Google & Facebook) di Supabase Dashboard, lalu
+   set **Authentication → URL Configuration**. Redirect allow-list wajib mencakup
+   subdomain karena callback dibangun dari Host header (`src/app/actions/auth.ts`):
+   - Site URL: `https://letmehearyou.id`
+   - `http://localhost:3000/**`
+   - `https://letmehearyou.id/**`
+   - `https://www.letmehearyou.id/**`
+   - `https://*.letmehearyou.id/**`
 4. Jalankan dev server pada port **3000**:
    ```bash
    npm run dev
