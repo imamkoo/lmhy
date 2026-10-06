@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   checkUsernameAvailabilityAction,
@@ -320,22 +319,15 @@ export default function OnboardingForm({
         </div>
 
         {/* Back Link / Sign Out */}
-        <div className="mt-6 flex items-center justify-center gap-4 text-xs font-semibold text-slate-500">
-          <form action={signOutAction}>
+        <div className="mt-6 text-center">
+          <form action={signOutAction} className="inline-block">
             <button
               type="submit"
-              className="text-slate-500 hover:text-rose-600 transition"
+              className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition"
             >
               ← Keluar / Ganti akun
             </button>
           </form>
-          <span>•</span>
-          <Link
-            href="/login"
-            className="hover:text-[#d07954] transition"
-          >
-            Halaman Masuk
-          </Link>
         </div>
       </div>
     </div>
