@@ -15,7 +15,7 @@ import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/app/actions/auth";
 
-const STORAGE_KEY = "lmhy_builder_draft_v2";
+const STORAGE_KEY = "lmhy_builder_draft_v3";
 
 export function WebBuilderClient({
   initialUsername,

@@ -134,6 +134,34 @@ export const DESIGN_TEMPLATES: WebDesignTemplate[] = [
     },
   },
   {
+    id: "claymorphism",
+    name: "Claymorphism",
+    tagline: "Sudut membulat lembut, bayangan clay 3D imut, hangat dan menenangkan.",
+    badge: "Soft 3D Clay",
+    accentColor: "#B8A9F0",
+    previewClass: {
+      container:
+        "bg-gradient-to-br from-[#FBF7FF] via-[#F7F5FF] to-[#FFF5F7] text-[#4A3F6B]",
+      header: "border-b border-[#B8A9F0]/25 pb-4",
+      authorAvatar:
+        "rounded-2xl bg-[#B8A9F0] text-white font-black shadow-[inset_2px_2px_4px_rgba(255,255,255,0.45),inset_-3px_-3px_6px_rgba(90,70,160,0.18),0_6px_14px_rgba(184,169,240,0.4)]",
+      authorName: "text-[#3B3358] font-black",
+      authorSub: "text-[#4A3F6B]/55",
+      badge:
+        "rounded-full bg-[#B8A9F0]/30 px-2.5 py-0.5 text-[9px] font-bold text-[#4A3F6B] shadow-[inset_1px_1px_2px_rgba(255,255,255,0.85),inset_-1px_-1px_3px_rgba(90,70,160,0.12),0_3px_8px_rgba(120,100,190,0.15)]",
+      mediaCard:
+        "rounded-[28px] overflow-hidden border border-white/70 bg-white/60 shadow-[inset_0_2px_6px_rgba(255,255,255,0.7),0_14px_30px_rgba(120,100,190,0.16)]",
+      tag: "rounded-full bg-white px-3 py-0.5 text-[10px] font-bold text-[#4A3F6B] border border-[#B8A9F0]/25 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9),inset_-2px_-2px_4px_rgba(90,70,160,0.08),0_4px_10px_rgba(120,100,190,0.12)]",
+      title: "text-[#3B3358] font-black tracking-tight",
+      excerpt:
+        "text-[#4A3F6B]/85 font-semibold bg-white/70 border-l-4 border-[#B8A9F0] pl-3 py-2 rounded-r-2xl shadow-[inset_1px_1px_3px_rgba(255,255,255,0.8),0_6px_14px_rgba(120,100,190,0.12)]",
+      content:
+        "text-[#4A4463] font-medium leading-relaxed whitespace-pre-wrap font-sans",
+      literaCard:
+        "rounded-[28px] bg-[#2C2545] p-6 text-center text-white border border-white/10 shadow-[inset_2px_2px_6px_rgba(255,255,255,0.08),0_18px_40px_rgba(44,37,69,0.45)]",
+    },
+  },
+  {
     id: "midnight-serenity",
     name: "Midnight Serenity (Dark)",
     tagline: "Mode gelap obsidian dengan aksen lavender, tenang di malam hari.",
