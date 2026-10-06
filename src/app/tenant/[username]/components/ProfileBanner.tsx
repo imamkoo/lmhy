@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { getBuilderUrl } from "@/lib/builder";
 import type { Profile } from "@/lib/supabase/types";
 import type { ProfileStats } from "@/lib/profile-storage";
 import { toggleFollowAction } from "@/app/actions/profile";
@@ -168,7 +169,7 @@ export function ProfileBanner({
                 </button>
 
                 <Link
-                  href={`/builder?username=${username}`}
+                  href={getBuilderUrl(username)}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-4 py-2.5 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
                 >
                   <span>✏️</span>

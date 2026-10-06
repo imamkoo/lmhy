@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
+import { getSessionCookieOptions } from "@/lib/supabase/cookie";
 
 const ROOT_DOMAINS = [
   "letmehearyou.id",
@@ -105,11 +106,13 @@ export async function middleware(req: NextRequest) {
   });
 
   if (supabaseUrl && supabaseAnonKey) {
+    const cookieOptions = getSessionCookieOptions(hostname);
     try {
       const supabase = createServerClient<Database>(
         supabaseUrl,
         supabaseAnonKey,
         {
+          cookieOptions,
           cookies: {
             getAll() {
               return req.cookies.getAll();
@@ -124,7 +127,10 @@ export async function middleware(req: NextRequest) {
                 },
               });
               cookiesToSet.forEach(({ name, value, options }) =>
-                sessionResponse.cookies.set(name, value, options)
+                sessionResponse.cookies.set(name, value, {
+                  ...options,
+                  ...(cookieOptions.domain ? { domain: cookieOptions.domain } : {}),
+                })
               );
             },
           },
@@ -164,10 +170,22 @@ export async function middleware(req: NextRequest) {
 
   // (3) Subdomain routing
   if (subdomain && subdomain !== "www") {
-    // Legacy /write di subdomain diarahkan ke Web Builder dengan username
+    // Rute builder di subdomain otomatis diarahkan ke root domain kanonik
+    if (url.pathname === "/builder" || url.pathname.startsWith("/builder/")) {
+      const canonicalBuilderUrl = new URL(
+        `https://www.letmehearyou.id${url.pathname}${url.search}`,
+        req.url
+      );
+      if (!canonicalBuilderUrl.searchParams.has("username")) {
+        canonicalBuilderUrl.searchParams.set("username", subdomain);
+      }
+      return NextResponse.redirect(canonicalBuilderUrl, 307);
+    }
+
+    // Legacy /write di subdomain diarahkan ke Web Builder dengan username di root domain
     if (url.pathname === "/write" || url.pathname === "/write/") {
       return NextResponse.redirect(
-        new URL(`/builder?username=${subdomain}`, req.url),
+        new URL(`https://www.letmehearyou.id/builder?username=${subdomain}`, req.url),
         308
       );
     }

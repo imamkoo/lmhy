@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getBuilderUrl } from "@/lib/builder";
 import { LiteraWidget } from "@/components/litera/LiteraWidget";
 import { getTenantArticleBySlug, getTenantArticles } from "@/lib/tenant-storage";
 import { getArticleBySlug } from "@/lib/article-storage";
@@ -142,7 +143,7 @@ export default async function TenantArticlePage({
             ← Kembali ke profil @{normalizedUser}
           </Link>
           <Link
-            href={`/builder?username=${normalizedUser}`}
+            href={getBuilderUrl(normalizedUser)}
             className="text-xs font-semibold text-slate-500 hover:text-[#3F3766]"
           >
             + Tulis Baru
