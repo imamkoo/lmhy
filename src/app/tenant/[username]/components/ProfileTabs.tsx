@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { getBuilderUrl } from "@/lib/builder";
 import type { Article, Profile } from "@/lib/supabase/types";
 
 interface ProfileTabsProps {
@@ -92,7 +93,7 @@ export function ProfileTabs({
               </p>
               <div className="mt-6">
                 <Link
-                  href={`/builder?username=${username}`}
+                  href={getBuilderUrl(username)}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
                 >
                   <span>Mulai Tulis Sekarang</span>
@@ -225,7 +226,7 @@ export function ProfileTabs({
               </p>
               <div className="mt-6">
                 <Link
-                  href={`/builder?username=${username}`}
+                  href={getBuilderUrl(username)}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
                 >
                   <span>Terbitkan Artikel NFT</span>
