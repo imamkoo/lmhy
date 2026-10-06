@@ -132,7 +132,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               required
-              placeholder="Contoh: Sarah Wijaya"
+              placeholder="Contoh: Budi Santoso"
               className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
             />
           </div>
@@ -225,7 +225,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 type="url"
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://sarahwijaya.me"
+                placeholder="https://website-anda.com"
                 className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
               />
             </div>
@@ -238,7 +238,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 type="url"
                 value={facebookUrl}
                 onChange={(e) => setFacebookUrl(e.target.value)}
-                placeholder="https://facebook.com/sarahwijaya"
+                placeholder="https://facebook.com/username-anda"
                 className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
               />
             </div>
