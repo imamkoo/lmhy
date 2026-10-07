@@ -98,19 +98,19 @@ export default async function TenantProfilePage({
   return (
     <main className="min-h-screen bg-[#fbf8f5] px-4 py-8 text-slate-900 sm:px-6 md:px-12 md:py-12">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-5 flex items-center justify-between">
-          <a href="https://letmehearyou.id" className="inline-flex items-center" aria-label="Ke beranda Let Me Hear You">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <a href="https://letmehearyou.id" className="inline-flex shrink-0 items-center" aria-label="Ke beranda Let Me Hear You">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/LMHY.png" alt="Let Me Hear You" className="h-7 w-auto max-w-[60vw] object-contain sm:h-9" />
+            <img src="/assets/LMHY.png" alt="Let Me Hear You" className="h-6 w-auto max-w-[50vw] object-contain sm:h-9" />
           </a>
           <a
             href="https://letmehearyou.id"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#3F3766] transition hover:bg-[#F7ABC5]/20"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white/80 px-2.5 py-1.5 text-xs font-semibold text-[#3F3766] shadow-xs backdrop-blur-xs transition hover:bg-[#F7ABC5]/20 hover:text-[#3F3766] sm:border-transparent sm:bg-transparent sm:px-3 sm:py-2 sm:shadow-none"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Beranda
+            <span>Beranda</span>
           </a>
         </div>
 
