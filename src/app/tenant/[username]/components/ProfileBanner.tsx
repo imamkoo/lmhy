@@ -191,7 +191,7 @@ export function ProfileBanner({
                     href={getBuilderUrl(username)}
                     className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-[#F7ABC5] px-3 py-2.5 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
                   >
-                    <span>Tulis di Web Builder</span>
+                    <span>Buat Konten</span>
                   </Link>
 
                   <form action={signOutAction} className="inline-flex">

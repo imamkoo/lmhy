@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/builder';
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") || "/";
 
   if (code) {
     try {
@@ -60,8 +60,11 @@ export async function GET(request: Request) {
         let targetUrl: string;
         if (!profile?.username) {
           targetUrl = `${origin}/onboarding`;
+        } else if (next === "/") {
+          // Default: redirect to creator's profile subdomain
+          targetUrl = `https://${profile.username}.letmehearyou.id/`;
         } else {
-          const redirectPath = next.startsWith('/') ? next : `/${next}`;
+          const redirectPath = next.startsWith("/") ? next : `/${next}`;
           targetUrl = `${origin}${redirectPath}`;
         }
 
