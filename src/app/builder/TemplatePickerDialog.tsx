@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import type { WebDesignTemplate } from "@/lib/design-templates";
+
+const MOBILE_QUERY = "(max-width: 639px)";
+
+function subscribeMobileQuery(callback: () => void) {
+  const mq = window.matchMedia(MOBILE_QUERY);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
 
 interface TemplatePickerDialogProps {
   templates: WebDesignTemplate[];
@@ -23,10 +31,10 @@ export function TemplatePickerDialog({
   onClose,
   renderPreview,
 }: TemplatePickerDialogProps) {
-  const [isMobile, setIsMobile] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 639px)").matches
+  const isMobile = useSyncExternalStore(
+    subscribeMobileQuery,
+    () => window.matchMedia(MOBILE_QUERY).matches,
+    () => false
   );
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -39,13 +47,6 @@ export function TemplatePickerDialog({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handleChange);
-    return () => mq.removeEventListener("change", handleChange);
-  }, []);
 
   useLayoutEffect(() => {
     if (!isMobile || carouselInitialized.current) return;
@@ -162,30 +163,56 @@ export function TemplatePickerDialog({
                 <span className="max-w-[46vw] truncate text-[11px] font-black text-[#3F3766] sm:max-w-none">
                   {staged.name}
                 </span>
+                <span
+                  data-testid="nameplate-check"
+                  aria-label="Tema terpilih"
+                  className="text-[11px] font-black text-[#3F3766]"
+                >
+                  ✓
+                </span>
               </div>
             </div>
 
-            {/* MOBILE: CAROUSEL POSITION DOTS + HOW-TO HINT */}
-            <div className="flex shrink-0 flex-col items-center gap-1.5 sm:hidden">
-              <div className="flex items-center gap-1.5" aria-hidden="true">
-                {templates.map((tmpl) => (
-                  <span
-                    key={tmpl.id}
-                    className={`h-1.5 rounded-full border transition-all ${
-                      tmpl.id === stagedId
-                        ? "w-5 border-[#3F3766]/30"
-                        : "w-1.5 border-transparent bg-[#3F3766]/25"
-                    }`}
-                    style={
-                      tmpl.id === stagedId
-                        ? { backgroundColor: staged.accentColor }
-                        : undefined
-                    }
-                  />
-                ))}
+            {/* MOBILE: THEME CHIP PICKER (TAP TO SELECT) + HOW-TO HINT */}
+            <div className="flex shrink-0 flex-col gap-1.5 sm:hidden">
+              <div
+                role="group"
+                aria-label="Pilih tema"
+                className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {templates.map((tmpl) => {
+                  const isStaged = tmpl.id === stagedId;
+                  return (
+                    <button
+                      key={tmpl.id}
+                      type="button"
+                      data-testid={`theme-chip-${tmpl.id}`}
+                      aria-pressed={isStaged}
+                      aria-label={`Pilih tema ${tmpl.name}`}
+                      onClick={() => onStage(tmpl.id)}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full border-2 px-2.5 py-1.5 text-[10px] font-black leading-none transition-all ${
+                        isStaged
+                          ? "border-[#3F3766] bg-white text-[#3F3766] shadow-[0_2px_0_0_#3F3766]"
+                          : "border-[#3F3766]/20 bg-white/60 text-[#3F3766]/55"
+                      }`}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+                        style={{ backgroundColor: tmpl.accentColor }}
+                        aria-hidden="true"
+                      />
+                      <span className="whitespace-nowrap">{tmpl.name}</span>
+                      {isStaged && (
+                        <span aria-hidden="true" className="text-[#3F3766]">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
               <p className="text-center text-[10px] leading-relaxed text-[#3F3766]/60">
-                Geser pratinjau ke samping untuk ganti tema — tekan{" "}
+                Ketuk tema di atas atau geser pratinjau — tekan{" "}
                 <span className="font-black text-[#3F3766]">
                   Mulai Menulis
                 </span>{" "}
