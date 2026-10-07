@@ -38,16 +38,25 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [uploading, setUploading] = useState<ProfileImageKind | null>(null);
-  const [pendingUpload, setPendingUpload] = useState<{ url: string; path: string } | null>(null);
+  const [pendingUploads, setPendingUploads] = useState<
+    Partial<Record<ProfileImageKind, { url: string; path: string }>>
+  >({});
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const handleClose = useCallback(() => {
-    if (pendingUpload && !loading) {
-      removeProfileMedia(createClient(), pendingUpload.path);
+    if (uploading !== null) return;
+    try {
+      if (!loading) {
+        for (const entry of Object.values(pendingUploads)) {
+          removeProfileMedia(createClient(), entry.path);
+        }
+      }
+    } catch {
+      console.warn("[edit-profile] pending upload cleanup skipped");
     }
     onClose();
-  }, [pendingUpload, loading, onClose]);
+  }, [pendingUploads, uploading, loading, onClose]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -74,12 +83,20 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
         setError("Gagal mengunggah gambar — coba lagi.");
         return;
       }
+      const existing = pendingUploads[kind];
+      if (existing) {
+        void removeProfileMedia(createClient(), existing.path);
+      }
       if (kind === "avatar") {
         setAvatarUrl(res.url);
       } else {
         setBannerUrl(res.url);
       }
-      setPendingUpload({ url: res.url, path: res.path });
+      setPendingUploads((prev) => {
+        const next = { ...prev };
+        next[kind] = { url: res.url, path: res.path };
+        return next;
+      });
     } catch {
       setError("Gagal mengunggah gambar — coba lagi.");
     } finally {
@@ -94,9 +111,13 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
       if (mediaPath) {
         removeProfileMedia(createClient(), mediaPath);
       }
-      if (pendingUpload && pendingUpload.url === url) {
-        setPendingUpload(null);
-      }
+    }
+    if (pendingUploads[kind]) {
+      setPendingUploads((prev) => {
+        const next = { ...prev };
+        delete next[kind];
+        return next;
+      });
     }
     if (kind === "avatar") {
       setAvatarUrl("");
@@ -142,7 +163,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
         return;
       }
 
-      setPendingUpload(null);
+      setPendingUploads({});
       cleanupReplacedMedia(profile.avatar_url, avatarUrl);
       cleanupReplacedMedia(profile.banner_url, bannerUrl);
       setSuccess(true);
