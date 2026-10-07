@@ -138,7 +138,7 @@ export function TemplatePickerDialog({
                   {templates.map((tmpl) => (
                     <div
                       key={tmpl.id}
-                      className="w-[86%] shrink-0 snap-center overflow-y-auto overscroll-contain p-3"
+                      className="w-[86%] shrink-0 snap-center overflow-y-auto overscroll-y-contain p-3"
                     >
                       <div className="pointer-events-none select-none">
                         {renderPreview(tmpl)}
