@@ -2,10 +2,19 @@
 
 import { useEffect } from "react";
 
+const STRICT_REMOUNT_TOLERANCE_MS = 1000;
+
 export function LandingEffects() {
   useEffect(() => {
     const preloader = document.querySelector(".js-preloader");
     if (preloader) {
+      const seenAt = Number(sessionStorage.getItem("lmhy_preloader_seen") || 0);
+      if (seenAt && Date.now() - seenAt >= STRICT_REMOUNT_TOLERANCE_MS) {
+        preloader.classList.add("fade-out");
+        (preloader as HTMLElement).style.display = "none";
+        return;
+      }
+      sessionStorage.setItem("lmhy_preloader_seen", String(Date.now()));
       preloader.classList.add("fade-out");
       const t = setTimeout(() => {
         (preloader as HTMLElement).style.display = "none";
