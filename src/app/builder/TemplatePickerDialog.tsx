@@ -80,7 +80,6 @@ export function TemplatePickerDialog({
   };
 
   const staged = templates.find((t) => t.id === stagedId) ?? templates[0];
-  const isUnchanged = stagedId === activeId;
 
   return (
     <div
@@ -101,8 +100,8 @@ export function TemplatePickerDialog({
               Pilih Desain Tampilan Web
             </h2>
             <p className="text-[10px] leading-relaxed text-[#3F3766]/70 sm:text-[11px]">
-              Telusuri tema, lihat pratinjau langsung, lalu tekan Terapkan.
-              Bisa diganti kapan saja.
+              Telusuri tema, lihat pratinjau langsung, lalu tekan Mulai
+              Menulis. Bisa diganti kapan saja.
             </p>
           </div>
           <button
@@ -188,7 +187,7 @@ export function TemplatePickerDialog({
               <p className="text-center text-[10px] leading-relaxed text-[#3F3766]/60">
                 Geser pratinjau ke samping untuk ganti tema — tekan{" "}
                 <span className="font-black text-[#3F3766]">
-                  Terapkan Tema
+                  Mulai Menulis
                 </span>{" "}
                 saat sudah cocok
               </p>
@@ -274,7 +273,7 @@ export function TemplatePickerDialog({
             onClick={onApply}
             className="flex-1 rounded-xl border-2 border-[#3F3766] bg-[#F7ABC5] px-5 py-2.5 text-xs font-black text-[#3F3766] shadow-[0_4px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[3px] sm:flex-none"
           >
-            {isUnchanged ? "Gunakan Tema Ini & Mulai Menulis →" : "Terapkan Tema & Mulai Menulis →"}
+            Mulai Menulis →
           </button>
         </div>
       </div>
