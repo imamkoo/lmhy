@@ -104,7 +104,7 @@ export function ProfileBanner({
 
       {/* Main Profile Info Container */}
       <div className="px-6 pb-8 pt-0 md:px-10">
-        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between">
+        <div className="relative flex flex-col sm:flex-row sm:flex-wrap md:flex-nowrap sm:items-end sm:justify-between">
           {/* Avatar & Identifiers */}
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 -mt-16 sm:-mt-20">
             {/* Avatar */}
@@ -153,13 +153,13 @@ export function ProfileBanner({
           </div>
 
           {/* Action CTAs (Right-aligned) */}
-          <div className="mt-5 flex flex-wrap items-center gap-2.5 sm:mt-0 sm:pb-2">
+          <div className="mt-5 flex flex-wrap items-center gap-2.5 sm:mt-0 sm:grow sm:pb-2">
             <div data-testid="profile-actions" className="ml-auto flex max-[359px]:flex-wrap flex-nowrap items-stretch gap-2.5">
               {isOwnProfile ? (
                 <>
                   <button
                     onClick={handleEditClick}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                   >
                     <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
@@ -174,7 +174,7 @@ export function ProfileBanner({
 
                   <Link
                     href={getBuilderUrl(username)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-3 py-2.5 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
+                    className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-[#F7ABC5] px-3 py-2.5 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
                   >
                     <span>Tulis di Web Builder</span>
                   </Link>
@@ -197,7 +197,7 @@ export function ProfileBanner({
                   <button
                     onClick={handleToggleFollow}
                     disabled={isFollowLoading}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-sm transition ${
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-5 py-2.5 text-xs font-semibold shadow-sm transition ${
                       isFollowing
                         ? "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
                         : "bg-[#F7ABC5] text-[#3F3766] hover:bg-[#F5E7C6]"
@@ -216,7 +216,7 @@ export function ProfileBanner({
 
                   <button
                     onClick={handleShare}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                     title="Salin tautan profil"
                   >
                     {copied ? (
