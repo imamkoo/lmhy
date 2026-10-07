@@ -156,6 +156,34 @@ export async function middleware(req: NextRequest) {
           return expiredRedirect;
         }
 
+        // User sudah login tidak boleh melihat halaman login: arahkan ke situs
+        // artikel miliknya (subdomain username); bila belum punya username, ke onboarding.
+        if (url.pathname === "/login") {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          const username = profile?.username;
+          let destination = "/onboarding";
+          if (username && SAFE_USERNAME.test(username)) {
+            const port = hostname.match(/:\d+$/)?.[0] || "";
+            const isRootHost =
+              hostname === "letmehearyou.id" ||
+              hostname.includes(".letmehearyou.id");
+            destination = isRootHost
+              ? `https://${username}.letmehearyou.id/`
+              : `http://${username}.localhost${port}/`;
+          }
+
+          const loginRedirect = NextResponse.redirect(new URL(destination, req.url));
+          sessionResponse.cookies.getAll().forEach((cookie) => {
+            loginRedirect.cookies.set(cookie.name, cookie.value, cookie);
+          });
+          return loginRedirect;
+        }
+
         // Hanya gate rute studio/kreator (/builder) yang mewajibkan profil kreator & username.
         // Halaman umum seperti landing page (/), blog (/blog), dll TIDAK boleh membajak pengunjung ke /onboarding.
         const isBuilderPath = url.pathname.startsWith("/builder");
