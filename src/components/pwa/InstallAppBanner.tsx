@@ -40,6 +40,16 @@ export function InstallAppBanner() {
       return;
     }
 
+    // Check if running on mobile device (Android/iOS phone or tablet)
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isMobileDevice =
+      /android|iphone|ipad|ipod|mobile/i.test(ua) ||
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobileDevice) {
+      return; // Suppress install prompt on desktop browsers
+    }
+
     // Android & Chromium: listen to beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -50,7 +60,6 @@ export function InstallAppBanner() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     // iOS Safari detection: iPhone/iPad/iPod, not standalone, and Safari browser
-    const ua = window.navigator.userAgent.toLowerCase();
     const isIOS = /iphone|ipad|ipod/.test(ua);
     const isSafari = ua.includes("safari") && !ua.includes("crios") && !ua.includes("fxios");
 

@@ -8,9 +8,11 @@ interface LiteraLoginModalProps {
   onSuccess: (walletAddress: string, method: string) => void;
 }
 
+const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+
 export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModalProps) {
   const [popupActive, setPopupActive] = useState(false);
-  const [popupError, setPopupError] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const popupRef = useRef<Window | null>(null);
 
   const LITERA_ORIGIN = process.env.NEXT_PUBLIC_LITERA_DASHBOARD_URL || "https://literaa.xyz";
@@ -18,16 +20,35 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
   useEffect(() => {
     if (!isOpen) return;
 
-    // Listener menerima pesan postMessage dari Litera /widget-auth popup
+    // Listener menerima pesan postMessage dari Litera /widget-auth popup di desktop
     const handleAuthMessage = (event: MessageEvent) => {
-      // Hanya terima pesan dari origin resmi Litera
-      if (!event.origin.includes("literaa.xyz") && !event.origin.includes("localhost")) {
-        return;
-      }
+      // Validasi origin ketat: hanya dari literaa.xyz atau localhost saat development
+      const isTrustedOrigin =
+        event.origin === "https://literaa.xyz" ||
+        event.origin.endsWith(".literaa.xyz") ||
+        (process.env.NODE_ENV === "development" && event.origin.includes("localhost"));
+
+      if (!isTrustedOrigin) return;
 
       const data = event.data;
       if (data && data.type === "LITERA_CLOUD_LOGIN_SUCCESS" && data.address) {
-        onSuccess(data.address, "Litera Cloud Wallet (Google / Email)");
+        // Validasi Anti-CSRF State Nonce
+        const savedNonce = sessionStorage.getItem("litera_sso_nonce");
+        if (data.state && savedNonce && data.state !== savedNonce) {
+          setErrorMsg("Sesi autentikasi tidak valid atau telah kedaluwarsa. Silakan coba kembali.");
+          setPopupActive(false);
+          return;
+        }
+
+        // Validasi format alamat EVM
+        if (!EVM_ADDRESS_REGEX.test(data.address)) {
+          setErrorMsg("Alamat dompet yang diterima tidak valid.");
+          setPopupActive(false);
+          return;
+        }
+
+        sessionStorage.removeItem("litera_sso_nonce");
+        onSuccess(data.address, "Litera Dashboard SSO");
         setPopupActive(false);
         if (popupRef.current && !popupRef.current.closed) {
           popupRef.current.close();
@@ -44,29 +65,49 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
 
   if (!isOpen) return null;
 
-  const openLiteraCloudAuth = () => {
-    setPopupError(null);
+  const handleLiteraSSO = () => {
+    setErrorMsg(null);
     setPopupActive(true);
 
-    const nonce = Math.random().toString(36).slice(2);
-    const callbackArticle = typeof window !== "undefined" ? window.location.href : "https://letmehearyou.id";
+    const nonce = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-    const popupUrl = `${LITERA_ORIGIN}/widget-auth?article=${encodeURIComponent(callbackArticle)}&state=${nonce}`;
+    try {
+      sessionStorage.setItem("litera_sso_nonce", nonce);
+    } catch {
+      // Storage blocked, lanjutkan
+    }
 
-    const w = 440;
-    const h = 680;
+    const callbackUrl = typeof window !== "undefined" ? window.location.href : "https://letmehearyou.id/builder";
+    const authUrl = `${LITERA_ORIGIN}/widget-auth?article=${encodeURIComponent(callbackUrl)}&state=${encodeURIComponent(nonce)}`;
+
+    // Deteksi lingkungan mobile: gunakan full-page redirect agar bebas popup-blocker dan mulus membuka Rabby/MetaMask mobile
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
+    const isMobile =
+      /android|iphone|ipad|ipod|mobile/i.test(ua) ||
+      (typeof window !== "undefined" && window.innerWidth < 640);
+
+    if (isMobile) {
+      window.location.href = authUrl;
+      return;
+    }
+
+    // Lingkungan Desktop: buka popup sembulan
+    const w = 460;
+    const h = 700;
     const left = window.screenX + (window.outerWidth - w) / 2;
     const top = window.screenY + (window.outerHeight - h) / 2;
 
     const popup = window.open(
-      popupUrl,
-      "litera-auth-window",
+      authUrl,
+      "litera-sso-window",
       `width=${w},height=${h},left=${left},top=${top},status=no,menubar=no,toolbar=no`
     );
 
     if (!popup) {
-      setPopupError("Popup diblokir oleh browser. Harap izinkan pop-up untuk domain ini.");
-      setPopupActive(false);
+      // Popup diblokir: fallback ke direct navigation
+      window.location.href = authUrl;
       return;
     }
 
@@ -81,43 +122,27 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
     }, 1000);
   };
 
-  const handleLocalMetaMask = () => {
-    const win = window as Window & { ethereum?: { request: (args: { method: string }) => Promise<string[]> } };
-    if (typeof win !== "undefined" && win.ethereum) {
-      win.ethereum
-        .request({ method: "eth_requestAccounts" })
-        .then((accounts: string[]) => {
-          if (accounts && accounts[0]) {
-            onSuccess(accounts[0], "MetaMask Extension");
-            onClose();
-          }
-        })
-        .catch((err: Error) => {
-          setPopupError(err.message || "Pengguna menolak koneksi MetaMask.");
-        });
-    } else {
-      setPopupError("Ekstensi MetaMask tidak terdeteksi. Silakan gunakan opsi Akun Litera Cloud (Google/Email).");
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="w-full max-w-md rounded-2xl border-2 border-[#3F3766] bg-[#FAF8F5] p-6 shadow-[0_16px_40px_rgba(63,55,102,0.25)]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#F7ABC5] text-[#3F3766] font-bold shadow-md shadow-[#F7ABC5]/30">
-              💎
+        <div className="flex items-center justify-between border-b border-[#3F3766]/10 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F7ABC5] text-[#3F3766] font-black border border-[#3F3766]/30 shadow-xs">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Hubungkan Akun Litera Web3</h3>
-              <p className="text-xs text-slate-500">Klaim kepemilikan NFT & sertifikat digital</p>
+              <h3 className="text-base font-bold text-[#3F3766]">Hubungkan Akun Litera</h3>
+              <p className="text-xs text-[#3F3766]/70">Otentikasi sertifikat &amp; publikasi Web3</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            aria-label="Tutup jendela login"
+            className="rounded-lg p-1.5 text-[#3F3766]/50 hover:bg-[#3F3766]/10 hover:text-[#3F3766] transition"
           >
             ✕
           </button>
@@ -125,57 +150,39 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
 
         {/* Content */}
         <div className="mt-5 space-y-4">
-          <p className="text-xs leading-relaxed text-slate-600">
-            Penulis membutuhkan akun atau alamat dompet Web3 untuk menerima kepemilikan sertifikat on-chain di Polygon.
+          <p className="text-xs leading-relaxed text-[#3F3766]/80">
+            Penulis menggunakan portal resmi Litera untuk menghubungkan dompet Web3 (Rabby, MetaMask, WalletConnect) atau akun Google &amp; Email secara terverifikasi.
           </p>
 
-          {popupError && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
-              ⚠️ {popupError}
+          {errorMsg && (
+            <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-800 leading-relaxed">
+              {errorMsg}
             </div>
           )}
 
-          {/* Opsi 1: Cloud Auth Resmi (Google / Email) */}
+          {/* Tombol Utama SSO Litera */}
           <button
             type="button"
-            onClick={openLiteraCloudAuth}
+            onClick={handleLiteraSSO}
             disabled={popupActive}
-            className="w-full flex items-center justify-between rounded-2xl border-2 border-[#F7ABC5] bg-[#F7ABC5]/10 p-4 text-left transition hover:bg-[#F7ABC5]/20 disabled:opacity-50"
+            className="w-full flex items-center justify-between rounded-xl border-2 border-[#3F3766] bg-[#F7ABC5] p-4 text-left transition hover:bg-[#F5E7C6] active:translate-y-[1px] disabled:opacity-60 shadow-[0_3px_0_0_#3F3766]"
           >
             <div>
-              <span className="block text-sm font-bold text-slate-900">
-                🌐 Akun Litera Cloud (Google / Email)
+              <span className="block text-sm font-black text-[#3F3766]">
+                Masuk melalui Portal Litera
               </span>
-              <span className="text-[11px] text-slate-500">
-                Mudah tanpa instal aplikasi, dibuatkan otomatis via Privy
+              <span className="text-[11px] font-medium text-[#3F3766]/80">
+                Pilih Rabby Wallet, MetaMask, Google, atau Email di Litera
               </span>
             </div>
-            <span className="text-xs font-bold text-[#3F3766]">
-              {popupActive ? "⏳ Membuka..." : "Buka →"}
+            <span className="text-xs font-black text-[#3F3766] shrink-0 pl-2">
+              {popupActive ? "Membuka..." : "Lanjutkan →"}
             </span>
           </button>
 
-          {/* Opsi 2: MetaMask / Browser Wallet */}
-          <button
-            type="button"
-            onClick={handleLocalMetaMask}
-            className="w-full flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:bg-slate-100 hover:border-slate-300"
-          >
-            <div>
-              <span className="block text-sm font-bold text-slate-800">
-                🦊 Ekstensi Dompet (MetaMask)
-              </span>
-              <span className="text-[11px] text-slate-500">
-                Gunakan dompet Web3 pribadi di browser Anda
-              </span>
-            </div>
-            <span className="text-xs font-bold text-slate-600">
-              Konek →
-            </span>
-          </button>
-
-          <div className="rounded-2xl bg-[#F5E7C6]/35 p-3.5 border border-[#3F3766]/15 text-[11px] text-[#3F3766] leading-relaxed">
-            🛡️ <strong className="font-bold text-[#3F3766]">Keamanan Terjamin:</strong> Autentikasi diproses langsung di domain resmi <code className="font-mono text-[10px] bg-white/80 px-1 py-0.5 rounded border border-[#3F3766]/15">https://literaa.xyz</code>. Kunci privat Anda tersimpan aman dan terenkripsi.
+          {/* Keamanan & Privacy Box */}
+          <div className="rounded-xl bg-[#F5E7C6]/50 p-3.5 border border-[#3F3766]/20 text-[11px] text-[#3F3766] leading-relaxed">
+            <span className="font-bold">Keamanan Terjamin:</span> Otentikasi dan izin tanda tangan diproses langsung pada domain terenkripsi resmi <code className="font-mono text-[10px] bg-white/90 px-1 py-0.5 rounded border border-[#3F3766]/20">https://literaa.xyz</code>.
           </div>
         </div>
 
@@ -184,7 +191,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100"
+            className="rounded-xl px-4 py-2 text-xs font-bold text-[#3F3766]/70 hover:bg-[#3F3766]/10 transition"
           >
             Batal
           </button>

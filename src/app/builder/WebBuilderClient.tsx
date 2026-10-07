@@ -150,11 +150,46 @@ export function WebBuilderClient({
     };
   }, [initialUser]);
 
-  // 6. Local Storage Persistence (Restore on Mount)
+  // 6. Local Storage Persistence & Litera SSO Callback Detection (Restore on Mount)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const timer = setTimeout(() => {
+      // A. Periksa callback Litera SSO dari redirect mobile (?lite_addr=...&lite_state=...)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const liteAddr = urlParams.get("lite_addr");
+        const liteState = urlParams.get("lite_state");
+
+        if (liteAddr) {
+          const savedNonce = sessionStorage.getItem("litera_sso_nonce");
+          const evmRegex = /^0x[a-fA-F0-9]{40}$/;
+
+          // Validasi Anti-CSRF Nonce & Format Alamat EVM
+          if (liteState && savedNonce && liteState !== savedNonce) {
+            console.warn("[Litera SSO] State nonce mismatch, login dibatalkan.");
+            setError("Sesi autentikasi Litera tidak valid atau kedaluwarsa.");
+          } else if (!evmRegex.test(liteAddr)) {
+            console.warn("[Litera SSO] Format alamat tidak valid:", liteAddr);
+            setError("Alamat dompet Litera yang diterima tidak valid.");
+          } else {
+            setCreatorWallet(liteAddr);
+            setLoginMethod("Litera Dashboard SSO");
+            setRegisterLitera(true);
+            sessionStorage.removeItem("litera_sso_nonce");
+          }
+
+          // Sanitasi URL Address Bar: bersihkan parameter query agar tidak bocor atau terulang saat refresh
+          urlParams.delete("lite_addr");
+          urlParams.delete("lite_state");
+          const remainingQuery = urlParams.toString();
+          const cleanUrl = window.location.pathname + (remainingQuery ? `?${remainingQuery}` : "");
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      } catch (e) {
+        console.warn("[Litera SSO] Gagal memproses callback:", e);
+      }
+
       try {
         const rawDraft = localStorage.getItem(STORAGE_KEY);
         if (rawDraft) {
@@ -1178,8 +1213,8 @@ export function WebBuilderClient({
                   {!creatorWallet ? (
                     <div className="rounded-2xl border-2 border-[#F7ABC5] bg-[#F5E7C6]/30 p-4 space-y-2.5 shadow-sm">
                       <div className="flex items-center gap-2">
-                        <span className="h-5 w-5 rounded-full bg-[#3F3766] text-[#F5E7C6] flex items-center justify-center text-xs font-black">
-                          💎
+                        <span className="h-5 w-5 rounded-full bg-[#3F3766] text-[#F5E7C6] flex items-center justify-center text-[10px] font-black">
+                          ✓
                         </span>
                         <h4 className="text-xs font-bold text-[#3F3766] uppercase tracking-wide">
                           Autentikasi Sertifikat Litera
@@ -1452,7 +1487,7 @@ export function WebBuilderClient({
               {/* IMPORTANT: DATA THAT CANNOT BE CHANGED */}
               <div className="rounded-2xl border-2 border-[#F7ABC5] bg-[#F5E7C6]/40 p-3.5 space-y-2">
                 <p className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
-                  ⚠️ Catatan Penting — Tidak Bisa Diubah Setelah Terbit
+                  Ketentuan Penting — Tidak Dapat Diubah Setelah Terbit
                 </p>
                 <ul className="space-y-1.5 text-[11px] text-[#3F3766]/85 leading-relaxed list-disc pl-4">
                   <li>
