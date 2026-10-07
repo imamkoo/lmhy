@@ -165,7 +165,7 @@ export async function completeOnboardingAction(
 export async function signInWithGoogleAction(redirectTo?: string): Promise<AuthActionResult> {
   try {
     const origin = await getOrigin();
-    const target = redirectTo || '/builder';
+    const target = redirectTo || "/";
     const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(target)}`;
 
     const supabase = await createClient();
@@ -194,7 +194,7 @@ export async function signInWithGoogleAction(redirectTo?: string): Promise<AuthA
 export async function signInWithFacebookAction(redirectTo?: string): Promise<AuthActionResult> {
   try {
     const origin = await getOrigin();
-    const target = redirectTo || '/builder';
+    const target = redirectTo || "/";
     const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(target)}`;
 
     const supabase = await createClient();
