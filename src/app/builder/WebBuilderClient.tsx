@@ -47,7 +47,7 @@ export function WebBuilderClient({
 
   // 2. Template & Article Content State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
-  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(true);
   const [stagedTemplateId, setStagedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
