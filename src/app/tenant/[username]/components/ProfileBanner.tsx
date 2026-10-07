@@ -82,17 +82,32 @@ export function ProfileBanner({
         .toUpperCase()
     : username.slice(0, 2).toUpperCase();
 
+  const isBannerContain = profile.banner_url?.includes("fit=contain");
+
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition">
       {/* Cover Banner with soft gradient fallback */}
       <div className="relative h-44 w-full overflow-hidden bg-[linear-gradient(120deg,#fae8df_0%,#f4d7c8_55%,#eed2c4_100%)] sm:h-56 md:h-64">
         {profile.banner_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={profile.banner_url}
-            alt={`${displayName} Cover Banner`}
-            className="h-full w-full object-cover"
-          />
+          <>
+            {isBannerContain && (
+              <>
+                <div className="absolute inset-0 bg-[radial-gradient(#F7ABC5_1.3px,transparent_1.3px)] opacity-[.4] [background-size:14px_14px]" />
+                <div className="absolute -top-12 right-12 h-32 w-32 rounded-full bg-[rgba(247,171,197,0.3)]" />
+                <div className="absolute -bottom-8 left-16 h-24 w-24 rounded-full bg-[rgba(63,55,102,0.08)]" />
+              </>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={profile.banner_url}
+              alt={`${displayName} Cover Banner`}
+              className={
+                isBannerContain
+                  ? "relative z-10 h-full w-full object-contain p-2 sm:p-4"
+                  : "h-full w-full object-cover"
+              }
+            />
+          </>
         ) : (
           <>
             <div className="absolute inset-0 bg-[radial-gradient(#F7ABC5_1.3px,transparent_1.3px)] opacity-[.65] [background-size:14px_14px]" />
