@@ -22,6 +22,18 @@ export function InstallAppBanner() {
       });
     }
 
+    // Pastikan hanya muncul saat pertama kali akses, tidak pernah muncul lagi saat navigasi/pindah page
+    try {
+      if (
+        localStorage.getItem("lmhy_pwa_first_visit_shown") === "true" ||
+        sessionStorage.getItem("lmhy_pwa_session_seen") === "true"
+      ) {
+        return;
+      }
+    } catch {
+      // Storage access blocked/private mode
+    }
+
     const dismissedAt = localStorage.getItem("lmhy_install_dismissed");
     if (dismissedAt) {
       const daysSinceDismiss = (Date.now() - parseInt(dismissedAt, 10)) / (1000 * 60 * 60 * 24);
@@ -50,9 +62,19 @@ export function InstallAppBanner() {
       return; // Suppress install prompt on desktop browsers
     }
 
+    const markAsShown = () => {
+      try {
+        localStorage.setItem("lmhy_pwa_first_visit_shown", "true");
+        sessionStorage.setItem("lmhy_pwa_session_seen", "true");
+      } catch {
+        // ignore
+      }
+    };
+
     // Android & Chromium: listen to beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
+      markAsShown();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowPrompt("android");
     };
@@ -66,7 +88,8 @@ export function InstallAppBanner() {
     let timer: NodeJS.Timeout | null = null;
     if (isIOS && !isStandalone && (isSafari || !("beforeinstallprompt" in window))) {
       timer = setTimeout(() => {
-        setShowPrompt((prev) => (prev ? prev : "ios"));
+        markAsShown();
+        setShowPrompt("ios");
       }, 2500);
     }
 
@@ -85,6 +108,12 @@ export function InstallAppBanner() {
         setShowPrompt(null);
       }
       setDeferredPrompt(null);
+      try {
+        localStorage.setItem("lmhy_pwa_first_visit_shown", "true");
+        sessionStorage.setItem("lmhy_pwa_session_seen", "true");
+      } catch {
+        // ignore
+      }
     } catch {
       // Fallback
     }
@@ -92,7 +121,13 @@ export function InstallAppBanner() {
 
   const handleDismiss = () => {
     setShowPrompt(null);
-    localStorage.setItem("lmhy_install_dismissed", Date.now().toString());
+    try {
+      localStorage.setItem("lmhy_pwa_first_visit_shown", "true");
+      sessionStorage.setItem("lmhy_pwa_session_seen", "true");
+      localStorage.setItem("lmhy_install_dismissed", Date.now().toString());
+    } catch {
+      // ignore
+    }
   };
 
   if (!showPrompt) {
@@ -129,7 +164,7 @@ export function InstallAppBanner() {
             type="button"
             onClick={handleDismiss}
             aria-label="Tutup rekomendasi instalasi"
-            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-200/60 hover:text-slate-700"
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-200/60 hover:text-slate-700 cursor-pointer"
           >
             ✕
           </button>
@@ -140,14 +175,14 @@ export function InstallAppBanner() {
             <button
               type="button"
               onClick={handleDismiss}
-              className="rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+              className="rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 cursor-pointer"
             >
               Nanti Saja
             </button>
             <button
               type="button"
               onClick={handleInstallClick}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#F7ABC5] px-4 py-2 text-xs font-bold text-[#3F3766] shadow-[0_2px_0_0_#3F3766] transition hover:bg-[#F5E7C6] active:translate-y-[2px] active:shadow-none"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#F7ABC5] px-4 py-2 text-xs font-bold text-[#3F3766] shadow-[0_2px_0_0_#3F3766] transition hover:bg-[#F5E7C6] active:translate-y-[2px] active:shadow-none cursor-pointer"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
