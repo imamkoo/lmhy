@@ -125,7 +125,7 @@ export function ProfileBanner({
             </div>
 
             {/* Display Name & Subdomain Pill */}
-            <div className="sm:pb-2">
+            <div className="min-w-0 sm:pb-2">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
                   {displayName}
@@ -154,86 +154,90 @@ export function ProfileBanner({
 
           {/* Action CTAs (Right-aligned) */}
           <div className="mt-5 flex flex-wrap items-center gap-2.5 sm:mt-0 sm:pb-2">
-            {isOwnProfile ? (
-              <>
-                <button
-                  onClick={handleEditClick}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
-                >
-                  <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                  <span>Edit Profil</span>
-                </button>
-
-                <Link
-                  href={getBuilderUrl(username)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-4 py-2.5 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
-                >
-                  <span>✏️</span>
-                  <span>Tulis di Web Builder</span>
-                </Link>
-
-                <form action={signOutAction} className="inline-flex">
+            <div data-testid="profile-actions" className="ml-auto flex max-[359px]:flex-wrap flex-nowrap items-stretch gap-2.5">
+              {isOwnProfile ? (
+                <>
                   <button
-                    type="submit"
-                    title="Keluar dari akun Anda"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
+                    onClick={handleEditClick}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                   >
-                    <span>Keluar</span>
+                    <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    <span>Edit Profil</span>
                   </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={handleToggleFollow}
-                  disabled={isFollowLoading}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-sm transition ${
-                    isFollowing
-                      ? "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
-                      : "bg-[#F7ABC5] text-[#3F3766] hover:bg-[#F5E7C6]"
-                  }`}
-                >
-                  {isFollowing ? (
-                    <>
-                      <span>✓ Mengikuti</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>+ Ikuti</span>
-                    </>
-                  )}
-                </button>
 
-                <button
-                  onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                  title="Salin tautan profil"
-                >
-                  {copied ? (
-                    <span className="text-emerald-600 font-bold">✓ Tersalin!</span>
-                  ) : (
-                    <>
-                      <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                        />
+                  <Link
+                    href={getBuilderUrl(username)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-3 py-2.5 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
+                  >
+                    <span>Tulis di Web Builder</span>
+                  </Link>
+
+                  <form action={signOutAction} className="inline-flex">
+                    <button
+                      type="submit"
+                      title="Keluar dari akun Anda"
+                      aria-label="Keluar dari akun Anda"
+                      className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-2.5 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                       </svg>
-                      <span>Bagikan</span>
-                    </>
-                  )}
-                </button>
-              </>
-            )}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleToggleFollow}
+                    disabled={isFollowLoading}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-sm transition ${
+                      isFollowing
+                        ? "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
+                        : "bg-[#F7ABC5] text-[#3F3766] hover:bg-[#F5E7C6]"
+                    }`}
+                  >
+                    {isFollowing ? (
+                      <>
+                        <span>✓ Mengikuti</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>+ Ikuti</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleShare}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    title="Salin tautan profil"
+                  >
+                    {copied ? (
+                      <span className="text-emerald-600 font-bold">✓ Tersalin!</span>
+                    ) : (
+                      <>
+                        <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                          />
+                        </svg>
+                        <span>Bagikan</span>
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
