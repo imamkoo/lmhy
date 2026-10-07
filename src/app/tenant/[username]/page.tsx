@@ -127,6 +127,7 @@ export default async function TenantProfilePage({
           articles={articles}
           profile={profile}
           username={username}
+          isOwnProfile={isOwnProfile}
         />
 
         {/* Modal for Creator to update profile details */}
