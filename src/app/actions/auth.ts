@@ -34,6 +34,14 @@ async function getOrigin(): Promise<string> {
   const headerStore = await headers();
   const host = headerStore.get('host') || 'letmehearyou.id';
   const proto = headerStore.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+
+  // Untuk environment production/preview domain letmehearyou.id:
+  // Selalu arahkan OAuth callback ke kanonik 'letmehearyou.id'.
+  // Menghindari Google OAuth 400 (redirect_uri_mismatch) jika login dipicu dari subdomain (*.letmehearyou.id).
+  if (host.includes('letmehearyou.id')) {
+    return 'https://letmehearyou.id';
+  }
+
   return `${proto}://${host}`;
 }
 
