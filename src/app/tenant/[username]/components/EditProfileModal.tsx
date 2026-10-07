@@ -32,6 +32,9 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
   const [bio, setBio] = useState(profile.bio || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || "");
   const [bannerUrl, setBannerUrl] = useState(profile.banner_url || "");
+  const [bannerFit, setBannerFit] = useState<"cover" | "contain">(() => {
+    return profile.banner_url?.includes("fit=contain") ? "contain" : "cover";
+  });
   const [website, setWebsite] = useState(profile.website || "");
   const [facebookUrl, setFacebookUrl] = useState(profile.facebook_profile_url || "");
   const [loading, setLoading] = useState(false);
@@ -124,11 +127,20 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
     }
   };
 
+  const formatBannerUrl = (url: string, fit: "cover" | "contain"): string => {
+    const clean = url.trim().replace(/[?#]fit=contain/g, "");
+    if (!clean) return "";
+    return fit === "contain" ? `${clean}#fit=contain` : clean;
+  };
+
   const cleanupReplacedMedia = (oldUrl: string | null, currentUrl: string) => {
     const current = currentUrl.trim() || null;
     if (!oldUrl || oldUrl === current) return;
     if (!isOwnProfileMediaUrl(oldUrl, profile.id)) return;
     const oldPath = extractOwnProfileMediaPath(oldUrl, profile.id);
+    const currentPath = current ? extractOwnProfileMediaPath(current, profile.id) : null;
+    // Don't delete file if only the URL marker (#fit=contain) changed
+    if (oldPath && currentPath && oldPath === currentPath) return;
     if (oldPath) {
       removeProfileMedia(createClient(), oldPath);
     }
@@ -146,11 +158,13 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
     setSuccess(false);
 
     try {
+      const finalBannerUrl = formatBannerUrl(bannerUrl, bannerFit);
+
       const res = await updateProfileAction({
         displayName: displayName.trim(),
         bio: bio.trim() || null,
         avatarUrl: avatarUrl.trim() || null,
-        bannerUrl: bannerUrl.trim() || null,
+        bannerUrl: finalBannerUrl || null,
         website: website.trim() || null,
         facebookProfileUrl: facebookUrl.trim() || null,
       });
@@ -163,7 +177,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
 
       setPendingUploads({});
       cleanupReplacedMedia(profile.avatar_url, avatarUrl);
-      cleanupReplacedMedia(profile.banner_url, bannerUrl);
+      cleanupReplacedMedia(profile.banner_url, finalBannerUrl);
       setSuccess(true);
       router.refresh();
       setTimeout(() => {
@@ -217,6 +231,96 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
             ✓ Profil berhasil disimpan! Memperbarui tampilan...
           </div>
         )}
+
+        {/* Live Real Preview */}
+        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/60 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 bg-white px-3.5 py-1.5">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              Pratinjau Langsung (Live Preview)
+            </span>
+            <span className="text-[10px] text-slate-400">
+              Tampilan nyata di halaman profil
+            </span>
+          </div>
+          <div className="p-3">
+            <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs">
+              {/* Mini Banner */}
+              <div className="relative h-20 w-full overflow-hidden bg-[linear-gradient(120deg,#fae8df_0%,#f4d7c8_55%,#eed2c4_100%)]">
+                {bannerUrl ? (
+                  <>
+                    {bannerFit === "contain" && (
+                      <>
+                        <div className="absolute inset-0 bg-[radial-gradient(#F7ABC5_1px,transparent_1px)] opacity-[.4] [background-size:10px_10px]" />
+                        <div className="absolute -top-6 right-6 h-16 w-16 rounded-full bg-[rgba(247,171,197,0.3)]" />
+                        <div className="absolute -bottom-4 left-8 h-12 w-12 rounded-full bg-[rgba(63,55,102,0.08)]" />
+                      </>
+                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={bannerUrl}
+                      alt="Preview Banner"
+                      className={
+                        bannerFit === "contain"
+                          ? "relative z-10 h-full w-full object-contain p-1.5"
+                          : "h-full w-full object-cover"
+                      }
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="absolute inset-0 bg-[radial-gradient(#F7ABC5_1.3px,transparent_1.3px)] opacity-[.65] [background-size:12px_12px]" />
+                    <div className="absolute -top-6 right-6 h-16 w-16 rounded-full bg-[rgba(247,171,197,0.5)]" />
+                    <div className="absolute -bottom-4 left-8 h-12 w-12 rounded-full bg-[rgba(63,55,102,0.10)]" />
+                  </>
+                )}
+              </div>
+
+              {/* Mini Profile Info Bar */}
+              <div className="px-3 pb-2.5 pt-0">
+                <div className="flex items-end gap-2.5 -mt-6">
+                  {/* Mini Avatar */}
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white bg-[#F7ABC5] shadow-sm flex items-center justify-center text-[#3F3766] font-bold text-sm select-none z-20">
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarUrl}
+                        alt="Preview Avatar"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <span>
+                        {displayName
+                          ? displayName.charAt(0).toUpperCase()
+                          : profile.username.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1 pb-0.5">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="font-bold text-slate-900 text-xs truncate">
+                        {displayName || "Nama Tampilan"}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-[#F7ABC5]/20 px-1.5 py-0.2 text-[9px] font-semibold text-[#3F3766]">
+                        @{profile.username}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 truncate">
+                      {profile.username}.letmehearyou.id
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
@@ -323,23 +427,38 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
 
           {/* Banner Upload */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              Banner Sampul
-            </label>
-            <div className="mt-1.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Banner Sampul
+              </label>
               {bannerUrl && (
-                <div className="relative h-14 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={bannerUrl}
-                    alt="Preview Banner"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = "none";
-                    }}
-                  />
+                <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 text-[11px] font-medium text-slate-600">
+                  <button
+                    type="button"
+                    onClick={() => setBannerFit("cover")}
+                    className={`rounded-md px-2 py-0.5 transition ${
+                      bannerFit === "cover"
+                        ? "bg-white text-slate-900 font-semibold shadow-xs"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    Isi Penuh (Cover)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBannerFit("contain")}
+                    className={`rounded-md px-2 py-0.5 transition ${
+                      bannerFit === "contain"
+                        ? "bg-white text-slate-900 font-semibold shadow-xs"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    Utuh / Pas (Contain)
+                  </button>
                 </div>
               )}
+            </div>
+            <div className="mt-1.5 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
