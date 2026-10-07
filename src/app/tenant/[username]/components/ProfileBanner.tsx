@@ -154,7 +154,7 @@ export function ProfileBanner({
 
           {/* Action CTAs (Right-aligned) */}
           <div className="mt-5 flex flex-wrap items-center gap-2.5 sm:mt-0 sm:grow sm:pb-2">
-            <div data-testid="profile-actions" className="ml-auto flex max-[359px]:flex-wrap flex-nowrap items-stretch gap-2.5">
+            <div data-testid="profile-actions" className="ml-auto flex max-[386px]:flex-wrap flex-nowrap items-stretch gap-2.5">
               {isOwnProfile ? (
                 <>
                   <button
