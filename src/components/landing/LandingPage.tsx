@@ -6,6 +6,8 @@ import { ContactForm } from "./ContactForm";
 import { LandingEffects } from "./LandingEffects";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/app/actions/auth";
+import { motion } from "motion/react";
+import { fadeUp, fadeDown, blurIn, slideRight, staggerParent, staggerChild, triggerOnly, viewportOnce } from "./motion-variants";
 
 const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
 
@@ -90,7 +92,7 @@ export function LandingPage({
         <img src="/assets/LMHY.png" alt="preloader" />
       </div>
 
-      <header className="header">
+      <motion.header className="header" initial="hidden" animate="visible" variants={fadeDown}>
         <div className="container">
           <div className="header-main">
             <div className="logo">
@@ -177,12 +179,19 @@ export function LandingPage({
             </nav>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      <section className="home" id="home">
+      <motion.section
+        className="home"
+        id="home"
+        initial="hidden"
+        whileInView="visible"
+        variants={staggerParent}
+        viewport={viewportOnce}
+      >
         <div className="container">
           <div className="row">
-            <div className="home-text">
+            <motion.div className="home-text" variants={fadeUp}>
               <h1>We Provide The Best Care For You</h1>
               <p>
                 Kami adalah komunitas yang peduli dengan Kesehatan Mental,
@@ -198,8 +207,8 @@ export function LandingPage({
                   Tulis Ceritamu
                 </Link>
               </div>
-            </div>
-            <div className="home-img">
+            </motion.div>
+            <motion.div className="home-img" variants={blurIn}>
               <div className="fancy-br-box">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={LOGO} alt="Let Me Hear You" />
@@ -208,12 +217,19 @@ export function LandingPage({
                   <img src="/assets/sapiens.png" alt="" />
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="about section-padding" id="about">
+      <motion.section
+        className="about section-padding"
+        id="about"
+        initial="hidden"
+        whileInView="visible"
+        variants={slideRight}
+        viewport={viewportOnce}
+      >
         <div className="container">
           <div className="section-title">
             <h2 className="title">About Us</h2>
@@ -261,22 +277,29 @@ export function LandingPage({
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="service section-padding" id="services">
+      <motion.section
+        className="service section-padding"
+        id="services"
+        initial="hidden"
+        whileInView="visible"
+        variants={triggerOnly}
+        viewport={viewportOnce}
+      >
         <div className="container">
-          <div className="section-title">
+          <motion.div className="section-title" variants={fadeUp}>
             <h2 className="title">Services</h2>
             <p className="sub-title">What we provide</p>
-          </div>
-          <div className="row">
+          </motion.div>
+          <motion.div className="row" variants={staggerParent}>
             {[
               { img: "1.jpg", title: "Mentoring", text: "Sharing tentang apa yang dirasa memberatkan dalam menjalani kehidupan tanpa mendapatkan penghakiman." },
               { img: "2.jpg", title: "Consultation", text: "Case yang lebih urgent dan serius akan di arahkan dan tangani oleh Psikolog handal." },
               { img: "3.jpg", title: "Sharing", text: "Mendapat sosial support dan komunitas sebagai sarana untuk berdiskusi." },
               { img: "4.jpg", title: "Online Mentoring", text: "Kelas khusus untuk modul atau webinar seputar psikologi dan kesehatan mental." },
             ].map((s) => (
-              <div key={s.img} className="services-item">
+              <motion.div key={s.img} className="services-item" variants={staggerChild}>
                 <div className="img-box">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`/assets/img/service/${s.img}`} alt="" />
@@ -285,40 +308,59 @@ export function LandingPage({
                   <h3>{s.title}</h3>
                   <p>{s.text}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="fun-fact">
+      <motion.section
+        className="fun-fact"
+        initial="hidden"
+        whileInView="visible"
+        variants={triggerOnly}
+        viewport={viewportOnce}
+      >
         <div className="container">
-          <div className="row">
+          <motion.div className="row" variants={staggerParent}>
             {[
               ["100", "Happy client"],
               ["99", "Mental health"],
               ["5", "Psikolog"],
               ["10", "Loyal clients"],
             ].map(([n, label]) => (
-              <div key={label} className="fun-fact-item">
+              <motion.div key={label} className="fun-fact-item" variants={staggerChild}>
                 <div className="box">
                   <h2>{n}</h2>
                   <p>{label}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="article section-padding" id="article">
+      <motion.section
+        className="article section-padding"
+        id="article"
+        initial="hidden"
+        whileInView="visible"
+        variants={triggerOnly}
+        viewport={viewportOnce}
+      >
         <div className="container">
-          <div className="section-title">
+          <motion.div className="section-title" variants={blurIn}>
             <h2 className="title">Article</h2>
             <p className="sub-title">Our Article</p>
-          </div>
+          </motion.div>
         </div>
-        <section className="cards-wrapper">
+        <motion.section
+          className="cards-wrapper"
+          initial="hidden"
+          whileInView="visible"
+          variants={staggerParent}
+          viewport={viewportOnce}
+        >
           {[
             {
               title: "Mental illness",
@@ -345,7 +387,7 @@ export function LandingPage({
                 "Salah satu masalah kesehatan yang penting diperhatikan oleh masyarakat adalah mental disorder...",
             },
           ].map((card) => (
-            <div key={card.title} className="card-grid-space">
+            <motion.div key={card.title} className="card-grid-space" variants={staggerChild}>
               <a
                 className="card"
                 href={`/blog/${card.slug}`}
@@ -359,17 +401,24 @@ export function LandingPage({
                   </div>
                 </div>
               </a>
-            </div>
+            </motion.div>
           ))}
-        </section>
+        </motion.section>
         <div className="container mt-8 text-center">
           <Link href="/blog" className="learn-more" style={{ display: "inline-block" }}>
             Lihat Semua Artikel →
           </Link>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="contact section-padding" id="contact">
+      <motion.section
+        className="contact section-padding"
+        id="contact"
+        initial="hidden"
+        whileInView="visible"
+        variants={fadeUp}
+        viewport={viewportOnce}
+      >
         <div className="container">
           <div className="row">
             <div className="contact-details">
@@ -427,7 +476,7 @@ export function LandingPage({
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <footer className="footer">
         <div className="footer-top">
