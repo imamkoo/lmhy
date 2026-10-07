@@ -106,6 +106,7 @@ export default async function TenantArticlePage({
 
   let currentUser = null;
   let isFollowingAuthor = false;
+  let isOwnArticle = false;
 
   if (authUser) {
     const { data: userProf } = await supabase
@@ -124,7 +125,9 @@ export default async function TenantArticlePage({
       avatar_url: userProf?.avatar_url || authUser.user_metadata?.avatar_url,
     };
 
-    if (authorId && authUser.id !== authorId) {
+    if (authorId && authUser.id === authorId) {
+      isOwnArticle = true;
+    } else if (authorId && authUser.id !== authorId) {
       isFollowingAuthor = await getFollowStatus(authUser.id, authorId);
     }
   }
@@ -149,12 +152,14 @@ export default async function TenantArticlePage({
             <span className="hidden sm:inline-block text-[10px] uppercase font-bold opacity-60">
               Tema: {activeTemplate.name}
             </span>
-            <Link
-              href={getBuilderUrl(normalizedUser)}
-              className="text-xs font-semibold opacity-70 hover:opacity-100 transition"
-            >
-              + Tulis Baru
-            </Link>
+            {isOwnArticle && (
+              <Link
+                href={getBuilderUrl(normalizedUser)}
+                className="text-xs font-semibold opacity-70 hover:opacity-100 transition"
+              >
+                + Tulis Baru
+              </Link>
+            )}
           </div>
         </div>
 

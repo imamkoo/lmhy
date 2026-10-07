@@ -9,6 +9,7 @@ interface ProfileTabsProps {
   articles: Article[];
   profile: Profile;
   username: string;
+  isOwnProfile?: boolean;
 }
 
 type TabType = "articles" | "nft" | "about";
@@ -17,6 +18,7 @@ export function ProfileTabs({
   articles,
   profile,
   username,
+  isOwnProfile = false,
 }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>("articles");
 
@@ -91,15 +93,17 @@ export function ProfileTabs({
               <p className="mt-1.5 text-sm text-slate-500">
                 @{username} belum membagikan tulisan jurnal di ruang ini.
               </p>
-              <div className="mt-6">
-                <Link
-                  href={getBuilderUrl(username)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
-                >
-                  <span>Mulai Tulis Sekarang</span>
-                  <span>→</span>
-                </Link>
-              </div>
+              {isOwnProfile && (
+                <div className="mt-6">
+                  <Link
+                    href={getBuilderUrl(username)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
+                  >
+                    <span>Mulai Tulis Sekarang</span>
+                    <span>→</span>
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             articles.map((art) => {
@@ -224,15 +228,17 @@ export function ProfileTabs({
               <p className="mt-1.5 text-sm text-slate-500 max-w-md mx-auto">
                 Kreator dapat mengaktifkan registrasi Litera Web3 saat menerbitkan tulisan dari Web Builder untuk menerbitkan sertifikat digital Polygon.
               </p>
-              <div className="mt-6">
-                <Link
-                  href={getBuilderUrl(username)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
-                >
-                  <span>Terbitkan Artikel NFT</span>
-                  <span>→</span>
-                </Link>
-              </div>
+              {isOwnProfile && (
+                <div className="mt-6">
+                  <Link
+                    href={getBuilderUrl(username)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
+                  >
+                    <span>Terbitkan Artikel NFT</span>
+                    <span>→</span>
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
