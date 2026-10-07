@@ -45,12 +45,10 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const handleClose = useCallback(() => {
-    if (uploading !== null) return;
+    if (uploading !== null || loading) return;
     try {
-      if (!loading) {
-        for (const entry of Object.values(pendingUploads)) {
-          removeProfileMedia(createClient(), entry.path);
-        }
+      for (const entry of Object.values(pendingUploads)) {
+        removeProfileMedia(createClient(), entry.path);
       }
     } catch {
       console.warn("[edit-profile] pending upload cleanup skipped");
