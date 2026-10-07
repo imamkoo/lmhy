@@ -83,6 +83,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: "/assets/logo let me hear you.jpeg",
+    apple: "/apple-touch-icon.png",
   },
 };
 
