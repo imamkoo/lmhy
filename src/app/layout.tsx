@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins, Geist } from "next/font/google";
 import Script from "next/script";
+import { InstallAppBanner } from "@/components/pwa/InstallAppBanner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { siteUrl } from "@/lib/site";
@@ -129,6 +130,7 @@ export default function RootLayout({
       </head>
       <body className={`${poppins.variable} min-h-screen antialiased`}>
         {children}
+        <InstallAppBanner />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-PZ90X2LJGY"
           strategy="afterInteractive"

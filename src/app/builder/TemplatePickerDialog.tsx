@@ -267,15 +267,14 @@ export function TemplatePickerDialog({
             onClick={onClose}
             className="flex-1 rounded-xl border-2 border-[#3F3766]/25 bg-white px-4 py-2.5 text-xs font-bold text-[#3F3766]/80 transition hover:bg-[#F5E7C6]/40 sm:flex-none"
           >
-            Batal
+            Lewati
           </button>
           <button
             type="button"
             onClick={onApply}
-            disabled={isUnchanged}
-            className="flex-1 rounded-xl border-2 border-[#3F3766] bg-[#F7ABC5] px-5 py-2.5 text-xs font-black text-[#3F3766] shadow-[0_4px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[3px] disabled:cursor-default disabled:bg-[#F5E7C6] disabled:text-[#3F3766]/60 disabled:shadow-none disabled:translate-y-0 sm:flex-none"
+            className="flex-1 rounded-xl border-2 border-[#3F3766] bg-[#F7ABC5] px-5 py-2.5 text-xs font-black text-[#3F3766] shadow-[0_4px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[3px] sm:flex-none"
           >
-            {isUnchanged ? "✓ Sudah Aktif" : "Terapkan Tema"}
+            {isUnchanged ? "Gunakan Tema Ini & Mulai Menulis →" : "Terapkan Tema & Mulai Menulis →"}
           </button>
         </div>
       </div>
