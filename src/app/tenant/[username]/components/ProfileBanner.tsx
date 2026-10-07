@@ -85,7 +85,7 @@ export function ProfileBanner({
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition">
       {/* Cover Banner with soft gradient fallback */}
-      <div className="relative h-44 w-full sm:h-56 md:h-64 bg-gradient-to-r from-[#fae8df] via-[#f7dfd3] to-[#e8d5c8] overflow-hidden">
+      <div className="relative h-44 w-full overflow-hidden bg-[linear-gradient(120deg,#fae8df_0%,#f4d7c8_55%,#eed2c4_100%)] sm:h-56 md:h-64">
         {profile.banner_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -94,9 +94,12 @@ export function ProfileBanner({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-[radial-gradient(#F7ABC5_1px,transparent_1px)] [background-size:16px_16px]" />
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(#F7ABC5_1.3px,transparent_1.3px)] opacity-[.65] [background-size:14px_14px]" />
+            <div data-testid="banner-blob-pink" className="absolute -top-12 right-12 h-32 w-32 rounded-full bg-[rgba(247,171,197,0.5)]" />
+            <div data-testid="banner-blob-purple" className="absolute -bottom-8 left-16 h-24 w-24 rounded-full bg-[rgba(63,55,102,0.10)]" />
+          </>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
       </div>
 
       {/* Main Profile Info Container */}
