@@ -8,6 +8,7 @@ interface LiteraLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (walletAddress: string, method: string) => void;
+  onDisconnect?: () => void;
 }
 
 const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -16,6 +17,7 @@ export function LiteraLoginModal({
   isOpen,
   onClose,
   onSuccess,
+  onDisconnect,
 }: LiteraLoginModalProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const popupRef = useRef<Window | null>(null);
@@ -33,9 +35,8 @@ export function LiteraLoginModal({
   }, [onClose]);
 
   // SSO Message Listener (Email / Google via Privy atau Web3 di Litera Cloud)
+  // Berjalan di latar belakang agar tetap menangkap respon auth / disconnect meski popup/modal ditutup
   useEffect(() => {
-    if (!isOpen) return;
-
     const handleAuthMessage = (event: MessageEvent) => {
       const isTrustedOrigin =
         event.origin === "https://literaa.xyz" ||
@@ -46,7 +47,21 @@ export function LiteraLoginModal({
       if (!isTrustedOrigin) return;
 
       const data = event.data;
-      if (data && data.type === "LITERA_CLOUD_LOGIN_SUCCESS" && data.address) {
+      if (!data) return;
+
+      // Sinyal Putus Akun / Ganti Akun dari Litera Cloud
+      if (
+        data.type === "LITERA_CLOUD_DISCONNECT" ||
+        data.type === "LITERA_DISCONNECT"
+      ) {
+        try {
+          disconnectAsync();
+        } catch {}
+        onDisconnect?.();
+        return;
+      }
+
+      if (data.type === "LITERA_CLOUD_LOGIN_SUCCESS" && data.address) {
         const savedNonce = sessionStorage.getItem("litera_sso_nonce");
         if (data.state && savedNonce && data.state !== savedNonce) {
           setErrorMsg("Sesi autentikasi tidak valid atau telah kedaluwarsa.");
@@ -71,7 +86,7 @@ export function LiteraLoginModal({
     return () => {
       window.removeEventListener("message", handleAuthMessage);
     };
-  }, [isOpen, handleClose, onSuccess]);
+  }, [disconnectAsync, handleClose, onDisconnect, onSuccess]);
 
   if (!isOpen) return null;
 

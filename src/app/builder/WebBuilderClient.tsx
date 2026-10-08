@@ -402,6 +402,20 @@ export function WebBuilderClient({
     setError(null);
   };
 
+  const handleDisconnectWallet = () => {
+    setCreatorWallet("");
+    setLoginMethod("");
+    try {
+      const rawDraft = localStorage.getItem(STORAGE_KEY);
+      if (rawDraft) {
+        const d = JSON.parse(rawDraft);
+        delete d.creatorWallet;
+        delete d.loginMethod;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+      }
+    } catch {}
+  };
+
   const cleanUser = username.trim() || "nama-domain";
   const domainPreview = `https://${cleanUser}.${activeBaseDomain}`;
   const activeTemplate: WebDesignTemplate = getDesignTemplate(selectedTemplateId);
@@ -1295,19 +1309,29 @@ export function WebBuilderClient({
                         <label className="text-xs font-bold text-[#3F3766]">
                           Akun Dompet Penulis Terverifikasi
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => setIsLoginModalOpen(true)}
-                          className="text-xs font-black text-[#3F3766] underline hover:text-[#3F3766]/70"
-                        >
-                          Ganti Akun
-                        </button>
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setIsLoginModalOpen(true)}
+                            className="text-xs font-black text-[#3F3766] underline hover:text-[#3F3766]/70 cursor-pointer"
+                          >
+                            Ganti Akun
+                          </button>
+                          <span className="text-[#3F3766]/30 text-xs">•</span>
+                          <button
+                            type="button"
+                            onClick={handleDisconnectWallet}
+                            className="text-xs font-bold text-red-600 hover:text-red-700 underline cursor-pointer"
+                          >
+                            Putuskan
+                          </button>
+                        </div>
                       </div>
 
                       <div className="p-3 bg-[#F7ABC5]/20 rounded-2xl border-2 border-[#3F3766]/20 flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/60 block mb-0.5">
-                            Alamat Dompet Terhubung
+                            Alamat Dompet Terhubung {loginMethod ? `(${loginMethod})` : ""}
                           </span>
                           <p className="text-xs font-mono font-bold text-[#3F3766] truncate">{creatorWallet}</p>
                         </div>
@@ -1732,8 +1756,12 @@ export function WebBuilderClient({
           isOpen={isLoginModalOpen}
           onClose={() => setIsLoginModalOpen(false)}
           onSuccess={handleLoginSuccess}
+          onDisconnect={handleDisconnectWallet}
         />
-        <WalletConnectWatcher onSuccess={handleLoginSuccess} />
+        <WalletConnectWatcher
+          onSuccess={handleLoginSuccess}
+          onDisconnect={handleDisconnectWallet}
+        />
       </Web3Providers>
     </div>
   );
