@@ -47,7 +47,7 @@ export function WebBuilderClient({
 
   // 2. Template & Article Content State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
-  const [showTemplatePicker, setShowTemplatePicker] = useState(true);
+  const [showTemplatePicker, setShowTemplatePicker] = useState<boolean>(false);
   const [stagedTemplateId, setStagedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -192,6 +192,8 @@ export function WebBuilderClient({
 
       try {
         const rawDraft = localStorage.getItem(STORAGE_KEY);
+        const hasPickedThemeBefore = localStorage.getItem("lmhy_theme_chosen") === "true";
+
         if (rawDraft) {
           const d = JSON.parse(rawDraft);
           if (d.username && !initialUsername) {
@@ -203,7 +205,10 @@ export function WebBuilderClient({
           if (d.excerpt !== undefined) setExcerpt(d.excerpt);
           if (d.content !== undefined) setContent(d.content);
           if (d.tags !== undefined) setTags(d.tags);
-          if (d.selectedTemplateId !== undefined) setSelectedTemplateId(d.selectedTemplateId);
+          if (d.selectedTemplateId !== undefined) {
+            setSelectedTemplateId(d.selectedTemplateId);
+            setStagedTemplateId(d.selectedTemplateId);
+          }
           if (d.registerLitera !== undefined) setRegisterLitera(d.registerLitera);
           if (d.creatorWallet) setCreatorWallet(d.creatorWallet);
           if (d.loginMethod) setLoginMethod(d.loginMethod);
@@ -215,6 +220,11 @@ export function WebBuilderClient({
           if (d.quizOptions !== undefined) setQuizOptions(d.quizOptions);
           if (d.correctIndex !== undefined) setCorrectIndex(d.correctIndex);
           if (d.savedAt) setLastSavedTime(d.savedAt);
+        }
+
+        // Hanya tampilkan popup tema jika pengguna baru pertama kali ke /builder dan belum pernah memilih tema
+        if (!hasPickedThemeBefore && !rawDraft) {
+          setShowTemplatePicker(true);
         }
       } catch (e) {
         console.warn("Gagal memulihkan draf lokal:", e);
@@ -314,6 +324,12 @@ export function WebBuilderClient({
 
   const handleSelectTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
+    setStagedTemplateId(templateId);
+    try {
+      localStorage.setItem("lmhy_theme_chosen", "true");
+    } catch {
+      // storage blocked
+    }
   };
 
   const handleOpenTemplatePicker = () => {
@@ -324,6 +340,16 @@ export function WebBuilderClient({
   const handleApplyStagedTemplate = () => {
     handleSelectTemplate(stagedTemplateId);
     setShowTemplatePicker(false);
+  };
+
+  const handleCloseTemplatePicker = () => {
+    setStagedTemplateId(selectedTemplateId);
+    setShowTemplatePicker(false);
+    try {
+      localStorage.setItem("lmhy_theme_chosen", "true");
+    } catch {
+      // storage blocked
+    }
   };
 
   const handleApplyReflectionPrompt = (template: ReflectionTemplate) => {
@@ -1417,7 +1443,7 @@ export function WebBuilderClient({
           stagedId={stagedTemplateId}
           onStage={setStagedTemplateId}
           onApply={handleApplyStagedTemplate}
-          onClose={() => setShowTemplatePicker(false)}
+          onClose={handleCloseTemplatePicker}
           renderPreview={renderPreviewMockup}
         />
       )}

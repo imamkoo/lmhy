@@ -165,6 +165,8 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
   const [currentView, setCurrentView] = useState<"MAIN" | "ALL_WALLETS">("MAIN");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
+  const [connectingWalletName, setConnectingWalletName] = useState<string | null>(null);
+  const [activeDeepLink, setActiveDeepLink] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [wallets, setWallets] = useState<WalletListing[]>(INITIAL_WALLETS);
@@ -179,6 +181,8 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
     setErrorMsg(null);
     setSearchQuery("");
     setIsConnectingWallet(false);
+    setConnectingWalletName(null);
+    setActiveDeepLink(null);
     onClose();
   }, [onClose]);
 
@@ -314,6 +318,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
   const connectInjectedProvider = async (walletName: string = "Web3 Wallet") => {
     setErrorMsg(null);
     setIsConnectingWallet(true);
+    setConnectingWalletName(walletName);
 
     const win =
       typeof window !== "undefined"
@@ -326,6 +331,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
         if (!accounts || !accounts[0] || !EVM_ADDRESS_REGEX.test(accounts[0])) {
           setErrorMsg("Gagal membaca alamat akun dari dompet.");
           setIsConnectingWallet(false);
+          setConnectingWalletName(null);
           return;
         }
 
@@ -369,24 +375,33 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
         }
       } finally {
         setIsConnectingWallet(false);
+        setConnectingWalletName(null);
       }
     } else {
       setIsConnectingWallet(false);
+      setConnectingWalletName(null);
       setErrorMsg("Tidak ada ekstensi dompet Web3 yang terdeteksi di browser ini.");
     }
   };
 
-  // Handler: Koneksi dompet via WalletConnect v2 Resmi (Native Deep Link / Modal Resmi)
+  // Handler: Koneksi dompet via WalletConnect v2 Resmi (Modal Resmi / Deep Link)
   const connectViaWalletConnect = async (targetWallet?: WalletListing) => {
     setIsConnectingWallet(true);
+    setConnectingWalletName(targetWallet ? targetWallet.name : "WalletConnect");
     setErrorMsg(null);
+    setActiveDeepLink(null);
 
     try {
       const { EthereumProvider } = await import("@walletconnect/ethereum-provider");
+      
+      // Jika pengguna memilih Buka Modal QR / Dompet Lainnya (sama seperti Litera saat klik WalletConnect di mobile):
+      // Langsung gunakan modal resmi WalletConnect (showQrModal: true) yang otomatis menyediakan tombol "Open in App"
+      const showModal = !targetWallet;
+
       const provider = await EthereumProvider.init({
         projectId: WALLETCONNECT_PROJECT_ID,
         chains: [137], // Polygon Mainnet
-        showQrModal: !targetWallet, // Jika tanpa target dompet spesifik, tampilkan modal QR WalletConnect resmi
+        showQrModal: showModal,
         metadata: {
           name: "Let Me Hear You",
           description: "Platform & Komunitas Kesehatan Mental",
@@ -398,25 +413,36 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
         },
       });
 
-      // Jika pengguna memilih dompet spesifik (MetaMask, Trust, dll) di HP
+      // Jika ada target dompet spesifik
       if (targetWallet) {
         provider.on("display_uri", (uri: string) => {
           const encodedUri = encodeURIComponent(uri);
           const lowerName = targetWallet.name.toLowerCase();
 
-          // Native WalletConnect deep link (membuka dialog persetujuan native dompet, bukan in-app browser)
+          let targetLink = "";
           if (lowerName.includes("metamask")) {
-            window.location.assign(`https://metamask.app.link/wc?uri=${encodedUri}`);
+            targetLink = `https://metamask.app.link/wc?uri=${encodedUri}`;
           } else if (lowerName.includes("trust")) {
-            window.location.assign(`https://link.trustwallet.com/wc?uri=${encodedUri}`);
+            targetLink = `https://link.trustwallet.com/wc?uri=${encodedUri}`;
           } else if (lowerName.includes("tokenpocket")) {
-            window.location.assign(`tpoutside://wc?uri=${encodedUri}`);
+            targetLink = `tpoutside://wc?uri=${encodedUri}`;
           } else if (lowerName.includes("bitget") || lowerName.includes("bitkeep")) {
-            window.location.assign(`https://bkapp.vip/wc?uri=${encodedUri}`);
+            targetLink = `https://bkapp.vip/wc?uri=${encodedUri}`;
           } else if (targetWallet.mobile?.universal) {
-            window.location.assign(`${targetWallet.mobile.universal}/wc?uri=${encodedUri}`);
+            targetLink = `${targetWallet.mobile.universal}/wc?uri=${encodedUri}`;
           } else if (targetWallet.mobile?.native) {
-            window.location.assign(`${targetWallet.mobile.native}wc?uri=${encodedUri}`);
+            targetLink = `${targetWallet.mobile.native}wc?uri=${encodedUri}`;
+          } else {
+            targetLink = `wc:${uri}`;
+          }
+
+          setActiveDeepLink(targetLink);
+
+          // Coba buka otomatis jika diizinkan browser
+          try {
+            window.location.href = targetLink;
+          } catch {
+            // fallback ke tombol interaktif
           }
         });
       }
@@ -439,6 +465,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
       }
     } finally {
       setIsConnectingWallet(false);
+      setConnectingWalletName(null);
     }
   };
 
@@ -456,7 +483,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
       return;
     }
 
-    // Jika di mobile atau desktop tanpa ekstensi: gunakan alur WalletConnect v2 resmi
+    // Jika di mobile atau desktop tanpa ekstensi: gunakan alur WalletConnect v2
     connectViaWalletConnect(wallet);
   };
 
@@ -612,13 +639,29 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
               </div>
             </div>
 
-            {/* Pesan Status / Error */}
+            {/* Banner Status Koneksi / Tombol Buka Aplikasi Manual */}
             {isConnectingWallet && (
-              <div className="mx-5 mt-3 flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 p-2.5 text-xs font-semibold text-[#b86644] animate-pulse">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="animate-spin">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                </svg>
-                Menghubungkan ke dompet... Buka aplikasi dompet untuk konfirmasi.
+              <div className="mx-5 mt-3 flex flex-col gap-2 rounded-2xl border border-orange-200 bg-orange-50/90 p-3.5 text-xs text-[#b86644] animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 font-bold">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="animate-spin shrink-0">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  Menghubungkan ke {connectingWalletName || "Dompet"}...
+                </div>
+                <p className="text-[11px] text-gray-600 leading-relaxed">
+                  Jika aplikasi tidak terbuka otomatis, tekan tombol di bawah ini:
+                </p>
+                {activeDeepLink && (
+                  <a
+                    href={activeDeepLink}
+                    target="_self"
+                    rel="noreferrer"
+                    className="mt-1 w-full py-2 px-3 bg-[#d07954] hover:bg-[#b86644] text-white text-center rounded-xl font-bold text-xs shadow-xs transition-all active:scale-98 flex items-center justify-center gap-1.5"
+                  >
+                    Buka Aplikasi {connectingWalletName || "Dompet"}
+                    <span className="text-sm">↗</span>
+                  </a>
+                )}
               </div>
             )}
 
@@ -668,7 +711,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
               )}
             </div>
 
-            {/* Footer: Tombol WalletConnect QR Modal & Salin Link Studio */}
+            {/* Footer: Tombol WalletConnect Modal Resmi (Sama Seperti di Litera) & Salin Link Studio */}
             <div className="p-4 border-t border-gray-100 bg-slate-950/[0.02] shrink-0 space-y-2">
               <button
                 type="button"
@@ -682,7 +725,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
                   <rect x="14" y="14" width="7" height="7" />
                   <rect x="3" y="14" width="7" height="7" />
                 </svg>
-                Buka Modal QR / Dompet Lainnya
+                Buka Modal WalletConnect Resmi
               </button>
 
               <button
