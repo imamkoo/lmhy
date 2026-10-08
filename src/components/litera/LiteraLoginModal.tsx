@@ -166,7 +166,6 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [connectingWalletName, setConnectingWalletName] = useState<string | null>(null);
-  const [activeDeepLink, setActiveDeepLink] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [wallets, setWallets] = useState<WalletListing[]>(INITIAL_WALLETS);
@@ -182,7 +181,6 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
     setSearchQuery("");
     setIsConnectingWallet(false);
     setConnectingWalletName(null);
-    setActiveDeepLink(null);
     onClose();
   }, [onClose]);
 
@@ -389,19 +387,16 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
     setIsConnectingWallet(true);
     setConnectingWalletName(targetWallet ? targetWallet.name : "WalletConnect");
     setErrorMsg(null);
-    setActiveDeepLink(null);
 
     try {
       const { EthereumProvider } = await import("@walletconnect/ethereum-provider");
       
-      // Jika pengguna memilih Buka Modal QR / Dompet Lainnya (sama seperti Litera saat klik WalletConnect di mobile):
-      // Langsung gunakan modal resmi WalletConnect (showQrModal: true) yang otomatis menyediakan tombol "Open in App"
-      const showModal = !targetWallet;
-
+      // Pada mobile, selalu buka modal WalletConnect resmi (showQrModal: true) yang native menangani
+      // deep linking ke MetaMask, Trust, Binance, dll dengan 100% reliabilitas tanpa terblokir browser.
       const provider = await EthereumProvider.init({
         projectId: WALLETCONNECT_PROJECT_ID,
         chains: [137], // Polygon Mainnet
-        showQrModal: showModal,
+        showQrModal: true,
         metadata: {
           name: "Let Me Hear You",
           description: "Platform & Komunitas Kesehatan Mental",
@@ -412,40 +407,6 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
           themeMode: "light",
         },
       });
-
-      // Jika ada target dompet spesifik
-      if (targetWallet) {
-        provider.on("display_uri", (uri: string) => {
-          const encodedUri = encodeURIComponent(uri);
-          const lowerName = targetWallet.name.toLowerCase();
-
-          let targetLink = "";
-          if (lowerName.includes("metamask")) {
-            targetLink = `https://metamask.app.link/wc?uri=${encodedUri}`;
-          } else if (lowerName.includes("trust")) {
-            targetLink = `https://link.trustwallet.com/wc?uri=${encodedUri}`;
-          } else if (lowerName.includes("tokenpocket")) {
-            targetLink = `tpoutside://wc?uri=${encodedUri}`;
-          } else if (lowerName.includes("bitget") || lowerName.includes("bitkeep")) {
-            targetLink = `https://bkapp.vip/wc?uri=${encodedUri}`;
-          } else if (targetWallet.mobile?.universal) {
-            targetLink = `${targetWallet.mobile.universal}/wc?uri=${encodedUri}`;
-          } else if (targetWallet.mobile?.native) {
-            targetLink = `${targetWallet.mobile.native}wc?uri=${encodedUri}`;
-          } else {
-            targetLink = `wc:${uri}`;
-          }
-
-          setActiveDeepLink(targetLink);
-
-          // Coba buka otomatis jika diizinkan browser
-          try {
-            window.location.href = targetLink;
-          } catch {
-            // fallback ke tombol interaktif
-          }
-        });
-      }
 
       await provider.enable();
 
@@ -500,14 +461,14 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
       onClick={handleClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Autentikasi Litera"
-        className="relative w-full sm:max-w-[420px] max-h-[85vh] flex flex-col overflow-hidden rounded-t-[32px] sm:rounded-[28px] border border-white/70 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.3),0_0_70px_rgba(208,121,84,0.2)] backdrop-blur-xl animate-in slide-in-from-bottom-6 sm:zoom-in duration-200"
+        className="relative w-full sm:max-w-[420px] max-h-[85vh] flex flex-col overflow-hidden rounded-t-[32px] sm:rounded-[28px] border border-white/70 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ========================================================
@@ -545,7 +506,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
               <button
                 onClick={handleEmailGoogleLogin}
                 type="button"
-                className="group relative w-full flex items-center justify-between overflow-hidden rounded-2xl border border-[#d07954]/50 bg-gradient-to-r from-[#fff8f4] to-white p-4.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_22px_rgba(208,121,84,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#d07954] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d07954]"
+                className="group relative w-full flex items-center justify-between overflow-hidden rounded-2xl border border-[#d07954]/50 bg-[#fff8f4] p-4.5 text-left transition-all duration-150 active:scale-98 hover:border-[#d07954] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d07954]"
               >
                 <div className="flex-1 min-w-0 pr-2">
                   <span className="block text-[0.95rem] font-[700] text-gray-900">Email atau Google</span>
@@ -564,7 +525,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
                 }}
                 disabled={isConnectingWallet}
                 type="button"
-                className="group relative mt-3 w-full flex items-center justify-between overflow-hidden rounded-2xl border border-gray-200 bg-white p-4.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_12px_26px_rgba(15,23,42,0.08)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d07954] disabled:opacity-60"
+                className="group relative mt-3 w-full flex items-center justify-between overflow-hidden rounded-2xl border border-gray-200 bg-white p-4.5 text-left transition-all duration-150 active:scale-98 hover:border-gray-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d07954] disabled:opacity-60"
               >
                 <div className="flex-1 min-w-0 pr-2">
                   <span className="block text-[0.95rem] font-[700] text-gray-900">Hubungkan Dompet</span>
@@ -639,29 +600,13 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
               </div>
             </div>
 
-            {/* Banner Status Koneksi / Tombol Buka Aplikasi Manual */}
+            {/* Banner Status Koneksi */}
             {isConnectingWallet && (
-              <div className="mx-5 mt-3 flex flex-col gap-2 rounded-2xl border border-orange-200 bg-orange-50/90 p-3.5 text-xs text-[#b86644] animate-in fade-in duration-150">
-                <div className="flex items-center gap-2 font-bold">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="animate-spin shrink-0">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                  Menghubungkan ke {connectingWalletName || "Dompet"}...
-                </div>
-                <p className="text-[11px] text-gray-600 leading-relaxed">
-                  Jika aplikasi tidak terbuka otomatis, tekan tombol di bawah ini:
-                </p>
-                {activeDeepLink && (
-                  <a
-                    href={activeDeepLink}
-                    target="_self"
-                    rel="noreferrer"
-                    className="mt-1 w-full py-2 px-3 bg-[#d07954] hover:bg-[#b86644] text-white text-center rounded-xl font-bold text-xs shadow-xs transition-all active:scale-98 flex items-center justify-center gap-1.5"
-                  >
-                    Buka Aplikasi {connectingWalletName || "Dompet"}
-                    <span className="text-sm">↗</span>
-                  </a>
-                )}
+              <div className="mx-5 mt-3 flex items-center gap-2 rounded-2xl border border-orange-200 bg-orange-50/90 p-3 text-xs font-bold text-[#b86644]">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="animate-spin shrink-0">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Membuka {connectingWalletName || "Dompet"}...
               </div>
             )}
 
@@ -680,9 +625,9 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
                     type="button"
                     disabled={isConnectingWallet}
                     onClick={() => handleSelectWallet(wallet)}
-                    className="flex flex-col items-center justify-start p-2 rounded-2xl hover:bg-gray-100/70 active:scale-95 transition-all cursor-pointer group text-center disabled:opacity-50"
+                    className="flex flex-col items-center justify-start p-2 rounded-2xl hover:bg-gray-100/70 active:scale-95 transition-transform cursor-pointer group text-center disabled:opacity-50"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 shadow-xs flex items-center justify-center p-2 mb-1.5 group-hover:shadow-md group-hover:border-gray-200 transition-all overflow-hidden shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 shadow-xs flex items-center justify-center p-2 mb-1.5 group-hover:border-gray-200 transition-colors overflow-hidden shrink-0">
                       {wallet.image_url?.md || wallet.image_url?.sm ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -711,13 +656,13 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
               )}
             </div>
 
-            {/* Footer: Tombol WalletConnect Modal Resmi (Sama Seperti di Litera) & Salin Link Studio */}
+            {/* Footer: Tombol WalletConnect Modal Resmi & Salin Link Studio */}
             <div className="p-4 border-t border-gray-100 bg-slate-950/[0.02] shrink-0 space-y-2">
               <button
                 type="button"
                 onClick={() => connectViaWalletConnect()}
                 disabled={isConnectingWallet}
-                className="w-full py-2.5 px-4 bg-[#d07954] hover:bg-[#b86644] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-2.5 px-4 bg-[#d07954] hover:bg-[#b86644] text-white rounded-xl text-xs font-bold transition-transform active:scale-98 shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="7" height="7" />
@@ -731,7 +676,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-transform active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="9" y="9" width="13" height="13" rx="2" />
