@@ -187,7 +187,7 @@ export function WebBuilderClient({
             setError("Alamat dompet Litera yang diterima tidak valid.");
           } else {
             setCreatorWallet(liteAddr);
-            setLoginMethod("Litera Dashboard SSO");
+            setLoginMethod("");
             setRegisterLitera(true);
             sessionStorage.removeItem("litera_sso_nonce");
           }
@@ -1307,13 +1307,13 @@ export function WebBuilderClient({
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-xs font-bold text-[#3F3766]">
-                          Akun Dompet Penulis Terverifikasi
+                          Dompet Penulis
                         </label>
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => setIsLoginModalOpen(true)}
-                            className="text-xs font-black text-[#3F3766] underline hover:text-[#3F3766]/70 cursor-pointer"
+                            className="text-[11px] font-bold text-[#3F3766] hover:underline cursor-pointer"
                           >
                             Ganti Akun
                           </button>
@@ -1321,7 +1321,7 @@ export function WebBuilderClient({
                           <button
                             type="button"
                             onClick={handleDisconnectWallet}
-                            className="text-xs font-bold text-red-600 hover:text-red-700 underline cursor-pointer"
+                            className="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
                           >
                             Putuskan
                           </button>
@@ -1331,7 +1331,7 @@ export function WebBuilderClient({
                       <div className="p-3 bg-[#F7ABC5]/20 rounded-2xl border-2 border-[#3F3766]/20 flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/60 block mb-0.5">
-                            Alamat Dompet Terhubung {loginMethod ? `(${loginMethod})` : ""}
+                            Alamat Dompet Terhubung
                           </span>
                           <p className="text-xs font-mono font-bold text-[#3F3766] truncate">{creatorWallet}</p>
                         </div>
