@@ -245,8 +245,8 @@ export function WebBuilderClient({
           if (d.savedAt) setLastSavedTime(d.savedAt);
         }
 
-        // Hanya tampilkan popup tema jika pengguna baru pertama kali ke /builder dan belum pernah memilih tema
-        if (!hasPickedThemeBefore && !rawDraft) {
+        // Hanya tampilkan popup tema jika pengguna sudah login, baru pertama kali ke /builder, dan belum pernah memilih tema
+        if (initialUser && !hasPickedThemeBefore && !rawDraft) {
           setShowTemplatePicker(true);
         }
       } catch (e) {
@@ -257,7 +257,7 @@ export function WebBuilderClient({
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [initialUsername]);
+  }, [initialUsername, initialUser]);
 
   // 7. Auto-save to Local Storage on Change
   useEffect(() => {
