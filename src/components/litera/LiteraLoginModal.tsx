@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useConnect } from "wagmi";
-import { useSmartConnectModal } from "./useSmartConnectModal";
+import { useSmartConnectModal, isMobileDevice } from "./useSmartConnectModal";
 
 interface LiteraLoginModalProps {
   isOpen: boolean;
@@ -31,7 +31,7 @@ export function LiteraLoginModal({
     onClose();
   }, [onClose]);
 
-  // SSO Message Listener (Email / Google via Privy di Litera Cloud)
+  // SSO Message Listener (Email / Google via Privy atau Web3 di Litera Cloud)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -58,7 +58,7 @@ export function LiteraLoginModal({
         }
 
         sessionStorage.removeItem("litera_sso_nonce");
-        onSuccess(data.address, "Litera Cloud (Email / Google)");
+        onSuccess(data.address, "Litera Cloud");
         if (popupRef.current && !popupRef.current.closed) {
           popupRef.current.close();
         }
@@ -74,8 +74,8 @@ export function LiteraLoginModal({
 
   if (!isOpen) return null;
 
-  // Handler: Login via Litera Cloud (Email atau Google via Privy)
-  const handleEmailGoogleLogin = () => {
+  // Helper untuk membuka Litera Cloud Auth Popup / Redirect
+  const openLiteraCloudAuth = (authType: "email" | "wallet" = "email") => {
     setErrorMsg(null);
 
     const nonce =
@@ -95,13 +95,9 @@ export function LiteraLoginModal({
         : "https://letmehearyou.id/builder";
     const authUrl = `${LITERA_ORIGIN}/widget-auth?article=${encodeURIComponent(
       callbackUrl
-    )}&state=${encodeURIComponent(nonce)}`;
+    )}&state=${encodeURIComponent(nonce)}&auth=${authType}`;
 
-    const ua =
-      typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
-    const isMobile =
-      /android|iphone|ipad|ipod|mobile/i.test(ua) ||
-      (typeof window !== "undefined" && window.innerWidth < 640);
+    const isMobile = isMobileDevice();
 
     if (isMobile) {
       window.location.assign(authUrl);
@@ -128,11 +124,17 @@ export function LiteraLoginModal({
     popup.focus();
   };
 
-  // Handler: Koneksi Dompet Web3 (Injected-first -> Fallback useSmartConnectModal)
+  // Handler: Login via Litera Cloud (Email atau Google via Privy)
+  const handleEmailGoogleLogin = () => {
+    openLiteraCloudAuth("email");
+  };
+
+  // Handler: Koneksi Dompet Web3 (Injected-first -> Mobile Litera Widget-Auth / Desktop Modal)
   const handleConnectWallet = async () => {
     setErrorMsg(null);
 
-    // 1. Prioritaskan Injected Connector bila browser memiliki window.ethereum (ekstensi desktop / in-app dApp browser)
+    // 1. Desktop Injected Extension (MetaMask, OKX, Brave, Rabby)
+    // ATAU dApp In-App Browser (MetaMask Browser)
     const injectedConnector = connectors?.find((c) => c.id === "injected");
     const hasInjectedProvider =
       typeof window !== "undefined" &&
@@ -158,7 +160,15 @@ export function LiteraLoginModal({
       }
     }
 
-    // 2. Buka Smart Connect Modal (Mobile: direct WalletConnect modal & app deep links; Desktop: RainbowKit modal)
+    // 2. Mobile Browser Biasa (Chrome / Safari di HP):
+    // Arahkan ke Litera Widget Auth (`auth=wallet`) yang memiliki handshake andal dan 100% lancar
+    if (isMobileDevice()) {
+      handleClose();
+      openLiteraCloudAuth("wallet");
+      return;
+    }
+
+    // 3. Desktop tanpa Injected Provider: Buka RainbowKit Modal
     handleClose();
     if (openConnectModal) {
       openConnectModal();
@@ -235,7 +245,7 @@ export function LiteraLoginModal({
             </span>
           </button>
 
-          {/* Opsi 2: Hubungkan Dompet Web3 -> Smart Connect Modal */}
+          {/* Opsi 2: Hubungkan Dompet Web3 -> Injected langsung / Litera Widget Auth / RainbowKit Modal */}
           <button
             onClick={handleConnectWallet}
             type="button"
