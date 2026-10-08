@@ -28,7 +28,7 @@ const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const POLYGON_CHAIN_ID_HEX = "0x89"; // 137 in hex
 const WALLETCONNECT_PROJECT_ID = "d94f04faafa515ac177c9c41052264b7";
 
-// Fallback kurasi dompet populer resmi dari WalletConnect Explorer
+// Kurasi dompet populer resmi dari WalletConnect Explorer
 const INITIAL_WALLETS: WalletListing[] = [
   {
     id: "c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96",
@@ -178,6 +178,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
     setCopiedLink(false);
     setErrorMsg(null);
     setSearchQuery("");
+    setIsConnectingWallet(false);
     onClose();
   }, [onClose]);
 
@@ -201,7 +202,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
           }
         }
       } catch {
-        // Gunakan INITIAL_WALLETS jika offline / error
+        // Fallback ke INITIAL_WALLETS
       } finally {
         if (isMounted) setIsLoadingWallets(false);
       }
@@ -309,7 +310,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
     popup.focus();
   };
 
-  // Handler: Request Akun via Injected Web3 Provider
+  // Handler: Request Akun via Injected Web3 Provider (Desktop / dApp browser)
   const connectInjectedProvider = async (walletName: string = "Web3 Wallet") => {
     setErrorMsg(null);
     setIsConnectingWallet(true);
@@ -371,71 +372,92 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
       }
     } else {
       setIsConnectingWallet(false);
-      // Jika di desktop tanpa extension, tampilkan pesan
       setErrorMsg("Tidak ada ekstensi dompet Web3 yang terdeteksi di browser ini.");
+    }
+  };
+
+  // Handler: Koneksi dompet via WalletConnect v2 Resmi (Native Deep Link / Modal Resmi)
+  const connectViaWalletConnect = async (targetWallet?: WalletListing) => {
+    setIsConnectingWallet(true);
+    setErrorMsg(null);
+
+    try {
+      const { EthereumProvider } = await import("@walletconnect/ethereum-provider");
+      const provider = await EthereumProvider.init({
+        projectId: WALLETCONNECT_PROJECT_ID,
+        chains: [137], // Polygon Mainnet
+        showQrModal: !targetWallet, // Jika tanpa target dompet spesifik, tampilkan modal QR WalletConnect resmi
+        metadata: {
+          name: "Let Me Hear You",
+          description: "Platform & Komunitas Kesehatan Mental",
+          url: typeof window !== "undefined" ? window.location.origin : "https://letmehearyou.id",
+          icons: ["https://letmehearyou.id/icon-192.png"],
+        },
+        qrModalOptions: {
+          themeMode: "light",
+        },
+      });
+
+      // Jika pengguna memilih dompet spesifik (MetaMask, Trust, dll) di HP
+      if (targetWallet) {
+        provider.on("display_uri", (uri: string) => {
+          const encodedUri = encodeURIComponent(uri);
+          const lowerName = targetWallet.name.toLowerCase();
+
+          // Native WalletConnect deep link (membuka dialog persetujuan native dompet, bukan in-app browser)
+          if (lowerName.includes("metamask")) {
+            window.location.assign(`https://metamask.app.link/wc?uri=${encodedUri}`);
+          } else if (lowerName.includes("trust")) {
+            window.location.assign(`https://link.trustwallet.com/wc?uri=${encodedUri}`);
+          } else if (lowerName.includes("tokenpocket")) {
+            window.location.assign(`tpoutside://wc?uri=${encodedUri}`);
+          } else if (lowerName.includes("bitget") || lowerName.includes("bitkeep")) {
+            window.location.assign(`https://bkapp.vip/wc?uri=${encodedUri}`);
+          } else if (targetWallet.mobile?.universal) {
+            window.location.assign(`${targetWallet.mobile.universal}/wc?uri=${encodedUri}`);
+          } else if (targetWallet.mobile?.native) {
+            window.location.assign(`${targetWallet.mobile.native}wc?uri=${encodedUri}`);
+          }
+        });
+      }
+
+      await provider.enable();
+
+      const accounts = provider.accounts;
+      if (accounts && accounts[0] && EVM_ADDRESS_REGEX.test(accounts[0])) {
+        onSuccess(accounts[0], targetWallet ? targetWallet.name : "WalletConnect");
+        handleClose();
+      } else {
+        setErrorMsg("Gagal membaca alamat akun dari WalletConnect.");
+      }
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message || "";
+      if (msg.toLowerCase().includes("user rejected") || msg.toLowerCase().includes("cancel")) {
+        setErrorMsg("Koneksi dompet dibatalkan.");
+      } else {
+        setErrorMsg(msg || "Gagal menghubungkan WalletConnect.");
+      }
+    } finally {
+      setIsConnectingWallet(false);
     }
   };
 
   // Handler Klik Dompet Spesifik pada Grid All Wallets
   const handleSelectWallet = (wallet: WalletListing) => {
     setErrorMsg(null);
-    const ua = typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
-    const isMobile =
-      /android|iphone|ipad|ipod|mobile/i.test(ua) || (typeof window !== "undefined" && window.innerWidth < 640);
-
     const win =
       typeof window !== "undefined"
         ? (window as unknown as { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } })
         : {};
 
-    // Jika di browser dApp atau desktop dengan ekstensi aktif
+    // Jika di desktop dengan ekstensi aktif atau di browser dApp
     if (win.ethereum && typeof win.ethereum.request === "function") {
       connectInjectedProvider(wallet.name);
       return;
     }
 
-    // Jika di mobile biasa tanpa provider aktif
-    if (isMobile) {
-      const currentUrl = typeof window !== "undefined" ? window.location.href : "https://letmehearyou.id/builder";
-      const cleanUrl = currentUrl.replace(/^https?:\/\//, "");
-
-      // Deep link khusus dompet populer
-      const lowerName = wallet.name.toLowerCase();
-      if (lowerName.includes("metamask")) {
-        window.location.assign(`https://metamask.app.link/dapp/${cleanUrl}`);
-        return;
-      }
-      if (lowerName.includes("trust")) {
-        window.location.assign(`https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`);
-        return;
-      }
-      if (lowerName.includes("tokenpocket")) {
-        window.location.assign(`tpoutside://open?url=${encodeURIComponent(currentUrl)}`);
-        return;
-      }
-      if (lowerName.includes("bitget") || lowerName.includes("bitkeep")) {
-        window.location.assign(`https://bkapp.vip/dapp?url=${encodeURIComponent(currentUrl)}`);
-        return;
-      }
-
-      // Universal / Native fallback dari metadata WalletConnect
-      if (wallet.mobile?.universal) {
-        window.location.assign(`${wallet.mobile.universal}/dapp/${cleanUrl}`);
-        return;
-      }
-      if (wallet.mobile?.native) {
-        window.location.assign(`${wallet.mobile.native}dapp/${cleanUrl}`);
-        return;
-      }
-
-      // Jika tidak ada deep link spesifik, salin URL dan beri instruksi
-      handleCopyLink();
-      setErrorMsg(`Link studio disalin. Silakan buka aplikasi ${wallet.name} dan tempel di dApp Browser.`);
-      return;
-    }
-
-    // Di Desktop tanpa provider
-    connectInjectedProvider(wallet.name);
+    // Jika di mobile atau desktop tanpa ekstensi: gunakan alur WalletConnect v2 resmi
+    connectViaWalletConnect(wallet);
   };
 
   // Salin Link URL Studio
@@ -590,7 +612,16 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
               </div>
             </div>
 
-            {/* Pesan Error / Status */}
+            {/* Pesan Status / Error */}
+            {isConnectingWallet && (
+              <div className="mx-5 mt-3 flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 p-2.5 text-xs font-semibold text-[#b86644] animate-pulse">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="animate-spin">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Menghubungkan ke dompet... Buka aplikasi dompet untuk konfirmasi.
+              </div>
+            )}
+
             {errorMsg && (
               <div className="mx-5 mt-3 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs font-semibold text-amber-800 leading-relaxed">
                 {errorMsg}
@@ -604,8 +635,9 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
                   <button
                     key={wallet.id}
                     type="button"
+                    disabled={isConnectingWallet}
                     onClick={() => handleSelectWallet(wallet)}
-                    className="flex flex-col items-center justify-start p-2 rounded-2xl hover:bg-gray-100/70 active:scale-95 transition-all cursor-pointer group text-center"
+                    className="flex flex-col items-center justify-start p-2 rounded-2xl hover:bg-gray-100/70 active:scale-95 transition-all cursor-pointer group text-center disabled:opacity-50"
                   >
                     <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 shadow-xs flex items-center justify-center p-2 mb-1.5 group-hover:shadow-md group-hover:border-gray-200 transition-all overflow-hidden shrink-0">
                       {wallet.image_url?.md || wallet.image_url?.sm ? (
@@ -636,12 +668,27 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
               )}
             </div>
 
-            {/* Footer: Tombol Salin Link Studio */}
-            <div className="p-4 border-t border-gray-100 bg-slate-950/[0.02] shrink-0">
+            {/* Footer: Tombol WalletConnect QR Modal & Salin Link Studio */}
+            <div className="p-4 border-t border-gray-100 bg-slate-950/[0.02] shrink-0 space-y-2">
+              <button
+                type="button"
+                onClick={() => connectViaWalletConnect()}
+                disabled={isConnectingWallet}
+                className="w-full py-2.5 px-4 bg-[#d07954] hover:bg-[#b86644] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                Buka Modal QR / Dompet Lainnya
+              </button>
+
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="w-full py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="9" y="9" width="13" height="13" rx="2" />
