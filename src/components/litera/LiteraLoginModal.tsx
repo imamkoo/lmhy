@@ -405,6 +405,9 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
         },
         qrModalOptions: {
           themeMode: "light",
+          themeVariables: {
+            "--wcm-z-index": "100000",
+          },
         },
       });
 
@@ -461,7 +464,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
+      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
       onClick={handleClose}
     >
       <div
