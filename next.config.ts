@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: [
+    "@base-org/account",
+    "@coinbase/cdp-sdk",
+    "@x402/core",
+    "@x402/evm",
+  ],
   images: {
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
   },

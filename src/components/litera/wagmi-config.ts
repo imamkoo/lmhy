@@ -1,9 +1,16 @@
 "use client";
 
-import { createConfig } from "wagmi";
+import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import {
+  metaMaskWallet,
+  trustWallet,
+  bitgetWallet,
+  coinbaseWallet,
+  braveWallet,
+  walletConnectWallet,
+} from "@rainbow-me/rainbowkit/wallets";
 import { polygon } from "wagmi/chains";
 import { http, fallback } from "wagmi";
-import { walletConnect, injected, coinbaseWallet } from "wagmi/connectors";
 
 export const projectId = "d94f04faafa515ac177c9c41052264b7";
 
@@ -14,21 +21,27 @@ export const metadata = {
   icons: ["https://letmehearyou.id/icon-192.png"],
 };
 
-const chains = [polygon] as const;
-
-const isBrowser = typeof window !== "undefined";
-
-export const config = createConfig({
-  chains,
-  multiInjectedProviderDiscovery: isBrowser,
-  connectors: isBrowser
-    ? [
-        walletConnect({ projectId, metadata, showQrModal: false }),
-        injected({ shimDisconnect: true }),
-        coinbaseWallet({ appName: metadata.name, appLogoUrl: metadata.icons[0] }),
-      ]
-    : [],
-  ssr: false,
+export const config = getDefaultConfig({
+  appName: metadata.name,
+  appDescription: metadata.description,
+  appUrl: metadata.url,
+  appIcon: metadata.icons[0],
+  projectId,
+  chains: [polygon],
+  wallets: [
+    {
+      groupName: "Populer",
+      wallets: [
+        metaMaskWallet,
+        trustWallet,
+        bitgetWallet,
+        coinbaseWallet,
+        braveWallet,
+        walletConnectWallet,
+      ],
+    },
+  ],
+  ssr: true,
   transports: {
     [polygon.id]: fallback([
       http("https://polygon-bor-rpc.publicnode.com", { timeout: 8000 }),

@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useConnect } from "wagmi";
-import {
-  mountWeb3Modal,
-  openWeb3ModalSafe,
-  probeWalletListReachable,
-  subscribeWeb3ModalState,
-} from "./web3modal-lazy";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 
 interface LiteraLoginModalProps {
   isOpen: boolean;
@@ -23,10 +18,10 @@ export function LiteraLoginModal({
   onSuccess,
 }: LiteraLoginModalProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [walletListBlocked, setWalletListBlocked] = useState(false);
   const popupRef = useRef<Window | null>(null);
 
   const { connectAsync, connectors } = useConnect();
+  const { openConnectModal } = useConnectModal();
 
   const LITERA_ORIGIN =
     process.env.NEXT_PUBLIC_LITERA_DASHBOARD_URL || "https://literaa.xyz";
@@ -35,29 +30,6 @@ export function LiteraLoginModal({
     setErrorMsg(null);
     onClose();
   }, [onClose]);
-
-  // Preload chunk Web3Modal & probe ketersediaan daftar wallet saat modal dibuka
-  useEffect(() => {
-    if (!isOpen) return;
-
-    let cancelled = false;
-    mountWeb3Modal().catch(() => {
-      // Error disimpan di loadState, subscriber menampilkan
-    });
-
-    const unsubscribe = subscribeWeb3ModalState((s) => {
-      if (!cancelled && s.error) setErrorMsg(s.error);
-    });
-
-    probeWalletListReachable().then((ok) => {
-      if (!cancelled) setWalletListBlocked(!ok);
-    });
-
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, [isOpen]);
 
   // SSO Message Listener (Email / Google via Privy di Litera Cloud)
   useEffect(() => {
@@ -156,11 +128,11 @@ export function LiteraLoginModal({
     popup.focus();
   };
 
-  // Handler: Koneksi Dompet Web3 (Injected-first -> Fallback Web3Modal AppKit)
+  // Handler: Koneksi Dompet Web3 (Injected-first -> Fallback RainbowKit Modal)
   const handleConnectWallet = async () => {
     setErrorMsg(null);
 
-    // 1. Prioritaskan Injected Connector bila browser memiliki window.ethereum (ekstensi / in-app dApp browser)
+    // 1. Prioritaskan Injected Connector bila browser memiliki window.ethereum (ekstensi desktop / in-app dApp browser)
     const injectedConnector = connectors?.find((c) => c.id === "injected");
     const hasInjectedProvider =
       typeof window !== "undefined" &&
@@ -186,11 +158,11 @@ export function LiteraLoginModal({
       }
     }
 
-    // 2. Fallback ke Web3Modal resmi Reown AppKit (Mobile QR / Deep-link view "Connect Wallet")
+    // 2. Buka RainbowKit Connect Modal (All Wallets grid & mobile app intent)
     handleClose();
-    try {
-      openWeb3ModalSafe();
-    } catch {
+    if (openConnectModal) {
+      openConnectModal();
+    } else {
       setErrorMsg(
         "Gagal memuat dialog dompet. Silakan gunakan opsi Email atau Google."
       );
@@ -263,7 +235,7 @@ export function LiteraLoginModal({
             </span>
           </button>
 
-          {/* Opsi 2: Hubungkan Dompet Web3 -> Injected langsung bila ada, atau Web3Modal AppKit */}
+          {/* Opsi 2: Hubungkan Dompet Web3 -> Injected langsung bila ada, atau RainbowKit Modal */}
           <button
             onClick={handleConnectWallet}
             type="button"
@@ -281,13 +253,6 @@ export function LiteraLoginModal({
               ↗
             </span>
           </button>
-
-          {walletListBlocked && (
-            <p className="mt-2 px-1 text-[11px] font-medium text-amber-800 leading-snug">
-              Daftar dompet lambat dimuat — bila dialog tidak muncul, gunakan
-              opsi Email atau Google.
-            </p>
-          )}
         </div>
 
         {/* Footer */}
