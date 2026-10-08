@@ -2,12 +2,12 @@
 
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import {
+  walletConnectWallet,
   metaMaskWallet,
   trustWallet,
   bitgetWallet,
   coinbaseWallet,
   braveWallet,
-  walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import { polygon } from "wagmi/chains";
 import { http, fallback } from "wagmi";
@@ -32,12 +32,12 @@ export const config = getDefaultConfig({
     {
       groupName: "Populer",
       wallets: [
+        walletConnectWallet,
         metaMaskWallet,
         trustWallet,
         bitgetWallet,
         coinbaseWallet,
         braveWallet,
-        walletConnectWallet,
       ],
     },
   ],
