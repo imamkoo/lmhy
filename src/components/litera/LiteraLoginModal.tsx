@@ -21,12 +21,28 @@ interface WalletListing {
     universal?: string | null;
   };
   injected?: Array<{ injected_id: string; namespace: string }> | null;
+  app?: {
+    ios?: string | null;
+    android?: string | null;
+    chrome?: string | null;
+  } | null;
   homepage?: string;
 }
 
 const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const POLYGON_CHAIN_ID_HEX = "0x89"; // 137 in hex
 const WALLETCONNECT_PROJECT_ID = "d94f04faafa515ac177c9c41052264b7";
+
+const toAppKitWallet = (listing: WalletListing) => ({
+  id: listing.id,
+  name: listing.name,
+  image_url: listing.image_url.lg ?? listing.image_url.md ?? listing.image_url.sm,
+  mobile_link: listing.mobile?.native || listing.mobile?.universal || null,
+  homepage: listing.homepage,
+  app_store: listing.app?.ios ?? null,
+  play_store: listing.app?.android ?? null,
+  chrome_store: listing.app?.chrome ?? null,
+});
 
 // Kurasi dompet populer resmi dari WalletConnect Explorer
 const INITIAL_WALLETS: WalletListing[] = [
@@ -388,6 +404,9 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
     setConnectingWalletName(targetWallet ? targetWallet.name : "WalletConnect");
     setErrorMsg(null);
 
+    let unsubscribeRouter: (() => void) | undefined;
+    let enableSettled = false;
+
     try {
       const { EthereumProvider } = await import("@walletconnect/ethereum-provider");
       
@@ -411,6 +430,24 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
         },
       });
 
+      // Di mobile, modal AppKit terbuka di view "AllWallets" (daftar kedua). Setelah reset itu,
+      // langsung push layar "Continue in <Dompet>" agar tombol di grid kita menuju halaman
+      // connect wallet yang benar (auto deep-link + tombol Open). Desktop tetap view QR default.
+      if (targetWallet) {
+        const wallet = toAppKitWallet(targetWallet);
+        if (wallet.mobile_link) {
+          const { RouterController } = await import("@reown/appkit-controllers");
+          let didPush = false;
+          unsubscribeRouter = RouterController.subscribeKey("view", (view) => {
+            if (enableSettled || didPush) return;
+            if (view === "AllWallets") {
+              didPush = true;
+              RouterController.push("ConnectingWalletConnect", { wallet });
+            }
+          });
+        }
+      }
+
       await provider.enable();
 
       const accounts = provider.accounts;
@@ -422,12 +459,15 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
       }
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message || "";
-      if (msg.toLowerCase().includes("user rejected") || msg.toLowerCase().includes("cancel")) {
+      const lowerMsg = msg.toLowerCase();
+      if (lowerMsg.includes("user rejected") || lowerMsg.includes("cancel") || lowerMsg.includes("reset")) {
         setErrorMsg("Koneksi dompet dibatalkan.");
       } else {
         setErrorMsg(msg || "Gagal menghubungkan WalletConnect.");
       }
     } finally {
+      enableSettled = true;
+      unsubscribeRouter?.();
       setIsConnectingWallet(false);
       setConnectingWalletName(null);
     }
