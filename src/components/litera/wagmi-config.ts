@@ -16,14 +16,18 @@ export const metadata = {
 
 const chains = [polygon] as const;
 
+const isBrowser = typeof window !== "undefined";
+
 export const config = createConfig({
   chains,
-  multiInjectedProviderDiscovery: true,
-  connectors: [
-    walletConnect({ projectId, metadata, showQrModal: false }),
-    injected({ shimDisconnect: true }),
-    coinbaseWallet({ appName: metadata.name, appLogoUrl: metadata.icons[0] }),
-  ],
+  multiInjectedProviderDiscovery: isBrowser,
+  connectors: isBrowser
+    ? [
+        walletConnect({ projectId, metadata, showQrModal: false }),
+        injected({ shimDisconnect: true }),
+        coinbaseWallet({ appName: metadata.name, appLogoUrl: metadata.icons[0] }),
+      ]
+    : [],
   ssr: false,
   transports: {
     [polygon.id]: fallback([
