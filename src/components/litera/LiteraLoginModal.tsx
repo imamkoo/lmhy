@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useConnect } from "wagmi";
+import { useConnect, useDisconnect } from "wagmi";
 import { useSmartConnectModal, isMobileDevice } from "./useSmartConnectModal";
 
 interface LiteraLoginModalProps {
@@ -21,6 +21,7 @@ export function LiteraLoginModal({
   const popupRef = useRef<Window | null>(null);
 
   const { connectAsync, connectors } = useConnect();
+  const { disconnectAsync } = useDisconnect();
   const { openConnectModal } = useSmartConnectModal();
 
   const LITERA_ORIGIN =
@@ -125,7 +126,13 @@ export function LiteraLoginModal({
   };
 
   // Handler: Login via Litera Cloud (Email atau Google via Privy)
-  const handleEmailGoogleLogin = () => {
+  const handleEmailGoogleLogin = async () => {
+    // Putuskan koneksi dompet wagmi sebelumnya agar tidak terjadi konflik akun
+    try {
+      await disconnectAsync();
+    } catch {
+      // Abaikan jika tidak ada dompet aktif
+    }
     openLiteraCloudAuth("email");
   };
 
