@@ -1236,7 +1236,7 @@ export function WebBuilderClient({
             </div>
 
             {/* SECTION 3: UNIFIED LITERA WEB3 INTEGRATION CARD (NO SEPARATE TAB) */}
-            <div className="rounded-3xl bg-white p-6 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-5">
+            <div className="rounded-3xl bg-white p-4 sm:p-6 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-5 overflow-hidden">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <span className="text-xs font-black uppercase tracking-wider text-[#3F3766] block">
@@ -1410,7 +1410,7 @@ export function WebBuilderClient({
                         {questions.map((q, qIndex) => (
                           <div
                             key={qIndex}
-                            className="p-4 rounded-2xl bg-[#F5E7C6]/40 border-2 border-[#3F3766]/20 space-y-3 relative shadow-xs"
+                            className="p-3.5 sm:p-4 rounded-2xl bg-[#F5E7C6]/40 border-2 border-[#3F3766]/20 space-y-3 relative shadow-xs overflow-hidden"
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-black uppercase tracking-wider text-[#3F3766]">
@@ -1471,7 +1471,7 @@ export function WebBuilderClient({
 
                               <div className="space-y-1.5">
                                 {q.options.map((opt, optIdx) => (
-                                  <div key={optIdx} className="flex items-center gap-2">
+                                  <div key={optIdx} className="flex items-center gap-2 w-full min-w-0">
                                     <input
                                       type="radio"
                                       name={`correctOption_${qIndex}`}
@@ -1481,47 +1481,51 @@ export function WebBuilderClient({
                                         updated[qIndex] = { ...updated[qIndex], correctIndex: optIdx };
                                         setQuestions(updated);
                                       }}
-                                      className="text-[#3F3766] focus:ring-[#F7ABC5] h-4 w-4"
+                                      className="text-[#3F3766] focus:ring-[#F7ABC5] h-4 w-4 shrink-0"
                                       title="Tandai sebagai kunci jawaban benar"
                                     />
-                                    <input
-                                      type="text"
-                                      value={opt}
-                                      onChange={(e) => {
-                                        const updated = [...questions];
-                                        const newOpts = [...updated[qIndex].options];
-                                        newOpts[optIdx] = e.target.value;
-                                        updated[qIndex] = { ...updated[qIndex], options: newOpts };
-                                        setQuestions(updated);
-                                      }}
-                                      placeholder={`Pilihan ${String.fromCharCode(65 + optIdx)}`}
-                                      className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
-                                    />
-                                    {q.options.length > 2 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
+                                    <div className="relative flex-1 min-w-0 flex items-center">
+                                      <input
+                                        type="text"
+                                        value={opt}
+                                        onChange={(e) => {
                                           const updated = [...questions];
-                                          const newOpts = updated[qIndex].options.filter((_, i) => i !== optIdx);
-                                          const newCorrect =
-                                            q.correctIndex === optIdx
-                                              ? 0
-                                              : q.correctIndex > optIdx
-                                              ? q.correctIndex - 1
-                                              : q.correctIndex;
-                                          updated[qIndex] = {
-                                            ...updated[qIndex],
-                                            options: newOpts,
-                                            correctIndex: newCorrect,
-                                          };
+                                          const newOpts = [...updated[qIndex].options];
+                                          newOpts[optIdx] = e.target.value;
+                                          updated[qIndex] = { ...updated[qIndex], options: newOpts };
                                           setQuestions(updated);
                                         }}
-                                        className="h-6 w-6 rounded-md bg-white border border-[#3F3766]/20 flex items-center justify-center text-xs text-[#3F3766]/60 hover:text-red-600 hover:border-red-300"
-                                        title="Hapus opsi ini"
-                                      >
-                                        ✕
-                                      </button>
-                                    )}
+                                        placeholder={`Pilihan ${String.fromCharCode(65 + optIdx)}`}
+                                        className={`w-full text-xs py-1.5 pl-3 rounded-lg border border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766] ${
+                                          q.options.length > 2 ? "pr-8" : "pr-3"
+                                        }`}
+                                      />
+                                      {q.options.length > 2 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const updated = [...questions];
+                                            const newOpts = updated[qIndex].options.filter((_, i) => i !== optIdx);
+                                            const newCorrect =
+                                              q.correctIndex === optIdx
+                                                ? 0
+                                                : q.correctIndex > optIdx
+                                                ? q.correctIndex - 1
+                                                : q.correctIndex;
+                                            updated[qIndex] = {
+                                              ...updated[qIndex],
+                                              options: newOpts,
+                                              correctIndex: newCorrect,
+                                            };
+                                            setQuestions(updated);
+                                          }}
+                                          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 rounded flex items-center justify-center text-[10px] text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                          title="Hapus opsi ini"
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                 ))}
                               </div>
