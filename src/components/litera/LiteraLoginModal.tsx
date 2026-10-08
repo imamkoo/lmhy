@@ -44,6 +44,40 @@ const toAppKitWallet = (listing: WalletListing) => ({
   chrome_store: listing.app?.chrome ?? null,
 });
 
+type WcProviderInstance = Awaited<
+  ReturnType<typeof import("@walletconnect/ethereum-provider").EthereumProvider.init>
+>;
+
+// Satu instance provider dipakai ulang untuk semua percobaan: init berulang membuat
+// relayer/WebSocket baru setiap kali dan menumpuk koneksi ke relay WalletConnect.
+let cachedWcProvider: WcProviderInstance | null = null;
+
+const getOrCreateWcProvider = async () => {
+  if (cachedWcProvider) return cachedWcProvider;
+  const { EthereumProvider } = await import("@walletconnect/ethereum-provider");
+
+  // Pada mobile, selalu buka modal WalletConnect resmi (showQrModal: true) yang native menangani
+  // deep linking ke MetaMask, Trust, Binance, dll dengan 100% reliabilitas tanpa terblokir browser.
+  cachedWcProvider = await EthereumProvider.init({
+    projectId: WALLETCONNECT_PROJECT_ID,
+    chains: [137], // Polygon Mainnet
+    showQrModal: true,
+    metadata: {
+      name: "Let Me Hear You",
+      description: "Platform & Komunitas Kesehatan Mental",
+      url: typeof window !== "undefined" ? window.location.origin : "https://letmehearyou.id",
+      icons: ["https://letmehearyou.id/icon-192.png"],
+    },
+    qrModalOptions: {
+      themeMode: "light",
+      themeVariables: {
+        "--wcm-z-index": "100000",
+      },
+    },
+  });
+  return cachedWcProvider;
+};
+
 // Kurasi dompet populer resmi dari WalletConnect Explorer
 const INITIAL_WALLETS: WalletListing[] = [
   {
@@ -408,27 +442,7 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
     let enableSettled = false;
 
     try {
-      const { EthereumProvider } = await import("@walletconnect/ethereum-provider");
-      
-      // Pada mobile, selalu buka modal WalletConnect resmi (showQrModal: true) yang native menangani
-      // deep linking ke MetaMask, Trust, Binance, dll dengan 100% reliabilitas tanpa terblokir browser.
-      const provider = await EthereumProvider.init({
-        projectId: WALLETCONNECT_PROJECT_ID,
-        chains: [137], // Polygon Mainnet
-        showQrModal: true,
-        metadata: {
-          name: "Let Me Hear You",
-          description: "Platform & Komunitas Kesehatan Mental",
-          url: typeof window !== "undefined" ? window.location.origin : "https://letmehearyou.id",
-          icons: ["https://letmehearyou.id/icon-192.png"],
-        },
-        qrModalOptions: {
-          themeMode: "light",
-          themeVariables: {
-            "--wcm-z-index": "100000",
-          },
-        },
-      });
+      const provider = await getOrCreateWcProvider();
 
       // Di mobile, modal AppKit terbuka di view "AllWallets" (daftar kedua). Setelah reset itu,
       // langsung push layar "Continue in <Dompet>" agar tombol di grid kita menuju halaman
@@ -462,6 +476,13 @@ export function LiteraLoginModal({ isOpen, onClose, onSuccess }: LiteraLoginModa
       const lowerMsg = msg.toLowerCase();
       if (lowerMsg.includes("user rejected") || lowerMsg.includes("cancel") || lowerMsg.includes("reset")) {
         setErrorMsg("Koneksi dompet dibatalkan.");
+      } else if (
+        lowerMsg.includes("publish") ||
+        lowerMsg.includes("timeout") ||
+        lowerMsg.includes("unable to connect") ||
+        lowerMsg.includes("relay")
+      ) {
+        setErrorMsg("Koneksi ke server WalletConnect gagal. Silakan coba lagi.");
       } else {
         setErrorMsg(msg || "Gagal menghubungkan WalletConnect.");
       }
