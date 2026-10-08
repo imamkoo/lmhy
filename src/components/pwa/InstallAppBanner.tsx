@@ -10,7 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function InstallAppBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showPrompt, setShowPrompt] = useState<"android" | "ios" | null>(null);
+  const [showPrompt, setShowPrompt] = useState<"android" | "ios" | "manual" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -22,34 +22,14 @@ export function InstallAppBanner() {
       });
     }
 
-    // Pastikan hanya muncul saat pertama kali akses, tidak pernah muncul lagi saat navigasi/pindah page
-    try {
-      if (
-        localStorage.getItem("lmhy_pwa_first_visit_shown") === "true" ||
-        sessionStorage.getItem("lmhy_pwa_session_seen") === "true"
-      ) {
-        return;
-      }
-    } catch {
-      // Storage access blocked/private mode
-    }
-
-    const dismissedAt = localStorage.getItem("lmhy_install_dismissed");
-    if (dismissedAt) {
-      const daysSinceDismiss = (Date.now() - parseInt(dismissedAt, 10)) / (1000 * 60 * 60 * 24);
-      if (daysSinceDismiss < 7) {
-        return; // Don't show again within 7 days of dismissal
-      }
-    }
-
-    // Check if already running in standalone (PWA) mode
+    // Check if already running in standalone (PWA) mode (Artinya aplikasi sudah terinstall & dibuka lewat PWA)
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
       document.referrer.includes("android-app://");
 
     if (isStandalone) {
-      return;
+      return; // Jangan pernah tampilkan banner jika PWA sudah terpasang & sedang aktif
     }
 
     // Check if running on mobile device (Android/iOS phone or tablet)
@@ -62,35 +42,36 @@ export function InstallAppBanner() {
       return; // Suppress install prompt on desktop browsers
     }
 
-    const markAsShown = () => {
-      try {
-        localStorage.setItem("lmhy_pwa_first_visit_shown", "true");
-        sessionStorage.setItem("lmhy_pwa_session_seen", "true");
-      } catch {
-        // ignore
-      }
-    };
+    let isPromptTriggered = false;
 
-    // Android & Chromium: listen to beforeinstallprompt event
+    // 1. Android & Chromium: tangkap event beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      markAsShown();
+      isPromptTriggered = true;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowPrompt("android");
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // iOS Safari detection: iPhone/iPad/iPod, not standalone, and Safari browser
+    // 2. iOS Safari detection
     const isIOS = /iphone|ipad|ipod/.test(ua);
     const isSafari = ua.includes("safari") && !ua.includes("crios") && !ua.includes("fxios");
 
     let timer: NodeJS.Timeout | null = null;
-    if (isIOS && !isStandalone && (isSafari || !("beforeinstallprompt" in window))) {
+    if (isIOS && (isSafari || !("beforeinstallprompt" in window))) {
       timer = setTimeout(() => {
-        markAsShown();
+        isPromptTriggered = true;
         setShowPrompt("ios");
-      }, 2500);
+      }, 1500);
+    } else {
+      // 3. Fallback jika browser mobile belum/tidak memancarkan beforeinstallprompt
+      // Pastikan banner notifikasi tetap muncul setiap user akses di mobile
+      timer = setTimeout(() => {
+        if (!isPromptTriggered) {
+          setShowPrompt((curr) => curr || "manual");
+        }
+      }, 2000);
     }
 
     return () => {
@@ -100,34 +81,25 @@ export function InstallAppBanner() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    try {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice.outcome === "accepted") {
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice.outcome === "accepted") {
+          setShowPrompt(null);
+        }
+        setDeferredPrompt(null);
+      } catch {
         setShowPrompt(null);
       }
-      setDeferredPrompt(null);
-      try {
-        localStorage.setItem("lmhy_pwa_first_visit_shown", "true");
-        sessionStorage.setItem("lmhy_pwa_session_seen", "true");
-      } catch {
-        // ignore
-      }
-    } catch {
-      // Fallback
+    } else {
+      // Jika prompt browser native tidak tersedia langsung, tampilkan info panduan menu browser
+      setShowPrompt("manual");
     }
   };
 
   const handleDismiss = () => {
     setShowPrompt(null);
-    try {
-      localStorage.setItem("lmhy_pwa_first_visit_shown", "true");
-      sessionStorage.setItem("lmhy_pwa_session_seen", "true");
-      localStorage.setItem("lmhy_install_dismissed", Date.now().toString());
-    } catch {
-      // ignore
-    }
   };
 
   if (!showPrompt) {
@@ -189,6 +161,17 @@ export function InstallAppBanner() {
               </svg>
               <span>Install Aplikasi</span>
             </button>
+          </div>
+        )}
+
+        {showPrompt === "manual" && (
+          <div className="mt-1 rounded-xl bg-white/80 p-2.5 text-xs text-[#3F3766] border border-slate-200/80">
+            <p className="flex items-center gap-1.5 font-medium">
+              <span>Pasang ke Layar Utama:</span>
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600 leading-relaxed">
+              Ketuk ikon titik tiga (<strong>⋮</strong>) di pojok kanan atas browser Anda, lalu pilih <strong>&quot;Install aplikasi&quot;</strong> atau <strong>&quot;Tambahkan ke Layar Utama&quot;</strong>.
+            </p>
           </div>
         )}
 

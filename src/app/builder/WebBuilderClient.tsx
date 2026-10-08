@@ -416,6 +416,11 @@ export function WebBuilderClient({
     } catch {}
   };
 
+  const handleSwitchAccount = () => {
+    handleDisconnectWallet();
+    setIsLoginModalOpen(true);
+  };
+
   const cleanUser = username.trim() || "nama-domain";
   const domainPreview = `https://${cleanUser}.${activeBaseDomain}`;
   const activeTemplate: WebDesignTemplate = getDesignTemplate(selectedTemplateId);
@@ -1254,7 +1259,7 @@ export function WebBuilderClient({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <span className="text-xs font-black uppercase tracking-wider text-[#3F3766] block">
-                    Penerbitan Sertifikat Web3 (Litera Protocol)
+                    Penerbitan Sertifikat Web3
                   </span>
                   <p className="text-[11px] text-[#3F3766]/70 leading-relaxed mt-1">
                     Aktifkan untuk menerbitkan artikel ini ke jaringan blockchain Polygon sebagai sertifikat digital permanen.
@@ -1312,7 +1317,7 @@ export function WebBuilderClient({
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setIsLoginModalOpen(true)}
+                            onClick={handleSwitchAccount}
                             className="text-[11px] font-bold text-[#3F3766] hover:underline cursor-pointer"
                           >
                             Ganti Akun
