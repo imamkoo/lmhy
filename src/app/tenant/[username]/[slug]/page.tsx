@@ -211,7 +211,7 @@ export default async function TenantArticlePage({
         </header>
 
         {/* Media Cover (Image or Video) */}
-        {mediaUrl && (
+        {mediaUrl && !mediaUrl.startsWith("blob:") && (
           <div className={`mb-8 ${activeTemplate.previewClass.mediaCard}`}>
             {mediaType === "VIDEO" ? (
               <video
@@ -226,6 +226,10 @@ export default async function TenantArticlePage({
                   src={mediaUrl}
                   alt={title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const parent = (e.currentTarget as HTMLElement).closest(".mb-8");
+                    if (parent) (parent as HTMLElement).style.display = "none";
+                  }}
                 />
               </div>
             )}
