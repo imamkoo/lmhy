@@ -155,6 +155,13 @@ export function LiteraLoginModal({
   const handleConnectWallet = async () => {
     setErrorMsg(null);
 
+    // Pastikan koneksi dompet sebelumnya telah terputus secara bersih
+    try {
+      await disconnectAsync();
+    } catch {
+      // Abaikan jika tidak ada dompet aktif
+    }
+
     // 1. Desktop Injected Extension (MetaMask, OKX, Brave, Rabby)
     // ATAU dApp In-App Browser (MetaMask Browser)
     const injectedConnector = connectors?.find((c) => c.id === "injected");
