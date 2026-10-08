@@ -41,7 +41,7 @@ export const DESIGN_TEMPLATES: WebDesignTemplate[] = [
         "rounded-full bg-[#3F3766] px-2.5 py-0.5 text-[9px] font-bold text-[#F7ABC5] shadow-sm",
       mediaCard:
         "rounded-2xl border-2 border-[#3F3766]/15 shadow-sm overflow-hidden",
-      tag: "rounded-lg bg-[#F7ABC5]/25 px-2.5 py-0.5 text-[10px] font-bold text-[#3F3766] border border-[#F7ABC5]/40",
+      tag: "rounded-lg bg-[#F7ABC5]/25 px-2 py-0.5 text-[9px] font-bold text-[#3F3766] border border-[#F7ABC5]/40",
       title: "text-[#3F3766] font-black tracking-tight",
       excerpt:
         "text-[#3F3766]/80 italic border-l-2 border-[#F7ABC5] pl-3 py-0.5 font-semibold",
@@ -68,7 +68,7 @@ export const DESIGN_TEMPLATES: WebDesignTemplate[] = [
         "rounded-none bg-[#FFE500] border-2 border-black px-2 py-0.5 text-[9px] font-black text-black shadow-[2px_2px_0_#000]",
       mediaCard:
         "rounded-none border-2 border-black shadow-[4px_4px_0_#000] overflow-hidden bg-white",
-      tag: "rounded-none bg-black text-white px-2 py-0.5 text-[10px] font-mono font-bold uppercase",
+      tag: "rounded-none bg-black text-white px-2 py-0.5 text-[9px] font-mono font-bold uppercase",
       title: "text-black font-black tracking-tight uppercase",
       excerpt:
         "text-black bg-[#FFE500]/30 border-2 border-black p-3 font-bold shadow-[3px_3px_0_#000]",
@@ -96,7 +96,7 @@ export const DESIGN_TEMPLATES: WebDesignTemplate[] = [
         "rounded-full bg-blue-500/15 border border-blue-400/30 backdrop-blur-md px-2.5 py-0.5 text-[9px] font-bold text-blue-700",
       mediaCard:
         "rounded-3xl border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.06)] backdrop-blur-md overflow-hidden bg-white/40",
-      tag: "rounded-full bg-white/70 backdrop-blur-md border border-white px-3 py-0.5 text-[10px] font-semibold text-slate-700 shadow-sm",
+      tag: "rounded-full bg-white/70 backdrop-blur-md border border-white px-2.5 py-0.5 text-[9px] font-semibold text-slate-700 shadow-sm",
       title: "text-slate-900 font-extrabold tracking-tight",
       excerpt:
         "text-slate-700 italic bg-white/60 backdrop-blur-md border-l-4 border-blue-400 pl-3 py-1.5 rounded-r-xl shadow-sm",
@@ -123,7 +123,7 @@ export const DESIGN_TEMPLATES: WebDesignTemplate[] = [
         "rounded-sm border border-[#222222]/30 px-2 py-0.5 text-[9px] font-serif uppercase tracking-widest text-[#222222]",
       mediaCard:
         "rounded-lg border border-[#222222]/20 overflow-hidden shadow-sm bg-[#FAF7F2]",
-      tag: "rounded-sm bg-[#222222]/5 px-2 py-0.5 text-[10px] font-serif text-[#222222]/80 border border-[#222222]/15",
+      tag: "rounded-sm bg-[#222222]/5 px-2 py-0.5 text-[9px] font-serif text-[#222222]/80 border border-[#222222]/15",
       title: "text-[#1A1A1A] font-serif font-bold tracking-normal leading-tight",
       excerpt:
         "text-[#222222]/85 font-serif italic border-l-2 border-[#222222]/40 pl-3 py-1 text-sm",
@@ -151,7 +151,7 @@ export const DESIGN_TEMPLATES: WebDesignTemplate[] = [
         "rounded-full bg-[#B8A9F0]/30 px-2.5 py-0.5 text-[9px] font-bold text-[#4A3F6B] shadow-[inset_1px_1px_2px_rgba(255,255,255,0.85),inset_-1px_-1px_3px_rgba(90,70,160,0.12),0_3px_8px_rgba(120,100,190,0.15)]",
       mediaCard:
         "rounded-[28px] overflow-hidden border border-white/70 bg-white/60 shadow-[inset_0_2px_6px_rgba(255,255,255,0.7),0_14px_30px_rgba(120,100,190,0.16)]",
-      tag: "rounded-full bg-white px-3 py-0.5 text-[10px] font-bold text-[#4A3F6B] border border-[#B8A9F0]/25 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9),inset_-2px_-2px_4px_rgba(90,70,160,0.08),0_4px_10px_rgba(120,100,190,0.12)]",
+      tag: "rounded-full bg-white px-2.5 py-0.5 text-[9px] font-bold text-[#4A3F6B] border border-[#B8A9F0]/25 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9),inset_-2px_-2px_4px_rgba(90,70,160,0.08),0_4px_10px_rgba(120,100,190,0.12)]",
       title: "text-[#3B3358] font-black tracking-tight",
       excerpt:
         "text-[#4A3F6B]/85 font-semibold bg-white/70 border-l-4 border-[#B8A9F0] pl-3 py-2 rounded-r-2xl shadow-[inset_1px_1px_3px_rgba(255,255,255,0.8),0_6px_14px_rgba(120,100,190,0.12)]",
@@ -178,7 +178,7 @@ export const DESIGN_TEMPLATES: WebDesignTemplate[] = [
         "rounded-full bg-[#A78BFA]/20 border border-[#A78BFA]/40 px-2.5 py-0.5 text-[9px] font-bold text-[#A78BFA]",
       mediaCard:
         "rounded-2xl border border-[#30363D] shadow-lg overflow-hidden bg-[#161B22]",
-      tag: "rounded-lg bg-[#161B22] border border-[#30363D] px-2.5 py-0.5 text-[10px] font-bold text-[#A78BFA]",
+      tag: "rounded-lg bg-[#161B22] border border-[#30363D] px-2 py-0.5 text-[9px] font-bold text-[#A78BFA]",
       title: "text-[#F0F6FC] font-black tracking-tight",
       excerpt:
         "text-[#8B949E] italic border-l-2 border-[#A78BFA] pl-3 py-1 font-medium bg-[#161B22]/50 rounded-r-lg",

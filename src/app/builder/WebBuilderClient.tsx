@@ -16,6 +16,7 @@ import { Web3Providers } from "@/components/litera/Web3Providers";
 import { WalletConnectWatcher } from "@/components/litera/WalletConnectWatcher";
 import { TemplatePickerDialog } from "@/app/builder/TemplatePickerDialog";
 import { createClient } from "@/lib/supabase/client";
+import { uploadProfileImage } from "@/lib/profile-media";
 import { signOutAction } from "@/app/actions/auth";
 
 const STORAGE_KEY = "lmhy_builder_draft_v3";
@@ -88,6 +89,7 @@ export function WebBuilderClient({
 
   // Media Asset State (Gambar / Video Switcher)
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">("IMAGE");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string>("/assets/sapiens.png");
   const [mediaFileName, setMediaFileName] = useState<string>("");
   const mediaInputRef = useRef<HTMLInputElement>(null);
@@ -337,6 +339,7 @@ export function WebBuilderClient({
   const handleMediaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setMediaFile(file);
       setMediaFileName(file.name);
       const url = URL.createObjectURL(file);
       setMediaPreview(url);
@@ -481,6 +484,24 @@ export function WebBuilderClient({
             }
           : undefined;
 
+      let uploadedMediaUrl = mediaPreview;
+      if (mediaFile && authUser) {
+        try {
+          const supabase = createClient();
+          const uploadRes = await uploadProfileImage(
+            supabase,
+            authUser.id,
+            "banner",
+            mediaFile
+          );
+          if (uploadRes.ok && uploadRes.url) {
+            uploadedMediaUrl = uploadRes.url;
+          }
+        } catch (uploadErr) {
+          console.warn("[Publish] Gagal upload media cover, fallback ke URL default:", uploadErr);
+        }
+      }
+
       const res = await publishTenantArticle({
         username: cleanUser,
         title,
@@ -493,7 +514,7 @@ export function WebBuilderClient({
         collectionName: finalCollection,
         unlockableUrl: unlockableUrl.trim() || undefined,
         mediaType,
-        mediaUrl: mediaPreview,
+        mediaUrl: uploadedMediaUrl,
         quiz: quizPayload,
       });
 

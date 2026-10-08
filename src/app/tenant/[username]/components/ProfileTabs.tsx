@@ -29,17 +29,17 @@ export function ProfileTabs({
     <div className="mt-10">
       {/* Tabs Navigation Header */}
       <div className="border-b border-slate-200">
-        <nav className="flex space-x-8" aria-label="Tabs Profil">
+        <nav className="flex space-x-4 sm:space-x-8 overflow-x-auto no-scrollbar py-1" aria-label="Tabs Profil">
           <button
             onClick={() => setActiveTab("articles")}
-            className={`relative pb-4 text-sm font-semibold transition ${
+            className={`relative pb-3 text-xs sm:text-sm font-semibold transition whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === "articles"
                 ? "text-[#3F3766]"
                 : "text-slate-500 hover:text-slate-800"
             }`}
           >
             <span>Refleksi & Tulisan</span>
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600">
+            <span className="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
               {articles.length}
             </span>
             {activeTab === "articles" && (
@@ -49,7 +49,7 @@ export function ProfileTabs({
 
           <button
             onClick={() => setActiveTab("nft")}
-            className={`relative pb-4 text-sm font-semibold transition ${
+            className={`relative pb-3 text-xs sm:text-sm font-semibold transition whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === "nft"
                 ? "text-[#3F3766]"
                 : "text-slate-500 hover:text-slate-800"
@@ -68,7 +68,7 @@ export function ProfileTabs({
 
           <button
             onClick={() => setActiveTab("about")}
-            className={`relative pb-4 text-sm font-semibold transition ${
+            className={`relative pb-3 text-xs sm:text-sm font-semibold transition whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === "about"
                 ? "text-[#3F3766]"
                 : "text-slate-500 hover:text-slate-800"
@@ -122,13 +122,13 @@ export function ProfileTabs({
                       {(art.tags || ["Refleksi"]).map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600"
+                          className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600"
                         >
                           #{tag}
                         </span>
                       ))}
                       {art.register_litera && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700 border border-purple-200/60">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700 border border-purple-200/60">
                           <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
                           Litera NFT
                         </span>
@@ -169,7 +169,7 @@ export function ProfileTabs({
                   </div>
 
                   {/* Thumbnail Cover (if exists) */}
-                  {art.media_url && (
+                  {art.media_url && !art.media_url.startsWith("blob:") && (
                     <div className="relative h-28 w-full sm:h-28 sm:w-36 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -177,7 +177,8 @@ export function ProfileTabs({
                         alt={art.title}
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                         onError={(e) => {
-                          (e.currentTarget as HTMLElement).style.display = "none";
+                          const parent = (e.currentTarget as HTMLElement).parentElement;
+                          if (parent) parent.style.display = "none";
                         }}
                       />
                     </div>
