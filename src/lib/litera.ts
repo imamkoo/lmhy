@@ -4,10 +4,20 @@
  * Blueprint Integrasi BikinWeb PANDI x Litera Protocol (Creator & Admin Specification)
  */
 
-export interface LiteraQuizInput {
+export interface LiteraQuizQuestionInput {
   question: string;
   options: string[];
   correctIndex: number;
+  explanation?: string;
+}
+
+export interface LiteraQuizInput {
+  passingScore?: number;
+  questions?: LiteraQuizQuestionInput[];
+  // Legacy single question compatibility
+  question?: string;
+  options?: string[];
+  correctIndex?: number;
   explanation?: string;
 }
 
