@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useConnect } from "wagmi";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useSmartConnectModal } from "./useSmartConnectModal";
 
 interface LiteraLoginModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export function LiteraLoginModal({
   const popupRef = useRef<Window | null>(null);
 
   const { connectAsync, connectors } = useConnect();
-  const { openConnectModal } = useConnectModal();
+  const { openConnectModal } = useSmartConnectModal();
 
   const LITERA_ORIGIN =
     process.env.NEXT_PUBLIC_LITERA_DASHBOARD_URL || "https://literaa.xyz";
@@ -128,7 +128,7 @@ export function LiteraLoginModal({
     popup.focus();
   };
 
-  // Handler: Koneksi Dompet Web3 (Injected-first -> Fallback RainbowKit Modal)
+  // Handler: Koneksi Dompet Web3 (Injected-first -> Fallback useSmartConnectModal)
   const handleConnectWallet = async () => {
     setErrorMsg(null);
 
@@ -158,7 +158,7 @@ export function LiteraLoginModal({
       }
     }
 
-    // 2. Buka RainbowKit Connect Modal (All Wallets grid & mobile app intent)
+    // 2. Buka Smart Connect Modal (Mobile: direct WalletConnect modal & app deep links; Desktop: RainbowKit modal)
     handleClose();
     if (openConnectModal) {
       openConnectModal();
@@ -235,7 +235,7 @@ export function LiteraLoginModal({
             </span>
           </button>
 
-          {/* Opsi 2: Hubungkan Dompet Web3 -> Injected langsung bila ada, atau RainbowKit Modal */}
+          {/* Opsi 2: Hubungkan Dompet Web3 -> Smart Connect Modal */}
           <button
             onClick={handleConnectWallet}
             type="button"
