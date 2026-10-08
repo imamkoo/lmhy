@@ -12,6 +12,8 @@ import {
 } from "@/lib/design-templates";
 import { publishTenantArticle } from "@/app/actions/tenant";
 import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
+import { Web3Providers } from "@/components/litera/Web3Providers";
+import { WalletConnectWatcher } from "@/components/litera/WalletConnectWatcher";
 import { TemplatePickerDialog } from "@/app/builder/TemplatePickerDialog";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/app/actions/auth";
@@ -1569,11 +1571,14 @@ export function WebBuilderClient({
       )}
 
       {/* MODAL AUTH LITERA POPUP */}
-      <LiteraLoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSuccess={handleLoginSuccess}
-      />
+      <Web3Providers>
+        <LiteraLoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          onSuccess={handleLoginSuccess}
+        />
+        <WalletConnectWatcher onSuccess={handleLoginSuccess} />
+      </Web3Providers>
     </div>
   );
 }
