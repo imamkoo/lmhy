@@ -69,11 +69,22 @@ export function WebBuilderClient({
   const [newCollectionName, setNewCollectionName] = useState<string>("");
   const [unlockableUrl, setUnlockableUrl] = useState<string>("");
 
-  // Quiz State (Proof of Reading)
+  // Quiz State (Proof of Reading - Multi-question support)
   const [enableQuiz, setEnableQuiz] = useState<boolean>(false);
-  const [quizQuestion, setQuizQuestion] = useState<string>("");
-  const [quizOptions, setQuizOptions] = useState<string[]>(["", "", ""]);
-  const [correctIndex, setCorrectIndex] = useState<number>(0);
+  const [passingScore, setPassingScore] = useState<number>(60);
+  const [questions, setQuestions] = useState<
+    Array<{
+      question: string;
+      options: string[];
+      correctIndex: number;
+    }>
+  >([
+    {
+      question: "",
+      options: ["", "", ""],
+      correctIndex: 0,
+    },
+  ]);
 
   // Media Asset State (Gambar / Video Switcher)
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">("IMAGE");
@@ -218,9 +229,19 @@ export function WebBuilderClient({
           if (d.newCollectionName !== undefined) setNewCollectionName(d.newCollectionName);
           if (d.unlockableUrl !== undefined) setUnlockableUrl(d.unlockableUrl);
           if (d.enableQuiz !== undefined) setEnableQuiz(d.enableQuiz);
-          if (d.quizQuestion !== undefined) setQuizQuestion(d.quizQuestion);
-          if (d.quizOptions !== undefined) setQuizOptions(d.quizOptions);
-          if (d.correctIndex !== undefined) setCorrectIndex(d.correctIndex);
+          if (d.passingScore !== undefined) setPassingScore(d.passingScore);
+          if (d.questions && Array.isArray(d.questions) && d.questions.length > 0) {
+            setQuestions(d.questions);
+          } else if (d.quizQuestion !== undefined) {
+            // Restore legacy single-question draft
+            setQuestions([
+              {
+                question: d.quizQuestion || "",
+                options: d.quizOptions || ["", "", ""],
+                correctIndex: d.correctIndex ?? 0,
+              },
+            ]);
+          }
           if (d.savedAt) setLastSavedTime(d.savedAt);
         }
 
@@ -258,9 +279,8 @@ export function WebBuilderClient({
       newCollectionName,
       unlockableUrl,
       enableQuiz,
-      quizQuestion,
-      quizOptions,
-      correctIndex,
+      passingScore,
+      questions,
       savedAt: timeStr,
     };
 
@@ -283,9 +303,8 @@ export function WebBuilderClient({
     newCollectionName,
     unlockableUrl,
     enableQuiz,
-    quizQuestion,
-    quizOptions,
-    correctIndex,
+    passingScore,
+    questions,
     isPublished,
   ]);
 
@@ -423,12 +442,23 @@ export function WebBuilderClient({
           ? newCollectionName.trim()
           : selectedCollection || "Let Me Hear You - Jurnal & Refleksi";
 
+      const validQuestions = questions
+        .map((q) => ({
+          question: q.question.trim(),
+          options: q.options.map((o) => o.trim()).filter(Boolean),
+          correctIndex: q.correctIndex,
+        }))
+        .filter((q) => q.question.length > 0 && q.options.length >= 2);
+
       const quizPayload =
-        enableQuiz && quizQuestion.trim()
+        enableQuiz && validQuestions.length > 0
           ? {
-              question: quizQuestion.trim(),
-              options: quizOptions.map((o) => o.trim()).filter(Boolean),
-              correctIndex,
+              passingScore,
+              questions: validQuestions,
+              // fallback for legacy single question handlers
+              question: validQuestions[0]?.question,
+              options: validQuestions[0]?.options,
+              correctIndex: validQuestions[0]?.correctIndex ?? 0,
             }
           : undefined;
 
@@ -1274,14 +1304,16 @@ export function WebBuilderClient({
                         </button>
                       </div>
 
-                      <div className="p-3 bg-[#F7ABC5]/20 rounded-2xl border-2 border-[#3F3766]/20 flex items-center gap-3">
-                        <span className="h-7 w-7 rounded-xl bg-[#3F3766] text-white flex items-center justify-center text-xs font-black">
-                          OK
-                        </span>
+                      <div className="p-3 bg-[#F7ABC5]/20 rounded-2xl border-2 border-[#3F3766]/20 flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-[#3F3766] truncate">{loginMethod || "Litera Cloud Wallet"}</p>
-                          <p className="text-[10px] font-mono text-[#3F3766]/80 truncate">{creatorWallet}</p>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/60 block mb-0.5">
+                            Alamat Dompet Terhubung
+                          </span>
+                          <p className="text-xs font-mono font-bold text-[#3F3766] truncate">{creatorWallet}</p>
                         </div>
+                        <span className="shrink-0 px-2 py-0.5 rounded-md bg-emerald-100 border border-emerald-300 text-[10px] font-bold text-emerald-800">
+                          ✓ Aktif
+                        </span>
                       </div>
                     </div>
                   )}
@@ -1355,47 +1387,167 @@ export function WebBuilderClient({
                     </div>
 
                     {enableQuiz && (
-                      <div className="p-3.5 rounded-2xl bg-[#F5E7C6]/50 border-2 border-[#3F3766]/20 space-y-2.5">
-                        <div>
-                          <label className="block text-[11px] font-bold text-[#3F3766] mb-1">
-                            Pertanyaan Kuis
+                      <div className="space-y-4">
+                        {/* Passing Score Setting */}
+                        <div className="p-3 rounded-2xl bg-white border border-[#3F3766]/15 flex items-center justify-between gap-3 shadow-xs">
+                          <label className="text-xs font-bold text-[#3F3766]">
+                            Target Skor Kelulusan
                           </label>
-                          <input
-                            type="text"
-                            value={quizQuestion}
-                            onChange={(e) => setQuizQuestion(e.target.value)}
-                            placeholder="Apa poin utama dari tulisan ini?"
-                            className="w-full text-xs px-3 py-2 rounded-xl border-2 border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
-                          />
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={passingScore}
+                              onChange={(e) => setPassingScore(Number(e.target.value) || 0)}
+                              className="w-16 px-2.5 py-1 text-xs font-bold text-center rounded-lg border border-[#3F3766]/20 focus:outline-none focus:border-[#3F3766]"
+                            />
+                            <span className="text-xs font-bold text-[#3F3766]">%</span>
+                          </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] font-bold text-[#3F3766]">
-                            Pilihan Jawaban (Pilih radio untuk kunci benar)
-                          </label>
-                          {quizOptions.map((opt, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="correctQuizOption"
-                                checked={correctIndex === idx}
-                                onChange={() => setCorrectIndex(idx)}
-                                className="text-[#3F3766] focus:ring-[#F7ABC5]"
-                              />
+                        {/* List of Questions */}
+                        {questions.map((q, qIndex) => (
+                          <div
+                            key={qIndex}
+                            className="p-4 rounded-2xl bg-[#F5E7C6]/40 border-2 border-[#3F3766]/20 space-y-3 relative shadow-xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black uppercase tracking-wider text-[#3F3766]">
+                                Soal {qIndex + 1} dari {questions.length}
+                              </span>
+                              {questions.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setQuestions(questions.filter((_, i) => i !== qIndex));
+                                  }}
+                                  className="text-[10px] font-bold text-red-600 hover:underline hover:text-red-800"
+                                >
+                                  Hapus Soal
+                                </button>
+                              )}
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3F3766] mb-1">
+                                Pertanyaan
+                              </label>
                               <input
                                 type="text"
-                                value={opt}
+                                value={q.question}
                                 onChange={(e) => {
-                                  const updated = [...quizOptions];
-                                  updated[idx] = e.target.value;
-                                  setQuizOptions(updated);
+                                  const updated = [...questions];
+                                  updated[qIndex] = { ...updated[qIndex], question: e.target.value };
+                                  setQuestions(updated);
                                 }}
-                                placeholder={`Pilihan ${String.fromCharCode(65 + idx)}`}
-                                className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
+                                placeholder="Tuliskan pertanyaan refleksi di sini..."
+                                className="w-full text-xs px-3 py-2 rounded-xl border border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
                               />
                             </div>
-                          ))}
-                        </div>
+
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="block text-[11px] font-bold text-[#3F3766]">
+                                  Pilihan Jawaban (Klik radio untuk kunci benar)
+                                </label>
+                                {q.options.length < 6 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...questions];
+                                      updated[qIndex] = {
+                                        ...updated[qIndex],
+                                        options: [...updated[qIndex].options, ""],
+                                      };
+                                      setQuestions(updated);
+                                    }}
+                                    className="text-[10px] font-bold text-[#3F3766] underline hover:opacity-80"
+                                  >
+                                    + Opsi
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="space-y-1.5">
+                                {q.options.map((opt, optIdx) => (
+                                  <div key={optIdx} className="flex items-center gap-2">
+                                    <input
+                                      type="radio"
+                                      name={`correctOption_${qIndex}`}
+                                      checked={q.correctIndex === optIdx}
+                                      onChange={() => {
+                                        const updated = [...questions];
+                                        updated[qIndex] = { ...updated[qIndex], correctIndex: optIdx };
+                                        setQuestions(updated);
+                                      }}
+                                      className="text-[#3F3766] focus:ring-[#F7ABC5] h-4 w-4"
+                                      title="Tandai sebagai kunci jawaban benar"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={opt}
+                                      onChange={(e) => {
+                                        const updated = [...questions];
+                                        const newOpts = [...updated[qIndex].options];
+                                        newOpts[optIdx] = e.target.value;
+                                        updated[qIndex] = { ...updated[qIndex], options: newOpts };
+                                        setQuestions(updated);
+                                      }}
+                                      placeholder={`Pilihan ${String.fromCharCode(65 + optIdx)}`}
+                                      className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
+                                    />
+                                    {q.options.length > 2 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updated = [...questions];
+                                          const newOpts = updated[qIndex].options.filter((_, i) => i !== optIdx);
+                                          const newCorrect =
+                                            q.correctIndex === optIdx
+                                              ? 0
+                                              : q.correctIndex > optIdx
+                                              ? q.correctIndex - 1
+                                              : q.correctIndex;
+                                          updated[qIndex] = {
+                                            ...updated[qIndex],
+                                            options: newOpts,
+                                            correctIndex: newCorrect,
+                                          };
+                                          setQuestions(updated);
+                                        }}
+                                        className="h-6 w-6 rounded-md bg-white border border-[#3F3766]/20 flex items-center justify-center text-xs text-[#3F3766]/60 hover:text-red-600 hover:border-red-300"
+                                        title="Hapus opsi ini"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Add Question Button */}
+                        {questions.length < 10 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuestions([
+                                ...questions,
+                                {
+                                  question: "",
+                                  options: ["", "", ""],
+                                  correctIndex: 0,
+                                },
+                              ]);
+                            }}
+                            className="w-full py-2 px-3 rounded-xl border-2 border-dashed border-[#3F3766]/30 bg-white/60 hover:bg-white text-xs font-bold text-[#3F3766] transition flex items-center justify-center gap-1.5 shadow-2xs"
+                          >
+                            <span>+ Tambah Pertanyaan Kuis</span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

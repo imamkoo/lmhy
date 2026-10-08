@@ -120,9 +120,9 @@ export function ProfileBanner({
       {/* Main Profile Info Container */}
       <div className="px-6 pb-8 pt-0 md:px-10">
         {/* Top row with Avatar (left) & Actions (right) right below banner */}
-        <div className="relative flex items-end justify-between gap-3 -mt-16 sm:-mt-20">
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-14 sm:-mt-20">
           {/* Avatar */}
-          <div className="relative h-24 w-24 sm:h-32 sm:w-32 shrink-0 overflow-hidden rounded-full border-4 border-white bg-[#F7ABC5] shadow-md flex items-center justify-center text-[#3F3766] font-bold text-2xl sm:text-3xl select-none">
+          <div className="relative h-20 w-20 sm:h-28 sm:w-28 md:h-32 md:w-32 shrink-0 overflow-hidden rounded-full border-4 border-white bg-[#F7ABC5] shadow-md flex items-center justify-center text-[#3F3766] font-bold text-xl sm:text-2xl md:text-3xl select-none">
             {profile.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -139,12 +139,12 @@ export function ProfileBanner({
           </div>
 
           {/* Action CTAs (Placed right below banner, alongside avatar) */}
-          <div data-testid="profile-actions" className="mb-1 flex flex-wrap items-center justify-end gap-2 sm:mb-2 sm:gap-2.5">
+          <div data-testid="profile-actions" className="w-full sm:w-auto flex flex-wrap items-center justify-start sm:justify-end gap-2 sm:mb-2 sm:gap-2.5">
             {isOwnProfile ? (
               <>
                 <button
                   onClick={handleEditClick}
-                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 sm:px-3 sm:py-2.5"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 sm:px-3.5 sm:py-2.5"
                 >
                   <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
@@ -159,7 +159,7 @@ export function ProfileBanner({
 
                 <Link
                   href={getBuilderUrl(username)}
-                  className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-[#F7ABC5] px-2.5 py-2 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px] sm:px-3 sm:py-2.5"
+                  className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-[#F7ABC5] px-3.5 py-2 text-xs font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px] sm:px-4 sm:py-2.5"
                 >
                   <span>Buat Konten</span>
                 </Link>
