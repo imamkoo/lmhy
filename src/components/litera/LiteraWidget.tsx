@@ -75,6 +75,8 @@ export function LiteraWidget({ title, articleUrl }: LiteraWidgetProps) {
       // Clean up widget root content and data so it doesn't leak to other SPA pages
       if (root) {
         root.innerHTML = "";
+        root.removeAttribute("data-litera-widget");
+        root.removeAttribute("id"); // Strip ID so embed script / SPA router never targets it after unmount
       }
       delete (window as Window & { myReactPluginData?: { permalink: string; title: string } }).myReactPluginData;
     };

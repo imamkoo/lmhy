@@ -87,15 +87,17 @@ export function CommentSection({
       <div className="flex items-center justify-between pb-6">
         <div>
           <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Refleksi & Tanggapan Pembaca
+            Tanggapan & Diskusi Pembaca
           </h3>
           <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-            Ruang berbagi pemikiran, resonansi emosional, dan apresiasi terhadap tulisan ini.
+            Ruang berbagi pemikiran, refleksi, dan apresiasi terhadap tulisan ini.
           </p>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
-          {comments.length} Resonansi
-        </span>
+        {comments.length > 0 && (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+            {comments.length} Komentar
+          </span>
+        )}
       </div>
 
       {/* Input Box / Invitation Form */}
