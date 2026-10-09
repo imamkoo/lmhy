@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { getBuilderUrl } from "@/lib/builder";
 import type { Article, Profile } from "@/lib/supabase/types";
-import { deleteTenantArticle } from "@/app/actions/tenant";
 
 interface ProfileTabsProps {
   articles: Article[];
@@ -22,31 +21,9 @@ export function ProfileTabs({
   isOwnProfile = false,
 }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>("articles");
-  const [articleList, setArticleList] = useState<Article[]>(articles);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const handleDelete = async (articleId: string, articleTitle: string) => {
-    const confirmDelete = window.confirm(`Hapus tulisan "${articleTitle}"? Tindakan ini tidak dapat dibatalkan.`);
-    if (!confirmDelete) return;
-
-    setDeletingId(articleId);
-    try {
-      const res = await deleteTenantArticle(articleId, username);
-      if (res.success) {
-        setArticleList((prev) => prev.filter((a) => a.id !== articleId));
-      } else {
-        alert(res.error || "Gagal menghapus tulisan.");
-      }
-    } catch (err: unknown) {
-      console.error("[ProfileTabs] Error deleting article:", err);
-      alert("Terjadi kesalahan saat menghapus tulisan.");
-    } finally {
-      setDeletingId(null);
-    }
-  };
 
   const displayName = profile.display_name || profile.username;
-  const literaArticles = articleList.filter((a) => Boolean(a.register_litera));
+  const literaArticles = articles.filter((a) => Boolean(a.register_litera));
 
   return (
     <div className="mt-10">
@@ -63,7 +40,7 @@ export function ProfileTabs({
           >
             <span>Refleksi & Tulisan</span>
             <span className="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
-              {articleList.length}
+              {articles.length}
             </span>
             {activeTab === "articles" && (
               <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#F7ABC5] rounded-t-full" />
@@ -108,7 +85,7 @@ export function ProfileTabs({
       {/* Tab 1: Refleksi & Tulisan */}
       {activeTab === "articles" && (
         <div className="mt-8 space-y-6">
-          {articleList.length === 0 ? (
+          {articles.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-300 bg-white/50 p-12 text-center">
               <h3 className="text-lg font-bold text-slate-800">
                 Belum ada refleksi yang diterbitkan
@@ -129,7 +106,7 @@ export function ProfileTabs({
               )}
             </div>
           ) : (
-            articleList.map((art) => {
+            articles.map((art) => {
               const readTime = Math.max(
                 1,
                 Math.ceil((art.content || "").split(/\s+/).filter(Boolean).length / 180)
@@ -188,20 +165,6 @@ export function ProfileTabs({
                       >
                         Baca selengkapnya →
                       </Link>
-
-                      {isOwnProfile && (
-                        <>
-                          <span>•</span>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(art.id, art.title)}
-                            disabled={deletingId === art.id}
-                            className="font-medium text-rose-500 hover:text-rose-700 hover:underline transition cursor-pointer disabled:opacity-50"
-                          >
-                            {deletingId === art.id ? "Menghapus..." : "Hapus"}
-                          </button>
-                        </>
-                      )}
                     </div>
                   </div>
 
