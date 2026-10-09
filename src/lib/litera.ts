@@ -212,10 +212,18 @@ export class LiteraClient {
   async registerArticle(
     input: LiteraRegisterArticleInput
   ): Promise<LiteraRegisterArticleResponse> {
-    const mediaUrl = input.coverImageUrl || input.mediaUrl;
-    if (mediaUrl && !/^https:\/\//i.test(mediaUrl)) {
-      throw new Error("coverImageUrl must be an absolute https:// URL");
+    const urlsToCheck = [
+      { name: "coverImageUrl", url: input.coverImageUrl },
+      { name: "mediaUrl", url: input.mediaUrl },
+    ];
+    for (const { name, url } of urlsToCheck) {
+      if (url !== undefined && url !== null && url !== "") {
+        if (!/^https:\/\//i.test(url)) {
+          throw new Error(`${name} must be an absolute https:// URL`);
+        }
+      }
     }
+    const mediaUrl = input.coverImageUrl || input.mediaUrl;
 
     const payload: Record<string, unknown> = {
       articleUrl: input.articleUrl,

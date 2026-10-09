@@ -39,8 +39,20 @@ test("registerArticle rejects unsafe media before fetch", async () => {
   globalThis.fetch = async () => { fetched = true; return new Response(); };
   try {
     const client = new LiteraClient({ baseUrl: "https://litera.test", apiKey: "secret" });
-    for (const coverImageUrl of ["/cover.jpg", "blob:https://example.com/id"]) {
+    const invalidUrls = [
+      "/cover.jpg",
+      "./relative/cover.png",
+      "blob:https://example.com/id",
+      "http://insecure.example.com/image.png",
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "ftp://cdn.example.com/image.png",
+    ];
+
+    for (const coverImageUrl of invalidUrls) {
       await assert.rejects(() => client.registerArticle({ ...article, coverImageUrl }), /https/i);
+    }
+    for (const mediaUrl of invalidUrls) {
+      await assert.rejects(() => client.registerArticle({ ...article, coverImageUrl: undefined, mediaUrl }), /https/i);
     }
     assert.equal(fetched, false);
   } finally { globalThis.fetch = originalFetch; }

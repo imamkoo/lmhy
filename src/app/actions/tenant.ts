@@ -131,6 +131,8 @@ export async function publishTenantArticle(
 
   // 5. Decoupled Publishing: Save article first, then register Litera asynchronously
   try {
+    let savedArticleRecord: { id: string; slug: string; updated_at?: string } | undefined;
+
     const pubResult = await publishArticleWithLitera({
       saveArticle: async () => {
         const saved = await savePersistentArticle({
@@ -148,6 +150,7 @@ export async function publishTenantArticle(
           creator_wallet: creatorAddress || null,
           published_at: new Date().toISOString(),
         });
+        savedArticleRecord = saved;
 
         // Sync to in-memory runtime for backwards-compatibility
         const legacyArticle: TenantArticle = {
@@ -177,13 +180,13 @@ export async function publishTenantArticle(
         ]);
 
         return await literaClient.registerArticle({
-          id: finalSlug,
-          updatedAt: new Date().toISOString(),
+          id: savedArticleRecord?.id,
+          updatedAt: savedArticleRecord?.updated_at,
           articleUrl: fullArticleUrl,
           title: title.trim(),
           author: `@${creatorUsername}`,
           creator: creatorAddress,
-          coverImageUrl: mediaUrl?.startsWith("https://") ? mediaUrl : undefined,
+          coverImageUrl: mediaUrl || undefined,
           description: excerpt?.trim() || content.slice(0, 160).trim() + "...",
           collectionName,
           unlockableUrl,
