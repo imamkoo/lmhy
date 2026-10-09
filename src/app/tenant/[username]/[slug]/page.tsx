@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SocialShareBar } from "../components/SocialShareBar";
 import { CommentSection } from "../components/CommentSection";
 import { FollowButton } from "../components/FollowButton";
+import { ArticleCoverImage } from "../components/ArticleCoverImage";
 
 export async function generateMetadata({
   params,
@@ -236,16 +237,7 @@ export default async function TenantArticlePage({
               />
             ) : (
               <div className="relative w-full h-64 sm:h-80 md:h-96 flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={mediaUrl}
-                  alt={title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const parent = (e.currentTarget as HTMLElement).closest(".mb-8");
-                    if (parent) (parent as HTMLElement).style.display = "none";
-                  }}
-                />
+                <ArticleCoverImage src={mediaUrl} alt={title} />
               </div>
             )}
           </div>
