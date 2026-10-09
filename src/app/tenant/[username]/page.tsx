@@ -33,28 +33,12 @@ export default async function TenantProfilePage({
     notFound();
   }
 
-  // 1. Fetch profile from Supabase with safe fallback
-  let profile: Profile | null = await getProfileByUsername(username);
+  // 1. Fetch profile from Supabase. Unknown usernames must 404 —
+  // never render a placeholder profile for unregistered subdomains.
+  const profile: Profile | null = await getProfileByUsername(username);
 
   if (!profile) {
-    const formattedDisplay = username
-      .split("-")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-
-    profile = {
-      id: `anon_${username}`,
-      username,
-      display_name: formattedDisplay || username,
-      bio: "Kumpulan refleksi, tulisan kesehatan mental, dan edisi sertifikat digital resmi di Let Me Hear You.",
-      avatar_url: null,
-      banner_url: null,
-      website: null,
-      facebook_profile_url: null,
-      facebook_access_token: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    notFound();
   }
 
   // 2. Fetch all creator articles
@@ -72,15 +56,11 @@ export default async function TenantProfilePage({
     data: { user: currentUser },
   } = await supabase.auth.getUser();
 
-  const isOwnProfile = Boolean(
-    currentUser &&
-      (currentUser.id === profile.id ||
-        (profile.id.startsWith("anon_") && currentUser.user_metadata?.username === username))
-  );
+  const isOwnProfile = Boolean(currentUser && currentUser.id === profile.id);
 
   // 5. Check if current user is following this creator
   let isFollowing = false;
-  if (currentUser && !isOwnProfile && profile.id && !profile.id.startsWith("anon_")) {
+  if (currentUser && !isOwnProfile) {
     try {
       const { data: followRow } = await supabase
         .from("follows")
