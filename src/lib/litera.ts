@@ -97,6 +97,14 @@ export interface LiteraRegisterArticleResponse {
   error?: string;
 }
 
+export interface LiteraIntegrationStatusDto {
+  status: "SYNCHRONIZED" | "DOMAIN_UNBOUND" | "DOMAIN_NOT_LIVE" | "PUBLISHER_MISMATCH";
+  apiKeyWallet: string;
+  domainOwnerWallet: string | null;
+  domain: string;
+  addedToCORS: boolean;
+}
+
 class LiteraClient {
   private get baseUrl(): string {
     return (
@@ -363,6 +371,39 @@ class LiteraClient {
       };
     } catch (err) {
       console.warn("[Litera S2S] Failed to fetch quota:", err);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch current publisher integration status (Domain, CORS, and wallet binding)
+   */
+  async getIntegrationStatus(domain?: string): Promise<LiteraIntegrationStatusDto | null> {
+    if (!this.apiKey) {
+      return null;
+    }
+
+    try {
+      const url = new URL(`${this.baseUrl}/cms/integration/status`);
+      if (domain) {
+        url.searchParams.set("domain", domain);
+      }
+
+      const res = await fetch(url.toString(), {
+        method: "GET",
+        headers: this.headers,
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const raw = await res.json();
+      const data = (raw?.data || raw) as LiteraIntegrationStatusDto;
+      return data;
+    } catch (err) {
+      console.warn("[Litera S2S] Failed to fetch integration status:", err);
       return null;
     }
   }
