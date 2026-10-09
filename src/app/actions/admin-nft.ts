@@ -7,7 +7,7 @@ import {
   saveAdminTokenomicsConfig,
 } from "@/lib/admin-tokenomics-storage";
 import { literaClient, LiteraPublisherQuota } from "@/lib/litera";
-import { getLiteraApiKeyStatus } from "@/lib/litera-runtime";
+import { evaluateIntegrationPreflight, getLiteraApiKeyStatus, type LiteraIntegrationPreflightResult } from "@/lib/litera-runtime";
 
 export async function verifyAdminPin(pin: string): Promise<boolean> {
   const DEFAULT_PIN = "123456";
@@ -71,24 +71,46 @@ export async function saveTokenomicsConfigAction(
 export interface AdminLiteraQuotaResult {
   quota: LiteraPublisherQuota | null;
   hasApiKey: boolean;
+  preflight?: LiteraIntegrationPreflightResult;
   error?: string;
 }
 
 export async function getAdminLiteraQuotaAction(): Promise<AdminLiteraQuotaResult> {
-  const apiKeyStatus = getLiteraApiKeyStatus(process.env.LITERA_API_KEY);
+  const apiKey = process.env.LITERA_API_KEY;
+  const configuredWallet = process.env.LITERA_PUBLISHER_WALLET;
+  const apiKeyStatus = getLiteraApiKeyStatus(apiKey);
+
   if (apiKeyStatus === "MISSING_API_KEY") {
+    const preflight = evaluateIntegrationPreflight({ apiKey });
     return {
       quota: null,
       hasApiKey: false,
+      preflight,
       error: "LITERA_API_KEY belum dikonfigurasi di Environment Variables server.",
     };
   }
 
-  const quota = await literaClient.getPublisherQuota();
+  const [quota, statusRes] = await Promise.all([
+    literaClient.getPublisherQuota(),
+    literaClient.getIntegrationStatus("letmehearyou.id"),
+  ]);
+
+  const preflight = evaluateIntegrationPreflight({
+    apiKey,
+    configuredPublisherWallet: configuredWallet,
+    statusResponse: statusRes,
+  });
+
   return {
     quota,
     hasApiKey: true,
-    error: quota ? undefined : "Kunci API Litera tidak valid atau kuota gagal dimuat dari server Litera.",
+    preflight,
+    error:
+      preflight.status === "PUBLISHER_MISMATCH"
+        ? preflight.message
+        : quota
+          ? undefined
+          : "Kunci API Litera tidak valid atau kuota gagal dimuat dari server Litera.",
   };
 }
 

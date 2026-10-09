@@ -7,6 +7,11 @@ const LOADER_ID = "lmhy-litera-loader";
 const EMBED_URL = "https://cdn.literaa.xyz/litera-embed.js";
 const ROOT_ID = "litera";
 
+function removeLoaderIfUnused() {
+  if (document.querySelector(`[data-litera-widget="true"]`)) return;
+  document.getElementById(LOADER_ID)?.remove();
+}
+
 interface LiteraWidgetProps {
   title: string;
   articleUrl?: string;
@@ -51,6 +56,7 @@ export function LiteraWidget({ title, articleUrl }: LiteraWidgetProps) {
       newScript.dataset.title = title;
       newScript.async = true;
       newScript.onload = () => {
+        if (!root.isConnected) return;
         const m = (window as Window & { literaMount?: (container: HTMLElement | string) => void }).literaMount;
         if (m) m(root);
       };
@@ -73,13 +79,14 @@ export function LiteraWidget({ title, articleUrl }: LiteraWidgetProps) {
       clearInterval(timer);
       clearTimeout(timeout);
       // Clean up widget root content and data so it doesn't leak to other SPA pages
-      if (root) {
-        root.innerHTML = "";
-        root.removeAttribute("data-litera-widget");
-        root.removeAttribute("id"); // Strip ID so embed script / SPA router never targets it after unmount
-      }
-      delete (window as Window & { myReactPluginData?: { permalink: string; title: string } }).myReactPluginData;
-    };
+        if (root) {
+          root.innerHTML = "";
+          root.removeAttribute("data-litera-widget");
+          root.removeAttribute("id"); // Strip ID so embed script / SPA router never targets it after unmount
+        }
+        delete (window as Window & { myReactPluginData?: { permalink: string; title: string } }).myReactPluginData;
+        removeLoaderIfUnused();
+      };
   }, [pathname, title, articleUrl]);
 
   return <div id={ROOT_ID} data-litera-widget="true" className="mt-12 min-h-16" aria-label="Litera article access" />;
