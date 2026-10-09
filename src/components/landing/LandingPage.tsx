@@ -130,7 +130,7 @@ export function LandingPage({
                   {currentUser ? (
                     <div className="flex flex-col items-center" style={{ marginTop: 2 }}>
                       <Link
-                        href="/builder"
+                        href={currentUser.username ? `https://${currentUser.username}.letmehearyou.id/` : "/builder"}
                         className="learn-more text-center"
                         style={{
                           display: "inline-block",
