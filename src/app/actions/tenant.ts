@@ -2,10 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import { literaClient, LiteraQuizInput } from "@/lib/litera";
-import { saveTenantArticle, TenantArticle } from "@/lib/tenant-storage";
+import { saveTenantArticle, deleteTenantArticle, TenantArticle } from "@/lib/tenant-storage";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileById } from "@/lib/profile-storage";
-import { savePersistentArticle } from "@/lib/article-storage";
+import {
+  savePersistentArticle,
+  updateArticleLiteraOperation,
+  deletePersistentArticle,
+} from "@/lib/article-storage";
+import {
+  publishArticleWithLitera,
+  deleteArticleWithLitera,
+  describeLiteraPublishState,
+} from "./tenant-litera";
+
+export {
+  publishArticleWithLitera,
+  deleteArticleWithLitera,
+  describeLiteraPublishState,
+};
 
 export interface PublishArticleInput {
   username: string;
@@ -28,6 +43,13 @@ export interface PublishArticleResult {
   slug?: string;
   error?: string;
   literaMessage?: string;
+  litera?: {
+    requested: boolean;
+    operationId?: string;
+    status?: string;
+    message?: string;
+    failureCode?: string;
+  };
 }
 
 export async function publishTenantArticle(
@@ -107,90 +129,191 @@ export async function publishTenantArticle(
         .filter(Boolean)
     : ["Refleksi", "Kesehatan Mental"];
 
-  // 5. Persist to Supabase articles
-  let savedArticle;
+  // 5. Decoupled Publishing: Save article first, then register Litera asynchronously
   try {
-    savedArticle = await savePersistentArticle({
-      author_id: user.id,
-      username: creatorUsername,
-      slug: finalSlug,
-      title: title.trim(),
-      excerpt: excerpt?.trim() || content.slice(0, 160).trim() + "...",
-      content: content.trim(),
-      tags: parsedTags,
-      template_id: templateId || "warm-sanctuary",
-      media_type: mediaType,
-      media_url: mediaUrl || "/assets/sapiens.png",
-      register_litera: registerLitera,
-      creator_wallet: creatorAddress || null,
-      published_at: new Date().toISOString(),
+    const pubResult = await publishArticleWithLitera({
+      saveArticle: async () => {
+        const saved = await savePersistentArticle({
+          author_id: user.id,
+          username: creatorUsername,
+          slug: finalSlug,
+          title: title.trim(),
+          excerpt: excerpt?.trim() || content.slice(0, 160).trim() + "...",
+          content: content.trim(),
+          tags: parsedTags,
+          template_id: templateId || "warm-sanctuary",
+          media_type: mediaType,
+          media_url: mediaUrl || "/assets/sapiens.png",
+          register_litera: registerLitera,
+          creator_wallet: creatorAddress || null,
+          published_at: new Date().toISOString(),
+        });
+
+        // Sync to in-memory runtime for backwards-compatibility
+        const legacyArticle: TenantArticle = {
+          id: saved.id,
+          username: saved.username,
+          slug: saved.slug,
+          title: saved.title,
+          excerpt: saved.excerpt,
+          content: saved.content,
+          createdAt: saved.published_at,
+          tags: saved.tags || [],
+          mediaType: saved.media_type || undefined,
+          mediaUrl: saved.media_url || undefined,
+          isLiteraRegistered: saved.register_litera ?? false,
+          templateId: saved.template_id || "warm-sanctuary",
+        };
+        saveTenantArticle(legacyArticle);
+
+        return saved;
+      },
+      registerArticle: async () => {
+        const fullArticleUrl = `https://${creatorUsername}.letmehearyou.id/${finalSlug}`;
+
+        // Auto-register subdomain to Litera CORS allowlist
+        await literaClient.registerDomains([
+          `${creatorUsername}.letmehearyou.id`,
+        ]);
+
+        return await literaClient.registerArticle({
+          id: finalSlug,
+          updatedAt: new Date().toISOString(),
+          articleUrl: fullArticleUrl,
+          title: title.trim(),
+          author: `@${creatorUsername}`,
+          creator: creatorAddress,
+          coverImageUrl: mediaUrl?.startsWith("https://") ? mediaUrl : undefined,
+          description: excerpt?.trim() || content.slice(0, 160).trim() + "...",
+          collectionName,
+          unlockableUrl,
+          quiz,
+        });
+      },
+      saveOperation: async (articleId, operation) => {
+        const op = operation as {
+          operationId?: string;
+          intentId?: string;
+          status?: string;
+          txHash?: string | null;
+          tokenId?: number | string | null;
+          failureCode?: string | null;
+          failureMessage?: string | null;
+          updatedAt?: string;
+        };
+        await updateArticleLiteraOperation(articleId, op);
+      },
+      registerLitera,
     });
-  } catch (dbErr: unknown) {
-    console.error("[publishTenantArticle] Error saving article to Supabase:", dbErr);
+
+    // 6. Revalidate paths
+    revalidatePath(`/tenant/${creatorUsername}`);
+    revalidatePath(`/tenant/${creatorUsername}/${pubResult.slug}`);
+    revalidatePath(`/${pubResult.slug}`);
+
+    let literaNotice = "";
+    if (pubResult.litera.requested) {
+      if (pubResult.litera.status === "FAILED") {
+        literaNotice = `Peringatan: ${pubResult.litera.message || "Gagal menghubungi Litera"}`;
+      } else {
+        literaNotice = "Artikel terdaftar di jaringan Litera (sedang diproses)";
+      }
+    }
+
+    return {
+      success: true,
+      slug: pubResult.slug,
+      litera: pubResult.litera,
+      literaMessage: literaNotice,
+    };
+  } catch (err: unknown) {
+    console.error("[publishTenantArticle] Error:", err);
     return {
       success: false,
-      error: dbErr instanceof Error ? dbErr.message : "Gagal menyimpan artikel ke basis data.",
+      error: err instanceof Error ? err.message : "Gagal menerbitkan artikel.",
+    };
+  }
+}
+
+export interface DeleteTenantArticleInput {
+  username: string;
+  slug: string;
+  intentId?: string | null;
+  confirmLocalOnly?: boolean;
+}
+
+export interface DeleteTenantArticleResult {
+  success: boolean;
+  deleted: boolean;
+  error?: string;
+  requiresConfirmation?: boolean;
+  nftRemainsOnChain?: boolean;
+  message?: string;
+}
+
+export async function deleteTenantArticleAction(
+  input: DeleteTenantArticleInput
+): Promise<DeleteTenantArticleResult> {
+  const { username, slug, intentId, confirmLocalOnly = false } = input;
+
+  // 1. Authenticate user session
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      success: false,
+      deleted: false,
+      error: "Sesi masuk tidak ditemukan.",
     };
   }
 
-  // Sync to in-memory runtime for backwards-compatibility
-  const legacyArticle: TenantArticle = {
-    id: savedArticle.id,
-    username: savedArticle.username,
-    slug: savedArticle.slug,
-    title: savedArticle.title,
-    excerpt: savedArticle.excerpt,
-    content: savedArticle.content,
-    createdAt: savedArticle.published_at,
-    tags: savedArticle.tags || [],
-    mediaType: savedArticle.media_type || undefined,
-    mediaUrl: savedArticle.media_url || undefined,
-    isLiteraRegistered: savedArticle.register_litera ?? false,
-    templateId: savedArticle.template_id || "warm-sanctuary",
-  };
-  saveTenantArticle(legacyArticle);
-
-  // 6. Register domains and intent with Litera
-  let literaNotice = "";
-
-  if (registerLitera) {
-    const fullArticleUrl = `https://${creatorUsername}.letmehearyou.id/${savedArticle.slug}`;
-
-    // 1. Auto-register subdomain to Litera CORS allowlist
-    await literaClient.registerDomains([
-      `${creatorUsername}.letmehearyou.id`,
-    ]);
-
-    // 2. Register article intent to Litera S2S CMS API
-    const regRes = await literaClient.registerArticle({
-      articleUrl: fullArticleUrl,
-      title: savedArticle.title,
-      author: `@${creatorUsername}`,
-      description: savedArticle.excerpt,
-      creatorAddress,
-      collectionName,
-      unlockableUrl,
-      mediaType,
-      mediaUrl: savedArticle.media_url || undefined,
-      quiz,
-    });
-
-    if (!regRes.success) {
-      console.warn("[Publish Notice] Litera S2S Registration Warning:", regRes.message);
-      literaNotice = regRes.message || "Peringatan: Kunci API Litera belum terkonfigurasi di server.";
-    } else {
-      literaNotice = regRes.message || "Artikel terdaftar di jaringan Litera";
-    }
+  // 2. Author check
+  const profile = await getProfileById(user.id);
+  if (!profile || !profile.username) {
+    return {
+      success: false,
+      deleted: false,
+      error: "Profil pengguna tidak valid.",
+    };
   }
 
-  // 7. Revalidate paths
-  revalidatePath(`/tenant/${creatorUsername}`);
-  revalidatePath(`/tenant/${creatorUsername}/${savedArticle.slug}`);
-  revalidatePath(`/${savedArticle.slug}`);
+  const targetUsername = (username || "").trim().toLowerCase();
+  const creatorUsername = profile.username.trim().toLowerCase();
+
+  if (creatorUsername !== targetUsername) {
+    return {
+      success: false,
+      deleted: false,
+      error: "Anda tidak memiliki izin untuk menghapus artikel ini.",
+    };
+  }
+
+  // 3. Decoupled Deletion
+  const delResult = await deleteArticleWithLitera({
+    intentId,
+    confirmLocalOnly,
+    deleteIntent: (id) => literaClient.deleteArticleIntent(id),
+    deleteLocal: async () => {
+      await deletePersistentArticle(creatorUsername, slug);
+      deleteTenantArticle(creatorUsername, slug);
+    },
+  });
+
+  if (delResult.deleted) {
+    revalidatePath(`/tenant/${creatorUsername}`);
+    revalidatePath(`/tenant/${creatorUsername}/${slug}`);
+    revalidatePath(`/${slug}`);
+  }
 
   return {
-    success: true,
-    slug: savedArticle.slug,
-    literaMessage: literaNotice,
+    success: delResult.success,
+    deleted: delResult.deleted,
+    requiresConfirmation: delResult.requiresConfirmation,
+    nftRemainsOnChain: delResult.nftRemainsOnChain,
+    message: delResult.message,
   };
 }

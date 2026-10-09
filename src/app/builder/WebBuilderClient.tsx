@@ -11,6 +11,7 @@ import {
   WebDesignTemplate,
 } from "@/lib/design-templates";
 import { publishTenantArticle } from "@/app/actions/tenant";
+import { describeLiteraPublishState } from "@/app/actions/tenant-litera";
 import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
 import { Web3Providers } from "@/components/litera/Web3Providers";
 import { WalletConnectWatcher } from "@/components/litera/WalletConnectWatcher";
@@ -36,7 +37,19 @@ export function WebBuilderClient({
   const [authProfile, setAuthProfile] = useState<{ username: string; display_name: string } | null>(initialProfile || null);
   const [showPublishSuccessModal, setShowPublishSuccessModal] = useState(false);
   const [showConfirmPublishModal, setShowConfirmPublishModal] = useState(false);
-  const [publishedData, setPublishedData] = useState<{ url: string; slug: string; title: string } | null>(null);
+  const [publishedData, setPublishedData] = useState<{
+    url: string;
+    slug: string;
+    title: string;
+    litera?: {
+      requested: boolean;
+      operationId?: string;
+      status?: string;
+      message?: string;
+      failureCode?: string;
+      txHash?: string | null;
+    };
+  } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // 1. Subdomain State & Lock Management
@@ -545,6 +558,7 @@ export function WebBuilderClient({
         url: targetUrl,
         slug: res.slug || "",
         title: title || "Refleksi Baru",
+        litera: res.litera,
       });
       setShowPublishSuccessModal(true);
       setIsSubmitting(false);
@@ -806,11 +820,75 @@ export function WebBuilderClient({
               <button
                 type="button"
                 onClick={() => handleCopyLink(publishedData.url)}
-                className="shrink-0 rounded-xl bg-[#3F3766] px-3 py-2 text-xs font-bold text-white hover:bg-[#3F3766]/80 transition"
+                className="shrink-0 rounded-xl bg-[#3F3766] px-3 py-2 text-xs font-bold text-white hover:bg-[#3F3766]/80 transition focus-visible:ring-2 focus-visible:ring-[#3F3766]/50 focus-visible:outline-none"
               >
                 {copiedLink ? "✓ Disalin" : "Salin Link"}
               </button>
             </div>
+
+            {/* Litera NFT Publishing Status Card */}
+            {publishedData.litera?.requested && (() => {
+              const literaState = describeLiteraPublishState(publishedData.litera);
+              const isMinted = publishedData.litera.status === "MINTED";
+              const isBlocked = publishedData.litera.status === "BLOCKED";
+              const isFailed = publishedData.litera.status === "FAILED";
+              const isProcessing = !isMinted && !isBlocked && !isFailed;
+
+              return (
+                <div
+                  className={`mt-3.5 rounded-2xl border-2 p-3.5 text-left transition-colors motion-safe:transition-transform ${
+                    isMinted
+                      ? "border-emerald-600/30 bg-emerald-50/70"
+                      : isBlocked
+                      ? "border-amber-600/30 bg-amber-50/70"
+                      : isFailed
+                      ? "border-rose-600/30 bg-rose-50/70"
+                      : "border-[#3F3766]/20 bg-[#FAF8F5]"
+                  }`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/60">
+                      Status Litera NFT
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                        isMinted
+                          ? "bg-emerald-600 text-white"
+                          : isBlocked
+                          ? "bg-amber-600 text-white"
+                          : isFailed
+                          ? "bg-rose-600 text-white"
+                          : "bg-[#3F3766] text-white"
+                      }`}
+                    >
+                      {isProcessing && (
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-white motion-safe:animate-pulse" />
+                      )}
+                      {literaState.title}
+                    </span>
+                  </div>
+
+                  <p className="mt-1.5 text-xs text-[#3F3766]/80 leading-relaxed">
+                    {literaState.body}
+                  </p>
+
+                  {literaState.href && (
+                    <div className="mt-2.5 pt-2 border-t border-[#3F3766]/10 flex items-center justify-between">
+                      <a
+                        href={literaState.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 hover:underline focus-visible:ring-2 focus-visible:ring-emerald-500 rounded focus-visible:outline-none"
+                      >
+                        <span>Lihat Transaksi di PolygonScan ↗</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Social Share Buttons */}
             <div className="mt-5">

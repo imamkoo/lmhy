@@ -76,6 +76,14 @@ export interface Database {
           template_id: string | null
           published_at: string
           updated_at: string
+          litera_operation_id: string | null
+          litera_intent_id: string | null
+          litera_status: string | null
+          litera_tx_hash: string | null
+          litera_token_id: number | null
+          litera_failure_code: string | null
+          litera_failure_message: string | null
+          litera_updated_at: string | null
         }
         Insert: {
           id?: string
@@ -93,6 +101,14 @@ export interface Database {
           template_id?: string | null
           published_at?: string
           updated_at?: string
+          litera_operation_id?: string | null
+          litera_intent_id?: string | null
+          litera_status?: string | null
+          litera_tx_hash?: string | null
+          litera_token_id?: number | null
+          litera_failure_code?: string | null
+          litera_failure_message?: string | null
+          litera_updated_at?: string | null
         }
         Update: {
           id?: string
@@ -110,6 +126,14 @@ export interface Database {
           template_id?: string | null
           published_at?: string
           updated_at?: string
+          litera_operation_id?: string | null
+          litera_intent_id?: string | null
+          litera_status?: string | null
+          litera_tx_hash?: string | null
+          litera_token_id?: number | null
+          litera_failure_code?: string | null
+          litera_failure_message?: string | null
+          litera_updated_at?: string | null
         }
         Relationships: [
           {
