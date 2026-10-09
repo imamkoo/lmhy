@@ -50,29 +50,37 @@ export default async function TenantProfilePage({
     stats.articlesCount = articles.length;
   }
 
-  // 4. Authenticate current visitor/author session
-  const supabase = await createClient();
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
-
-  const isOwnProfile = Boolean(currentUser && currentUser.id === profile.id);
-
-  // 5. Check if current user is following this creator
+  // 4-5. Authenticate visitor/author session + follow status. A transient
+  // auth/DB failure must never 500 the profile — degrade to guest view instead.
+  let currentUser: { id: string } | null = null;
+  let isOwnProfile = false;
   let isFollowing = false;
-  if (currentUser && !isOwnProfile) {
-    try {
-      const { data: followRow } = await supabase
-        .from("follows")
-        .select("follower_id")
-        .eq("follower_id", currentUser.id)
-        .eq("following_id", profile.id)
-        .maybeSingle();
 
-      isFollowing = Boolean(followRow);
-    } catch {
-      // Ignored for unauthenticated or fallback states
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    currentUser = user;
+
+    isOwnProfile = Boolean(currentUser && currentUser.id === profile.id);
+
+    if (currentUser && !isOwnProfile) {
+      try {
+        const { data: followRow } = await supabase
+          .from("follows")
+          .select("follower_id")
+          .eq("follower_id", currentUser.id)
+          .eq("following_id", profile.id)
+          .maybeSingle();
+
+        isFollowing = Boolean(followRow);
+      } catch {
+        // Ignored for unauthenticated or fallback states
+      }
     }
+  } catch (err) {
+    console.error("[TenantProfilePage] Visitor session lookup failed, rendering as guest:", err);
   }
 
   return (

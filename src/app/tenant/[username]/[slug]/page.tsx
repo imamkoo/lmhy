@@ -103,38 +103,48 @@ export default async function TenantArticlePage({
   const authorProfile = await getProfileByUsername(normalizedUser);
   const authorId = authorProfile?.id || dbArticle?.author_id;
 
-  // 3. Fetch visitor auth session
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-
-  let currentUser = null;
+  // 3. Fetch visitor auth session. A transient auth/DB failure must never
+  // 500 the article — degrade to guest view instead.
+  let currentUser: {
+    id: string;
+    username?: string;
+    display_name?: string;
+    avatar_url?: string | null;
+  } | null = null;
   let isFollowingAuthor = false;
   let isOwnArticle = false;
 
-  if (authUser) {
-    const { data: userProf } = await supabase
-      .from("profiles")
-      .select("id, username, display_name, avatar_url")
-      .eq("id", authUser.id)
-      .maybeSingle();
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
 
-    currentUser = {
-      id: authUser.id,
-      username: userProf?.username || authUser.user_metadata?.username,
-      display_name:
-        userProf?.display_name ||
-        authUser.user_metadata?.display_name ||
-        authUser.user_metadata?.name,
-      avatar_url: userProf?.avatar_url || authUser.user_metadata?.avatar_url,
-    };
+    if (authUser) {
+      const { data: userProf } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .eq("id", authUser.id)
+        .maybeSingle();
 
-    if (authorId && authUser.id === authorId) {
-      isOwnArticle = true;
-    } else if (authorId && authUser.id !== authorId) {
-      isFollowingAuthor = await getFollowStatus(authUser.id, authorId);
+      currentUser = {
+        id: authUser.id,
+        username: userProf?.username || authUser.user_metadata?.username,
+        display_name:
+          userProf?.display_name ||
+          authUser.user_metadata?.display_name ||
+          authUser.user_metadata?.name,
+        avatar_url: userProf?.avatar_url || authUser.user_metadata?.avatar_url,
+      };
+
+      if (authorId && authUser.id === authorId) {
+        isOwnArticle = true;
+      } else if (authorId && authUser.id !== authorId) {
+        isFollowingAuthor = await getFollowStatus(authUser.id, authorId);
+      }
     }
+  } catch (err) {
+    console.error("[TenantArticlePage] Visitor session lookup failed, rendering as guest:", err);
   }
 
   // 4. Fetch comments for this article
@@ -193,7 +203,7 @@ export default async function TenantArticlePage({
               <span className={activeTemplate.previewClass.authorName}>
                 Ditulis oleh @{normalizedUser}
               </span>
-              {authorId && authUser?.id !== authorId && (
+              {authorId && currentUser?.id !== authorId && (
                 <FollowButton
                   targetUserId={authorId}
                   targetUsername={normalizedUser}
