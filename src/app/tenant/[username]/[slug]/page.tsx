@@ -65,23 +65,28 @@ export default async function TenantArticlePage({
     notFound();
   }
 
-  // 1. Fetch article from DB or fallback storage
+  // 1. Fetch article from DB or fallback storage.
+  // Unknown slugs must 404 — never render placeholder content.
   const dbArticle = await getArticleBySlug(normalizedUser, slug);
   const legacyArticle = !dbArticle ? getTenantArticleBySlug(normalizedUser, slug) : null;
+
+  if (!dbArticle && !legacyArticle) {
+    notFound();
+  }
 
   const articleId = dbArticle?.id || legacyArticle?.id || `slug_${normalizedUser}_${slug}`;
 
   // Title fallback
-  const title = dbArticle?.title || legacyArticle?.title || slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  const title =
+    dbArticle?.title ||
+    legacyArticle?.title ||
+    slug
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
 
-  // Content fallback
-  const content =
-    dbArticle?.content ||
-    legacyArticle?.content ||
-    `Ini adalah artikel yang diterbitkan melalui subdomain personal @${normalizedUser}. Setiap tulisan di sini dapat dikoleksi oleh pembaca sebagai sertifikat digital permanen melalui jaringan Litera Web3 di blockchain Polygon.`;
+  // Content fallback (unreachable after the notFound guard above)
+  const content = dbArticle?.content || legacyArticle?.content || "";
 
   const tags = dbArticle?.tags || legacyArticle?.tags || ["Refleksi", "Kesehatan Mental"];
   const mediaUrl = dbArticle?.media_url || legacyArticle?.mediaUrl;
