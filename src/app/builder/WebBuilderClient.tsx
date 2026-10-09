@@ -66,6 +66,7 @@ export function WebBuilderClient({
   const [creatorWallet, setCreatorWallet] = useState<string>("");
   const [loginMethod, setLoginMethod] = useState<string>("");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSwitchMode, setIsSwitchMode] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<string>("");
   const [newCollectionName, setNewCollectionName] = useState<string>("");
   const [unlockableUrl, setUnlockableUrl] = useState<string>("");
@@ -402,6 +403,7 @@ export function WebBuilderClient({
     setCreatorWallet(walletAddress);
     setLoginMethod(method);
     setRegisterLitera(true);
+    setIsSwitchMode(false);
     setError(null);
   };
 
@@ -421,6 +423,7 @@ export function WebBuilderClient({
 
   const handleSwitchAccount = () => {
     handleDisconnectWallet();
+    setIsSwitchMode(true);
     setIsLoginModalOpen(true);
   };
 
@@ -1780,9 +1783,13 @@ export function WebBuilderClient({
       <Web3Providers>
         <LiteraLoginModal
           isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
+          onClose={() => {
+            setIsLoginModalOpen(false);
+            setIsSwitchMode(false);
+          }}
           onSuccess={handleLoginSuccess}
           onDisconnect={handleDisconnectWallet}
+          isSwitchMode={isSwitchMode}
         />
         <WalletConnectWatcher
           onSuccess={handleLoginSuccess}

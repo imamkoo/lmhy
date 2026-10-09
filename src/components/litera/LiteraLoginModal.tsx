@@ -9,6 +9,7 @@ interface LiteraLoginModalProps {
   onClose: () => void;
   onSuccess: (walletAddress: string, method: string) => void;
   onDisconnect?: () => void;
+  isSwitchMode?: boolean;
 }
 
 const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -18,6 +19,7 @@ export function LiteraLoginModal({
   onClose,
   onSuccess,
   onDisconnect,
+  isSwitchMode = false,
 }: LiteraLoginModalProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const popupRef = useRef<Window | null>(null);
@@ -109,9 +111,10 @@ export function LiteraLoginModal({
       typeof window !== "undefined"
         ? window.location.href
         : "https://letmehearyou.id/builder";
+    const switchParam = isSwitchMode ? "&switch=1" : "";
     const authUrl = `${LITERA_ORIGIN}/widget-auth?article=${encodeURIComponent(
       callbackUrl
-    )}&state=${encodeURIComponent(nonce)}&auth=${authType}`;
+    )}&state=${encodeURIComponent(nonce)}&auth=${authType}${switchParam}`;
 
     const isMobile = isMobileDevice();
 
@@ -141,10 +144,10 @@ export function LiteraLoginModal({
   };
 
   // Handler: Login via Litera Cloud (Email atau Google via Privy)
-  const handleEmailGoogleLogin = async () => {
-    // Putuskan koneksi dompet wagmi sebelumnya agar tidak terjadi konflik akun
+  // Eksekusi langsung secara synchronous agar popup blocker browser tidak memblokir window.open
+  const handleEmailGoogleLogin = () => {
     try {
-      await disconnectAsync();
+      disconnectAsync().catch(() => {});
     } catch {
       // Abaikan jika tidak ada dompet aktif
     }
