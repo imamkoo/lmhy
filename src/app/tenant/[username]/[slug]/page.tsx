@@ -92,6 +92,7 @@ export default async function TenantArticlePage({
   const tags = dbArticle?.tags || legacyArticle?.tags || ["Refleksi", "Kesehatan Mental"];
   const mediaUrl = dbArticle?.media_url || legacyArticle?.mediaUrl;
   const mediaType = dbArticle?.media_type || legacyArticle?.mediaType || "IMAGE";
+  const isLiteraRegistered = Boolean(dbArticle?.register_litera ?? legacyArticle?.isLiteraRegistered);
   const publishedAt = dbArticle?.published_at || legacyArticle?.createdAt;
   const templateId = dbArticle?.template_id || legacyArticle?.templateId || "warm-sanctuary";
   const activeTemplate = getDesignTemplate(templateId);
@@ -259,21 +260,23 @@ export default async function TenantArticlePage({
           authorUsername={normalizedUser}
         />
 
-        {/* Litera NFT Widget Resmi Web3 */}
-        <div className="mt-12 border-t border-current/15 pt-8">
-          <div className="mb-4">
-            <h3 className="text-lg font-bold text-inherit">
-              Sertifikat Digital & Edisi Koleksi
-            </h3>
-            <p className="text-sm opacity-75">
-              Dukung penulis dan simpan bukti keterlibatan Anda sebagai sertifikat digital resmi di Polygon melalui Litera.
-            </p>
+        {/* Litera NFT Widget Resmi Web3 (Hanya Tampil Jika Penulis Mengaktifkan Integrasi Web3) */}
+        {isLiteraRegistered && (
+          <div className="mt-12 border-t border-current/15 pt-8">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-inherit">
+                Sertifikat Digital & Edisi Koleksi
+              </h3>
+              <p className="text-sm opacity-75">
+                Dukung penulis dan simpan bukti keterlibatan Anda sebagai sertifikat digital resmi di Polygon melalui Litera.
+              </p>
+            </div>
+            <LiteraWidget
+              title={title}
+              articleUrl={articleCanonicalUrl}
+            />
           </div>
-          <LiteraWidget
-            title={title}
-            articleUrl={articleCanonicalUrl}
-          />
-        </div>
+        )}
 
         {/* Requirement: Display CommentSection under the Litera NFT widget */}
         <CommentSection
