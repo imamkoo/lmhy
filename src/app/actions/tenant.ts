@@ -179,6 +179,20 @@ export async function publishTenantArticle(
           `${creatorUsername}.letmehearyou.id`,
         ]);
 
+        // Ensure cover image URL is always a full HTTPS URL matching Litera NFT schema
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://letmehearyou.id";
+        const normalizedSiteUrl = siteUrl.startsWith("https://")
+          ? siteUrl
+          : `https://${siteUrl.replace(/^http:\/\//, "")}`;
+        const resolvedCoverUrl =
+          mediaUrl && mediaUrl.startsWith("https://")
+            ? mediaUrl
+            : `${normalizedSiteUrl}${
+                mediaUrl && mediaUrl.startsWith("/")
+                  ? mediaUrl
+                  : `/${mediaUrl || "assets/sapiens.png"}`
+              }`;
+
         return await literaClient.registerArticle({
           id: savedArticleRecord?.id,
           updatedAt: savedArticleRecord?.updated_at,
@@ -186,7 +200,7 @@ export async function publishTenantArticle(
           title: title.trim(),
           author: `@${creatorUsername}`,
           creator: creatorAddress,
-          coverImageUrl: mediaUrl || undefined,
+          coverImageUrl: resolvedCoverUrl,
           description: excerpt?.trim() || content.slice(0, 160).trim() + "...",
           collectionName,
           unlockableUrl,
