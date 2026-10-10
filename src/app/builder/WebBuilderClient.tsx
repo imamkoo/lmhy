@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { REFLECTION_TEMPLATES, ReflectionTemplate } from "@/lib/builder-templates";
+import { RANDOM_REFLECTION_TEMPLATES } from "@/lib/builder-templates";
 import {
   DESIGN_TEMPLATES,
   getDesignTemplate,
@@ -390,18 +390,28 @@ export function WebBuilderClient({
     }
   };
 
-  const handleApplyReflectionPrompt = (template: ReflectionTemplate) => {
-    if (template.id !== "blank-canvas") {
-      setTitle(template.defaultTitle);
-      setExcerpt(template.defaultExcerpt);
-      setContent(template.content);
-      setTags(template.defaultTags);
-    } else {
-      setTitle("");
-      setExcerpt("");
-      setContent("");
-      setTags("Refleksi, Jurnal, Kesehatan Mental");
-    }
+  const lastRandomTemplateIdRef = useRef<string | null>(null);
+
+  const handleApplyRandomPrompt = () => {
+    const pool = RANDOM_REFLECTION_TEMPLATES.filter(
+      (t) => t.id !== lastRandomTemplateIdRef.current
+    );
+    const candidates = pool.length > 0 ? pool : RANDOM_REFLECTION_TEMPLATES;
+    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    if (!picked) return;
+
+    lastRandomTemplateIdRef.current = picked.id;
+    setTitle(picked.defaultTitle);
+    setExcerpt(picked.defaultExcerpt);
+    setContent(picked.content);
+    setTags(picked.defaultTags);
+  };
+
+  const handleApplyBlankCanvas = () => {
+    setTitle("");
+    setExcerpt("");
+    setContent("");
+    setTags("Refleksi, Jurnal, Kesehatan Mental");
   };
 
   const handleToggleLitera = (enabled: boolean) => {
@@ -1231,17 +1241,29 @@ export function WebBuilderClient({
                     <span className="text-xs group-open:rotate-180 transition-transform">▼</span>
                   </summary>
                   <div className="mt-2 space-y-1.5">
-                    {REFLECTION_TEMPLATES.map((promptTmpl) => (
-                      <button
-                        key={promptTmpl.id}
-                        type="button"
-                        onClick={() => handleApplyReflectionPrompt(promptTmpl)}
-                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#3F3766]/15 bg-[#F5E7C6]/20 px-3 py-2 text-left text-[10px] text-[#3F3766] transition hover:bg-[#F5E7C6]/50"
-                      >
-                        <span className="min-w-0 flex-1 leading-snug">{promptTmpl.name}</span>
-                        <span className="shrink-0 font-bold text-[#3F3766]/60">Muat →</span>
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={handleApplyRandomPrompt}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#3F3766]/15 bg-[#F5E7C6]/30 px-3 py-2 text-left text-[10px] text-[#3F3766] transition hover:bg-[#F5E7C6]/60 active:scale-[0.99]"
+                    >
+                      <span className="min-w-0 flex-1 font-semibold leading-snug flex items-center gap-2">
+                        <span>🎲</span>
+                        <span>Artikel Acak (Inspirasi Otomatis)</span>
+                      </span>
+                      <span className="shrink-0 font-bold text-[#3F3766]/60">Muat Acak ↻</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleApplyBlankCanvas}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#3F3766]/15 bg-white px-3 py-2 text-left text-[10px] text-[#3F3766] transition hover:bg-slate-50 active:scale-[0.99]"
+                    >
+                      <span className="min-w-0 flex-1 font-semibold leading-snug flex items-center gap-2">
+                        <span>✍️</span>
+                        <span>Kanvas Kosong (Mulai dari Nol)</span>
+                      </span>
+                      <span className="shrink-0 font-bold text-[#3F3766]/60">Muat →</span>
+                    </button>
                   </div>
                 </details>
               </div>

@@ -64,6 +64,59 @@ Refleksi saya tentang batasan sehat:
 - Hubungan yang sehat selalu menghormati batasan masing-masing.`,
   },
   {
+    id: "overthinking-quiet",
+    name: "Melepaskan Beban Overthinking",
+    tagline: "Menemukan keheningan saat kepala terlalu bising memikirkan hal yang belum terjadi.",
+    icon: "🌧️",
+    defaultTitle: "Ketika Pikiran Terlalu Bising: Seni Melepaskan Kekhawatiran Berlebih",
+    defaultExcerpt: "Kekhawatiran tidak pernah mengosongkan hari esok dari kesedihan, ia hanya mengosongkan hari ini dari kekuatan dan ketenangan.",
+    defaultTags: "Overthinking, Mindfulness, Ketenangan, Refleksi Diri",
+    content: `Pernahkah Anda terjaga di larut malam hanya untuk memutar ulang percakapan yang sudah berlalu, atau mereka-reka kemungkinan buruk di masa depan?
+
+Pikiran kita sering kali bertindak seperti narator yang cemas, mengarang skenario rumit dari ketakutan kecil. Namun kenyataannya, sebagian besar kekhawatiran yang menguras tenaga kita tidak pernah benar-benar terjadi.
+
+Hari ini, saya memilih untuk:
+1. Menyadari bahwa pikiran bukanlah fakta mutlak; pikiran hanyalah peristiwa mental yang datang dan pergi.
+2. Mengembalikan fokus ke napas saat kepala mulai berlari terlalu jauh ke depan.
+3. Mengikhlaskan hal-hal di luar kendali saya dan merawat hal kecil yang ada di depan mata.
+
+Jika kepalamu terasa penuh hari ini, tarik napas perlahan. Kamu aman di saat ini.`,
+  },
+  {
+    id: "gratitude-simple",
+    name: "Menemukan Kebaikan dalam Keseharian",
+    tagline: "Latihan bersyukur sederhana di tengah rutinitas yang monoton atau melelahkan.",
+    icon: "✨",
+    defaultTitle: "Hal-Hal Kecil yang Terlupakan: Catatan Bersyukur di Tengah Kesibukan",
+    defaultExcerpt: "Kebahagiaan sering kali tidak bersembunyi dalam pencapaian megah, melainkan dalam kemampuan kita menyadari keindahan momen-momen biasa.",
+    defaultTags: "Gratitude, Bersyukur, Ketenangan, Mindfulness",
+    content: `Di tengah hari-hari yang sibuk dan menuntut, sangat mudah untuk hanya melihat apa yang kurang, apa yang belum tercapai, atau apa yang luput dari rencana.
+
+Padahal di sekitar kita, selalu ada kebaikan sederhana yang luput dari perhatian:
+- Secangkir teh hangat di pagi hari yang memberi ketenangan sebelum hari dimulai.
+- Pesan singkat dari seorang teman yang menanyakan kabar.
+- Udara sejuk dan kesempatan untuk bernapas satu hari lagi.
+
+Bersyukur bukan berarti mengabaikan kesulitan hidup, melainkan memperluas pandangan kita agar tidak dibutakan oleh rasa lelah. Hari ini, saya bersyukur untuk hal-hal sederhana yang membuat jiwa saya merasa cukup.`,
+  },
+  {
+    id: "emotional-rest",
+    name: "Mengizinkan Diri untuk Rapuh",
+    tagline: "Menerima bahwa kita tidak selalu harus kuat di hadapan semua orang.",
+    icon: "🌱",
+    defaultTitle: "Tidak Apa-Apa Tidak Baik-Baik Saja: Ruang Aman untuk Emosi yang Lelah",
+    defaultExcerpt: "Menangis atau mengakui bahwa kita sedang rapuh bukanlah tanda kelemahan, melainkan bukti keberanian untuk jujur pada diri sendiri.",
+    defaultTags: "Kerapuhan, Self-Care, Emosi, Kesehatan Mental",
+    content: `Kita diajarkan untuk selalu tersenyum, selalu menjawab "baik-baik saja", dan tampak tangguh menghadapi setiap badai. Namun menekan emosi terus-menerus adalah beban yang sangat berat.
+
+Refleksi hari ini adalah tentang memberi diri izin:
+- Izin untuk merasa sedih tanpa harus segera mencari solusi instan.
+- Izin untuk menangis ketika hati terasa sesak.
+- Izin untuk meletakkan topeng "orang kuat" dan kembali menjadi manusia yang butuh jeda dan pelukan hangat.
+
+Kerapuhan bukanlah kebalikan dari keberanian; itu adalah pintu masuk paling tulus menuju penyembuhan dan kedamaian batin.`,
+  },
+  {
     id: "blank-canvas",
     name: "Kanvas Kosong (Mulai dari Nol)",
     tagline: "Tuliskan cerita, wawasan, atau gagasan reflektif bebas sesuai suara hati Anda.",
@@ -74,3 +127,11 @@ Refleksi saya tentang batasan sehat:
     content: "",
   },
 ];
+
+export const RANDOM_REFLECTION_TEMPLATES: ReflectionTemplate[] = REFLECTION_TEMPLATES.filter(
+  (t) => t.id !== "blank-canvas"
+);
+
+export const BLANK_CANVAS_TEMPLATE: ReflectionTemplate = REFLECTION_TEMPLATES.find(
+  (t) => t.id === "blank-canvas"
+)!;
