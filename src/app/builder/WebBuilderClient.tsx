@@ -104,7 +104,7 @@ export function WebBuilderClient({
   // Media Asset State (Gambar / Video Switcher)
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">("IMAGE");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [mediaPreview, setMediaPreview] = useState<string>("/assets/sapiens.png");
+  const [mediaPreview, setMediaPreview] = useState<string>("/assets/lmhy-cover.jpg");
   const [mediaFileName, setMediaFileName] = useState<string>("");
   const mediaInputRef = useRef<HTMLInputElement>(null);
 
@@ -468,6 +468,36 @@ export function WebBuilderClient({
       return;
     }
 
+    // Validasi Media Sampul: jika Web3 aktif, wajib ada media sampul (file diunggah atau preview valid)
+    if (registerLitera && !mediaFile && (!mediaPreview || mediaPreview.startsWith("blob:"))) {
+      setError("Gambar/video sampul wajib dipilih terlebih dahulu untuk visual sertifikat NFT Web3.");
+      setMobileActiveTab("editor");
+      return;
+    }
+
+    // Validasi Kuis Refleksi jika diaktifkan
+    if (enableQuiz) {
+      if (passingScore < 1 || passingScore > 100) {
+        setError("Target skor kelulusan kuis harus bernilai antara 1% hingga 100%.");
+        setMobileActiveTab("editor");
+        return;
+      }
+      for (let idx = 0; idx < questions.length; idx++) {
+        const q = questions[idx];
+        if (!q.question.trim()) {
+          setError(`Soal kuis nomor ${idx + 1} belum memiliki pertanyaan.`);
+          setMobileActiveTab("editor");
+          return;
+        }
+        const filledOptions = q.options.filter((o) => o.trim().length > 0);
+        if (filledOptions.length < 2) {
+          setError(`Soal kuis nomor ${idx + 1} minimal harus memiliki 2 pilihan jawaban.`);
+          setMobileActiveTab("editor");
+          return;
+        }
+      }
+    }
+
     // Security Hardening: If Litera Web3 is ON, Creator Wallet is STRICTLY REQUIRED
     if (registerLitera && !creatorWallet) {
       setError("Peringatan Keamanan: Penerbitan Web3 diaktifkan, namun akun Litera belum terhubung. Hubungkan akun Litera terlebih dahulu agar sertifikat NFT terbit atas nama dompet Anda, atau matikan penerbitan Web3.");
@@ -511,26 +541,46 @@ export function WebBuilderClient({
           : undefined;
 
       let uploadedMediaUrl = mediaPreview;
-      if (mediaFile && authUser) {
+      if (mediaFile) {
         try {
-          const supabase = createClient();
-          const uploadRes = await uploadProfileImage(
-            supabase,
-            authUser.id,
-            "banner",
-            mediaFile
-          );
-          if (uploadRes.ok && uploadRes.url) {
-            uploadedMediaUrl = uploadRes.url;
+          const form = new FormData();
+          form.append("file", mediaFile, mediaFile.name);
+          const ipfsRes = await fetch("https://ipfs.literaa.xyz:8443/api/v0/add", {
+            method: "POST",
+            body: form,
+          });
+          if (ipfsRes.ok) {
+            const ipfsData = await ipfsRes.json();
+            if (ipfsData?.Hash) {
+              uploadedMediaUrl = `https://ipfs.literaa.xyz:8443/ipfs/${ipfsData.Hash}`;
+            }
           }
         } catch (uploadErr) {
-          console.warn("[Publish] Gagal upload media cover, fallback ke URL default:", uploadErr);
+          console.warn("[Publish] Gagal upload media cover ke IPFS, fallback ke URL profil/default:", uploadErr);
+        }
+
+        // Fallback Supabase Storage jika IPFS node gagal
+        if ((!uploadedMediaUrl || uploadedMediaUrl.startsWith("blob:")) && authUser) {
+          try {
+            const supabase = createClient();
+            const uploadRes = await uploadProfileImage(
+              supabase,
+              authUser.id,
+              "banner",
+              mediaFile
+            );
+            if (uploadRes.ok && uploadRes.url) {
+              uploadedMediaUrl = uploadRes.url;
+            }
+          } catch (uploadErr) {
+            console.warn("[Publish] Gagal upload media cover ke Supabase:", uploadErr);
+          }
         }
       }
 
-      // Pastikan blob: lokal tidak terkirim ke backend / Litera
+      // Pastikan blob: lokal tidak pernah terkirim ke backend / Litera
       if (uploadedMediaUrl && uploadedMediaUrl.startsWith("blob:")) {
-        uploadedMediaUrl = "";
+        uploadedMediaUrl = "/assets/lmhy-cover.jpg";
       }
 
       const res = await publishTenantArticle({
@@ -717,7 +767,7 @@ export function WebBuilderClient({
             {/* Artwork Cover */}
             <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-[#c5baa7] flex items-center justify-center">
               <Image
-                src="/assets/sapiens.png"
+                src={mediaPreview && !mediaPreview.startsWith("blob:") ? mediaPreview : "/assets/lmhy-cover.jpg"}
                 alt="Artwork Cover"
                 width={180}
                 height={180}
