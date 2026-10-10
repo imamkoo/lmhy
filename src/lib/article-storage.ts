@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type { Article, Database } from '@/lib/supabase/types';
 import { DEFAULT_TENANT_ARTICLES, TenantArticle } from '@/lib/tenant-storage';
 
@@ -250,7 +251,7 @@ export async function updateArticleByOperationId(
   }
 ): Promise<boolean> {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const { data, error } = await supabase
       .from('articles')
       .update({
