@@ -324,7 +324,7 @@ export class LiteraClient {
       return [
         {
           id: "col_default_lmhy",
-          name: "Let Me Hear You - Jurnal & Refleksi",
+          name: "Let Me Hear You",
           description: "Koleksi tulisan refleksi resmi komunitas Let Me Hear You",
           articleCount: 1,
         },
