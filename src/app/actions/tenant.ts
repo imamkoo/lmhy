@@ -145,7 +145,7 @@ export async function publishTenantArticle(
           tags: parsedTags,
           template_id: templateId || "warm-sanctuary",
           media_type: mediaType,
-          media_url: mediaUrl || "/assets/sapiens.png",
+          media_url: mediaUrl || "/assets/lmhy-cover.jpg",
           register_litera: registerLitera,
           creator_wallet: creatorAddress || null,
           published_at: new Date().toISOString(),
@@ -180,7 +180,7 @@ export async function publishTenantArticle(
         ]);
 
         // Ensure cover image URL is always a full HTTPS URL matching Litera NFT schema
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://letmehearyou.id";
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.letmehearyou.id";
         const normalizedSiteUrl = siteUrl.startsWith("https://")
           ? siteUrl
           : `https://${siteUrl.replace(/^http:\/\//, "")}`;
@@ -194,7 +194,7 @@ export async function publishTenantArticle(
             : `${normalizedSiteUrl}${
                 cleanMediaUrl && cleanMediaUrl.startsWith("/")
                   ? cleanMediaUrl
-                  : `/${cleanMediaUrl || "assets/sapiens.png"}`
+                  : `/${cleanMediaUrl || "assets/lmhy-cover.jpg"}`
               }`;
 
         return await literaClient.registerArticle({
