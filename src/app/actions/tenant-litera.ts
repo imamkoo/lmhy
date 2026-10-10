@@ -125,6 +125,7 @@ export function describeLiteraPublishState(litera: {
 
   switch (status) {
     case "REGISTERED":
+    case "CONFIGURED":
     case "QUEUED":
     case "SUBMITTED":
       return {

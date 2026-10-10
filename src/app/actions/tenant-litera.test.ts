@@ -4,6 +4,12 @@ import { createHash } from "node:crypto";
 import { LiteraClient } from "@/lib/litera";
 import { deleteArticleWithLitera, describeLiteraPublishState, publishArticleWithLitera } from "./tenant-litera";
 
+test("describeLiteraPublishState treats CONFIGURED as in-progress, not failed (incident 2026-10-10)", async () => {
+  const state = describeLiteraPublishState({ requested: true, status: "CONFIGURED" });
+  assert.equal(state.title, "NFT sedang diproses");
+  assert.equal(state.status, "CONFIGURED");
+});
+
 test("publish keeps article success when Litera registration fails", async () => {
   const result = await publishArticleWithLitera({
     saveArticle: async () => ({ id: "a1", slug: "hope", updated_at: "2026-10-09T00:00:00.000Z" }),

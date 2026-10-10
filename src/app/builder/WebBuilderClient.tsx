@@ -926,7 +926,7 @@ export function WebBuilderClient({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-bold text-[#3F3766] hover:text-[#3F3766]/70 hover:underline"
               >
-                <span>Lihat Artikel Live ↗</span>
+                <span>Lihat Tulisan ↗</span>
               </a>
               <span className="text-xs text-[#3F3766]/30">•</span>
               <a
@@ -935,7 +935,7 @@ export function WebBuilderClient({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-bold text-[#3F3766]/80 hover:text-[#3F3766] hover:underline"
               >
-                <span>Lihat Profil Subdomain ↗</span>
+                <span>Kunjungi Profil ↗</span>
               </a>
             </div>
           </div>
