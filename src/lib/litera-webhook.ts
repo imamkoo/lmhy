@@ -1,7 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export interface LiteraWebhookEventPayload {
-  status: "REGISTERED" | "QUEUED" | "SUBMITTED" | "MINTED" | "BLOCKED" | "FAILED" | string;
+  // Opsional: backend prod tidak mengirim status di payload (hanya
+  // txHash/tokenId/failureCode/…) — status diturunkan dari event type.
+  status?: "REGISTERED" | "QUEUED" | "SUBMITTED" | "MINTED" | "BLOCKED" | "FAILED" | string;
   txHash?: string | null;
   tokenId?: number | string | null;
   failureCode?: string | null;
@@ -60,7 +62,12 @@ export function verifyLiteraWebhook(
   }
 
   const timestamp = Number(tsHeader);
-  if (Number.isNaN(timestamp) || Math.abs(now - timestamp) > MAX_REPLAY_AGE_MS) {
+  // Kontrak prod: backend mengirim detik (Math.floor(Date.now()/1000)),
+  // klien lama mengira ms. Normalisasi ke ms untuk cek freshness —
+  // tanpa ini semua webhook prod ditolak (insiden 2026-10-10).
+  // Verifikasi signature tetap memakai string header mentah apa adanya.
+  const timestampMs = timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp;
+  if (Number.isNaN(timestamp) || Math.abs(now - timestampMs) > MAX_REPLAY_AGE_MS) {
     throw new Error("Invalid timestamp: replay window of 300s exceeded");
   }
 
@@ -85,6 +92,20 @@ export function verifyLiteraWebhook(
 }
 
 /**
+ * Peta tipe event backend → status artikel. Body webhook backend TIDAK memuat
+ * `payload.status` (hanya txHash/tokenId/failureCode/…), jadi status harus
+ * diturunkan dari `type`. `payload.status` eksplisit tetap menang bila ada
+ * (kompatibilitas mundur).
+ */
+const EVENT_TYPE_STATUS: Record<string, string> = {
+  "cms.mint.succeeded": "MINTED",
+  "cms.mint.failed": "FAILED",
+  "cms.mint.blocked": "BLOCKED",
+  "cms.transaction.submitted": "SUBMITTED",
+  "cms.article.accepted": "REGISTERED",
+};
+
+/**
  * Idempotently applies a validated Litera webhook event to the persistent store.
  */
 export async function applyLiteraWebhookEvent(
@@ -97,8 +118,11 @@ export async function applyLiteraWebhookEvent(
     return false;
   }
 
+  const status =
+    event.payload?.status || EVENT_TYPE_STATUS[event.type] || "REGISTERED";
+
   const values = {
-    litera_status: event.payload?.status,
+    litera_status: status,
     litera_tx_hash: event.payload?.txHash,
     litera_token_id: event.payload?.tokenId,
     litera_failure_code: event.payload?.failureCode,
