@@ -225,11 +225,14 @@ export class LiteraClient {
     }
     const mediaUrl = input.coverImageUrl || input.mediaUrl;
 
+    const resolvedCreator = input.creatorAddress || input.creator || undefined;
+
     const payload: Record<string, unknown> = {
       articleUrl: input.articleUrl,
       title: input.title,
       author: input.author,
-      creator: input.creator || input.creatorAddress,
+      creatorAddress: resolvedCreator,
+      creator: resolvedCreator,
       coverImageUrl: mediaUrl,
       autoMint: true,
     };
@@ -241,9 +244,9 @@ export class LiteraClient {
     if (input.unlockableUrl) payload.unlockableUrl = input.unlockableUrl;
     if (input.quiz) payload.quiz = input.quiz;
 
-    // Clean undefined keys
+    // Clean undefined, null, or empty string keys
     for (const key of Object.keys(payload)) {
-      if (payload[key] === undefined) {
+      if (payload[key] === undefined || payload[key] === null || payload[key] === "") {
         delete payload[key];
       }
     }

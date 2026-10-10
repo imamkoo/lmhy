@@ -26,7 +26,7 @@ test("registerArticle sends canonical metadata, API defaults, and stable idempot
     const result = await client.registerArticle(article);
     assert.equal(result.operation.status, "REGISTERED");
     const body = JSON.parse(String(calls[0].init?.body));
-    assert.deepEqual(body, { articleUrl: article.articleUrl, title: "Hope", author: "Author", creator: article.creator, coverImageUrl: article.coverImageUrl, quiz: article.quiz, autoMint: true });
+    assert.deepEqual(body, { articleUrl: article.articleUrl, title: "Hope", author: "Author", creatorAddress: article.creator, creator: article.creator, coverImageUrl: article.coverImageUrl, quiz: article.quiz, autoMint: true });
     for (const key of ["userReward", "creatorMintReward", "creatorApproveReward", "maxMinted", "price", "feeEnabled"]) assert.equal(key in body, false);
     const headers = calls[0].init?.headers as Record<string, string>;
     assert.equal(headers["Idempotency-Key"], createHash("sha256").update(`lmhy:${article.id}:${article.updatedAt}`).digest("hex"));
