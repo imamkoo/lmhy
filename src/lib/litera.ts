@@ -1,13 +1,16 @@
+import { createHash } from "node:crypto";
+
 /**
  * Litera Protocol Client for Let Me Hear You
  * Standardized S2S Integration with Litera Platform (Polygon Web3 NFT Publishing)
- * Blueprint Integrasi BikinWeb PANDI x Litera Protocol (Creator & Admin Specification)
+ * Task 11: Hardened Auto-Minting, Envelope Unwrapping, & Status Tracking
  */
 
 export interface LiteraQuizQuestionInput {
   question: string;
   options: string[];
-  correctIndex: number;
+  correctIndex?: number;
+  correctOption?: number;
   explanation?: string;
 }
 
@@ -18,30 +21,53 @@ export interface LiteraQuizInput {
   question?: string;
   options?: string[];
   correctIndex?: number;
+  correctOption?: number;
   explanation?: string;
 }
 
 export interface LiteraRegisterArticleInput {
+  id?: string;
+  updatedAt?: string;
   articleUrl: string;
   title: string;
   author?: string;
-  description?: string;
+  creator?: string;
   creatorAddress?: string;
+  coverImageUrl?: string;
+  mediaUrl?: string;
+  description?: string;
   collectionName?: string;
   collectionId?: string;
   info?: string;
   externalUrl?: string;
   unlockableUrl?: string;
-  userReward?: number;
-  creatorReward?: number;
-  creatorApproveReward?: number;
-  maxMint?: number;
-  mintingFeeEnabled?: boolean;
-  priceLite?: number;
   mediaType?: "IMAGE" | "VIDEO";
-  mediaUrl?: string;
   mediaIpfsCid?: string;
   quiz?: LiteraQuizInput;
+}
+
+export interface LiteraOperation {
+  operationId: string;
+  intentId: string;
+  articleUrl: string;
+  status: "REGISTERED" | "QUEUED" | "SUBMITTED" | "MINTED" | "BLOCKED" | "FAILED" | string;
+  creditState?: string | null;
+  depositLite?: string | null;
+  nextAction?: string | null;
+  txHash?: string | null;
+  tokenId?: number | string | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+export interface LiteraRegisterArticleResponse {
+  created?: boolean;
+  operation: LiteraOperation;
+  embedCode?: string;
+  [key: string]: unknown;
 }
 
 export interface LiteraCollection {
@@ -86,17 +112,6 @@ export interface LiteraPublisherTokenomics {
   maxAllowedMinted: number;
 }
 
-export interface LiteraRegisterArticleResponse {
-  success: boolean;
-  registered: boolean;
-  articleUrl: string;
-  title: string;
-  collectionId?: string;
-  intentId?: string;
-  message?: string;
-  error?: string;
-}
-
 export interface LiteraIntegrationStatusDto {
   status: "SYNCHRONIZED" | "DOMAIN_UNBOUND" | "DOMAIN_NOT_LIVE" | "PUBLISHER_MISMATCH";
   apiKeyWallet: string;
@@ -105,9 +120,23 @@ export interface LiteraIntegrationStatusDto {
   addedToCORS: boolean;
 }
 
-class LiteraClient {
+export interface LiteraClientOptions {
+  baseUrl?: string;
+  apiKey?: string;
+}
+
+export class LiteraClient {
+  private customBaseUrl?: string;
+  private customApiKey?: string;
+
+  constructor(options?: LiteraClientOptions) {
+    this.customBaseUrl = options?.baseUrl;
+    this.customApiKey = options?.apiKey;
+  }
+
   private get baseUrl(): string {
     return (
+      this.customBaseUrl ||
       process.env.LITERA_API_URL ||
       process.env.NEXT_PUBLIC_LITERA_API_URL ||
       "https://literaa.xyz/api/v1"
@@ -115,7 +144,7 @@ class LiteraClient {
   }
 
   private get apiKey(): string | undefined {
-    return process.env.LITERA_API_KEY;
+    return this.customApiKey !== undefined ? this.customApiKey : process.env.LITERA_API_KEY;
   }
 
   private get headers(): Record<string, string> {
@@ -177,68 +206,114 @@ class LiteraClient {
   }
 
   /**
-   * Register an article NFT intent with Litera CMS
+   * Register an article NFT intent with Litera CMS with auto-mint enabled.
+   * Sends ONLY article metadata + autoMint: true (omitting all tokenomics fields).
    */
   async registerArticle(
     input: LiteraRegisterArticleInput
   ): Promise<LiteraRegisterArticleResponse> {
-    if (!this.apiKey) {
-      return {
-        success: false,
-        registered: false,
-        articleUrl: input.articleUrl,
-        title: input.title,
-        message: "LITERA_API_KEY tidak dikonfigurasi di server environment.",
-        error: "LITERA_API_KEY_MISSING",
-      };
+    const urlsToCheck = [
+      { name: "coverImageUrl", url: input.coverImageUrl },
+      { name: "mediaUrl", url: input.mediaUrl },
+    ];
+    for (const { name, url } of urlsToCheck) {
+      if (url !== undefined && url !== null && url !== "") {
+        if (!/^https:\/\//i.test(url)) {
+          throw new Error(`${name} must be an absolute https:// URL`);
+        }
+      }
     }
+    const mediaUrl = input.coverImageUrl || input.mediaUrl;
+
+    const payload: Record<string, unknown> = {
+      articleUrl: input.articleUrl,
+      title: input.title,
+      author: input.author,
+      creator: input.creator || input.creatorAddress,
+      coverImageUrl: mediaUrl,
+      autoMint: true,
+    };
+
+    if (input.description) payload.description = input.description;
+    if (input.collectionName) payload.collectionName = input.collectionName;
+    if (input.info) payload.info = input.info;
+    if (input.externalUrl) payload.externalUrl = input.externalUrl;
+    if (input.unlockableUrl) payload.unlockableUrl = input.unlockableUrl;
+    if (input.quiz) payload.quiz = input.quiz;
+
+    // Clean undefined keys
+    for (const key of Object.keys(payload)) {
+      if (payload[key] === undefined) {
+        delete payload[key];
+      }
+    }
+
+    const requestHeaders: Record<string, string> = { ...this.headers };
+    if (input.id) {
+      const rawKey = `lmhy:${input.id}:${input.updatedAt || ""}`;
+      requestHeaders["Idempotency-Key"] = createHash("sha256").update(rawKey).digest("hex");
+    }
+
+    const res = await fetch(`${this.baseUrl}/cms/articles/register`, {
+      method: "POST",
+      headers: requestHeaders,
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok && res.status !== 202) {
+      const errorText = await res.text();
+      throw new Error(`Gagal mendaftarkan artikel ke Litera (${res.status}): ${errorText}`);
+    }
+
+    const json = await res.json();
+    return (json.data || json) as LiteraRegisterArticleResponse;
+  }
+
+  /**
+   * Fetch article operation status by article URL
+   */
+  async getArticleStatus(articleUrl: string): Promise<LiteraOperation | null> {
+    if (!this.apiKey) return null;
 
     try {
-      const res = await fetch(`${this.baseUrl}/cms/articles/register`, {
-        method: "POST",
+      const url = `${this.baseUrl}/cms/articles/status?url=${encodeURIComponent(articleUrl)}`;
+      const res = await fetch(url, {
+        method: "GET",
         headers: this.headers,
-        body: JSON.stringify({
-          articleUrl: input.articleUrl,
-          title: input.title,
-          author: input.author,
-          description: input.description,
-          coverImageUrl: input.mediaUrl,
-          creatorAddress: input.creatorAddress,
-          collectionName: input.collectionName,
-          info: input.info,
-          externalUrl: input.externalUrl,
-          unlockableUrl: input.unlockableUrl,
-          userReward: input.userReward ?? 0,
-          creatorReward: input.creatorReward ?? 0,
-          creatorApproveReward: input.creatorApproveReward ?? 0,
-          maxMint: input.maxMint ?? 100,
-          mintingFeeEnabled: input.mintingFeeEnabled ?? false,
-          priceLite: input.priceLite ?? 0,
-          autoMint: true,
-          mediaType: input.mediaType || "IMAGE",
-          mediaUrl: input.mediaUrl,
-          mediaIpfsCid: input.mediaIpfsCid,
-          quiz: input.quiz,
-        }),
+        cache: "no-store",
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Gagal mendaftarkan artikel ke Litera (${res.status}): ${errorText}`);
-      }
-
-      return await res.json();
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data?.operation || json.data || json) as LiteraOperation;
     } catch (err) {
-      console.warn("[Litera S2S] Article registration notice:", err);
-      return {
-        success: false,
-        registered: false,
-        articleUrl: input.articleUrl,
-        title: input.title,
-        message: err instanceof Error ? err.message : String(err),
-        error: "S2S_NETWORK_OR_AUTH_ERROR",
-      };
+      console.warn("[Litera S2S] Failed to fetch article status:", err);
+      return null;
     }
+  }
+
+  /**
+   * Delete an un-broadcast article intent in Litera CMS
+   */
+  async deleteArticleIntent(intentId: string): Promise<{ status: number; deleted?: boolean; message?: string }> {
+    const res = await fetch(`${this.baseUrl}/cms/articles/${encodeURIComponent(intentId)}`, {
+      method: "DELETE",
+      headers: this.headers,
+    });
+
+    let message: string | undefined;
+    try {
+      const json = await res.json();
+      message = json.message || json.error;
+    } catch {
+      // ignore
+    }
+
+    return {
+      status: res.status,
+      deleted: res.ok,
+      message,
+    };
   }
 
   /**

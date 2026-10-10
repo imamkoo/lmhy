@@ -47,6 +47,14 @@ export function convertTenantArticleToArticle(ta: TenantArticle, authorId?: stri
     template_id: ta.templateId ?? 'warm-sanctuary',
     published_at: ta.createdAt,
     updated_at: ta.createdAt,
+    litera_operation_id: null,
+    litera_intent_id: null,
+    litera_status: ta.isLiteraRegistered ? 'REGISTERED' : null,
+    litera_tx_hash: null,
+    litera_token_id: null,
+    litera_failure_code: null,
+    litera_failure_message: null,
+    litera_updated_at: null,
   };
 }
 
@@ -183,3 +191,112 @@ export async function savePersistentArticle(
 
   return inserted;
 }
+
+/**
+ * Updates Litera operation tracking fields on an article after registration.
+ */
+export async function updateArticleLiteraOperation(
+  articleId: string,
+  operation: {
+    operationId?: string;
+    intentId?: string;
+    status?: string;
+    txHash?: string | null;
+    tokenId?: number | string | null;
+    failureCode?: string | null;
+    failureMessage?: string | null;
+    updatedAt?: string;
+  }
+): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('articles')
+      .update({
+        litera_operation_id: operation.operationId,
+        litera_intent_id: operation.intentId,
+        litera_status: operation.status,
+        litera_tx_hash: operation.txHash,
+        litera_token_id: operation.tokenId ? Number(operation.tokenId) : null,
+        litera_failure_code: operation.failureCode,
+        litera_failure_message: operation.failureMessage,
+        litera_updated_at: operation.updatedAt || new Date().toISOString(),
+      })
+      .eq('id', articleId);
+
+    if (error) {
+      console.warn('[article-storage] Failed to update article litera operation:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[article-storage] Exception updating article litera operation:', err);
+    return false;
+  }
+}
+
+/**
+ * Updates an article by its unique litera_operation_id (used by webhook processor).
+ */
+export async function updateArticleByOperationId(
+  operationId: string,
+  values: {
+    litera_status?: string;
+    litera_tx_hash?: string | null;
+    litera_token_id?: number | string | null;
+    litera_failure_code?: string | null;
+    litera_failure_message?: string | null;
+    litera_updated_at?: string;
+  }
+): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('articles')
+      .update({
+        litera_status: values.litera_status,
+        litera_tx_hash: values.litera_tx_hash,
+        litera_token_id: values.litera_token_id ? Number(values.litera_token_id) : null,
+        litera_failure_code: values.litera_failure_code,
+        litera_failure_message: values.litera_failure_message,
+        litera_updated_at: values.litera_updated_at || new Date().toISOString(),
+      })
+      .eq('litera_operation_id', operationId)
+      .select('id');
+
+    if (error || !data || data.length === 0) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[article-storage] Exception updating article by operationId:', err);
+    return false;
+  }
+}
+
+/**
+ * Hard deletes an article from Supabase.
+ */
+export async function deletePersistentArticle(
+  username: string,
+  slug: string
+): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('articles')
+      .delete()
+      .eq('username', username.toLowerCase())
+      .eq('slug', slug.toLowerCase());
+
+    if (error) {
+      console.warn('[article-storage] Error deleting persistent article:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[article-storage] Exception deleting persistent article:', err);
+    return false;
+  }
+}
+
