@@ -518,6 +518,11 @@ export function WebBuilderClient({
         }
       }
 
+      // Pastikan blob: lokal tidak terkirim ke backend / Litera
+      if (uploadedMediaUrl && uploadedMediaUrl.startsWith("blob:")) {
+        uploadedMediaUrl = "";
+      }
+
       const res = await publishTenantArticle({
         username: cleanUser,
         title,

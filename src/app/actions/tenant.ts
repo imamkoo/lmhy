@@ -184,13 +184,17 @@ export async function publishTenantArticle(
         const normalizedSiteUrl = siteUrl.startsWith("https://")
           ? siteUrl
           : `https://${siteUrl.replace(/^http:\/\//, "")}`;
+
+        const cleanMediaUrl =
+          mediaUrl && !mediaUrl.startsWith("blob:") ? mediaUrl : undefined;
+
         const resolvedCoverUrl =
-          mediaUrl && mediaUrl.startsWith("https://")
-            ? mediaUrl
+          cleanMediaUrl && cleanMediaUrl.startsWith("https://")
+            ? cleanMediaUrl
             : `${normalizedSiteUrl}${
-                mediaUrl && mediaUrl.startsWith("/")
-                  ? mediaUrl
-                  : `/${mediaUrl || "assets/sapiens.png"}`
+                cleanMediaUrl && cleanMediaUrl.startsWith("/")
+                  ? cleanMediaUrl
+                  : `/${cleanMediaUrl || "assets/sapiens.png"}`
               }`;
 
         return await literaClient.registerArticle({
