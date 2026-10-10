@@ -478,7 +478,7 @@ export function WebBuilderClient({
       const finalCollection =
         selectedCollection === "__new__"
           ? newCollectionName.trim()
-          : selectedCollection || "Let Me Hear You - Jurnal & Refleksi";
+          : selectedCollection || "Let Me Hear You";
 
       const validQuestions = questions
         .map((q) => ({
@@ -726,7 +726,9 @@ export function WebBuilderClient({
               <span>
                 {selectedCollection && selectedCollection !== "__new__"
                   ? selectedCollection
-                  : newCollectionName || "THE EVERYDAY HUMAN"}
+                  : selectedCollection === "__new__"
+                  ? newCollectionName || "Koleksi Baru"
+                  : "Let Me Hear You"}
               </span>
             </div>
 
@@ -1464,7 +1466,7 @@ export function WebBuilderClient({
                       onChange={(e) => setSelectedCollection(e.target.value)}
                       className="w-full text-xs font-bold px-3 py-2.5 rounded-xl border-2 border-[#3F3766]/15 bg-white text-[#3F3766] focus:outline-none focus:border-[#3F3766]"
                     >
-                      <option value="">Let Me Hear You - Jurnal & Refleksi (Default)</option>
+                      <option value="">Let Me Hear You (Default)</option>
                       <option value="Ruang Pemulihan & Self-Care">Ruang Pemulihan & Self-Care</option>
                       <option value="Jurnal Mindfulness Harian">Jurnal Mindfulness Harian</option>
                       <option value="__new__">+ Buat Koleksi Baru...</option>
