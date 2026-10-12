@@ -20,6 +20,16 @@ export interface Database {
           website: string | null
           facebook_profile_url: string | null
           facebook_access_token: string | null
+          creator_role: 'REFLECTOR' | 'COMPANION' | 'PROFESSIONAL'
+          service_track: 'PEER' | 'CLINICAL' | null
+          credential_type: string | null
+          credential_number: string | null
+          credential_document_url: string | null
+          verification_status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'
+          verified_at: string | null
+          verified_by: string | null
+          verification_note: string | null
+          pro_until: string | null
           created_at: string
           updated_at: string
         }
@@ -33,6 +43,16 @@ export interface Database {
           website?: string | null
           facebook_profile_url?: string | null
           facebook_access_token?: string | null
+          creator_role?: 'REFLECTOR' | 'COMPANION' | 'PROFESSIONAL'
+          service_track?: 'PEER' | 'CLINICAL' | null
+          credential_type?: string | null
+          credential_number?: string | null
+          credential_document_url?: string | null
+          verification_status?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'
+          verified_at?: string | null
+          verified_by?: string | null
+          verification_note?: string | null
+          pro_until?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -46,6 +66,16 @@ export interface Database {
           website?: string | null
           facebook_profile_url?: string | null
           facebook_access_token?: string | null
+          creator_role?: 'REFLECTOR' | 'COMPANION' | 'PROFESSIONAL'
+          service_track?: 'PEER' | 'CLINICAL' | null
+          credential_type?: string | null
+          credential_number?: string | null
+          credential_document_url?: string | null
+          verification_status?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'
+          verified_at?: string | null
+          verified_by?: string | null
+          verification_note?: string | null
+          pro_until?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -237,6 +267,177 @@ export interface Database {
           }
         ]
       }
+      creator_subscriptions: {
+        Row: {
+          id: string
+          provider_id: string
+          tier: 'FREE' | 'PRO'
+          current_period_end: string | null
+          status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          provider_id: string
+          tier?: 'FREE' | 'PRO'
+          current_period_end?: string | null
+          status?: 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          provider_id?: string
+          tier?: 'FREE' | 'PRO'
+          current_period_end?: string | null
+          status?: 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      listening_slots: {
+        Row: {
+          id: string
+          provider_id: string
+          start_time: string
+          duration_min: number
+          price_idr: number
+          status: 'AVAILABLE' | 'RESERVED' | 'BOOKED' | 'CANCELLED' | 'COMPLETED'
+          reserved_until: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          provider_id: string
+          start_time: string
+          duration_min: number
+          price_idr: number
+          status?: 'AVAILABLE' | 'RESERVED' | 'BOOKED' | 'CANCELLED' | 'COMPLETED'
+          reserved_until?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          provider_id?: string
+          start_time?: string
+          duration_min?: number
+          price_idr?: number
+          status?: 'AVAILABLE' | 'RESERVED' | 'BOOKED' | 'CANCELLED' | 'COMPLETED'
+          reserved_until?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listening_slots_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      session_bookings: {
+        Row: {
+          id: string
+          slot_id: string
+          client_pseudonym: string
+          client_contact: string
+          client_note: string | null
+          consent_accepted: boolean
+          status: 'PENDING' | 'PAID' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'NO_SHOW'
+          order_id: string | null
+          midtrans_transaction_id: string | null
+          room_url: string | null
+          take_rate_bps: number
+          amount_idr: number
+          risk_flag: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slot_id: string
+          client_pseudonym: string
+          client_contact: string
+          client_note?: string | null
+          consent_accepted?: boolean
+          status?: 'PENDING' | 'PAID' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'NO_SHOW'
+          order_id?: string | null
+          midtrans_transaction_id?: string | null
+          room_url?: string | null
+          take_rate_bps: number
+          amount_idr: number
+          risk_flag?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slot_id?: string
+          client_pseudonym?: string
+          client_contact?: string
+          client_note?: string | null
+          consent_accepted?: boolean
+          status?: 'PENDING' | 'PAID' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'NO_SHOW'
+          order_id?: string | null
+          midtrans_transaction_id?: string | null
+          room_url?: string | null
+          take_rate_bps?: number
+          amount_idr?: number
+          risk_flag?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_bookings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "listening_slots"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      guided_prompts: {
+        Row: {
+          id: string
+          slug: string
+          title: string
+          prompt_body: string
+          category: 'Burnout' | 'Duka' | 'Penerimaan Diri' | 'Hubungan' | 'Kecemasan'
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          title: string
+          prompt_body: string
+          category: 'Burnout' | 'Duka' | 'Penerimaan Diri' | 'Hubungan' | 'Kecemasan'
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          title?: string
+          prompt_body?: string
+          category?: 'Burnout' | 'Duka' | 'Penerimaan Diri' | 'Hubungan' | 'Kecemasan'
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -272,3 +473,19 @@ export type FollowUpdate = TablesUpdate<'follows'>
 export type Comment = Tables<'comments'>
 export type CommentInsert = TablesInsert<'comments'>
 export type CommentUpdate = TablesUpdate<'comments'>
+
+export type CreatorSubscription = Tables<'creator_subscriptions'>
+export type CreatorSubscriptionInsert = TablesInsert<'creator_subscriptions'>
+export type CreatorSubscriptionUpdate = TablesUpdate<'creator_subscriptions'>
+
+export type ListeningSlot = Tables<'listening_slots'>
+export type ListeningSlotInsert = TablesInsert<'listening_slots'>
+export type ListeningSlotUpdate = TablesUpdate<'listening_slots'>
+
+export type SessionBooking = Tables<'session_bookings'>
+export type SessionBookingInsert = TablesInsert<'session_bookings'>
+export type SessionBookingUpdate = TablesUpdate<'session_bookings'>
+
+export type GuidedPrompt = Tables<'guided_prompts'>
+export type GuidedPromptInsert = TablesInsert<'guided_prompts'>
+export type GuidedPromptUpdate = TablesUpdate<'guided_prompts'>
