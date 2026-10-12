@@ -20,13 +20,19 @@ export default async function WebBuilderPage({
   } = await supabase.auth.getUser();
 
   let initialProfile = null;
+  let initialCreatorRole: string | null = null;
+  let initialVerificationStatus: string | null = null;
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("username, display_name")
+      .select("username, display_name, creator_role, verification_status")
       .eq("id", user.id)
       .maybeSingle();
-    initialProfile = profile;
+    if (profile) {
+      initialProfile = { username: profile.username, display_name: profile.display_name };
+      initialCreatorRole = profile.creator_role;
+      initialVerificationStatus = profile.verification_status;
+    }
   }
 
   return (
@@ -35,6 +41,8 @@ export default async function WebBuilderPage({
         initialUsername={username || initialProfile?.username}
         initialUser={user}
         initialProfile={initialProfile}
+        initialCreatorRole={initialCreatorRole}
+        initialVerificationStatus={initialVerificationStatus}
       />
     </main>
   );
