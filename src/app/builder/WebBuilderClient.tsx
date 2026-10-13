@@ -509,7 +509,7 @@ export function WebBuilderClient({
   const activeTemplate: WebDesignTemplate = getDesignTemplate(selectedTemplateId);
 
   const canScheduleSessions = canProviderCreateSlot(providerEligibility);
-  const isProfessionalRole = providerEligibility.creator_role === "PROFESSIONAL";
+  const isProfessionalRole = providerEligibility.creator_role === "PRAKTISI";
   const guidedPromptCopy = isProfessionalRole
     ? "Pilih template untuk memulai, lalu sesuaikan dengan pendekatan konseling Anda."
     : "Pilih template ruang aman untuk memulai, lalu sesuaikan dengan cerita Anda.";

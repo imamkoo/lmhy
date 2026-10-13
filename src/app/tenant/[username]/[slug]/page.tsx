@@ -109,7 +109,7 @@ export default async function TenantArticlePage({
   const authorRole = authorProfile?.creator_role ?? null;
   const isVerifiedProvider =
     authorProfile?.verification_status === "APPROVED" &&
-    (authorRole === "COMPANION" || authorRole === "PROFESSIONAL");
+    (authorRole === "PENDAMPING" || authorRole === "PRAKTISI");
 
   let authorHasAvailableSlot = false;
   if (authorId && isVerifiedProvider) {

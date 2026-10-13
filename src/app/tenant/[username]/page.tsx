@@ -86,7 +86,7 @@ export default async function TenantProfilePage({
   }
 
   const providerRole =
-    profile.creator_role === "COMPANION" || profile.creator_role === "PROFESSIONAL"
+    profile.creator_role === "PENDAMPING" || profile.creator_role === "PRAKTISI"
       ? profile.creator_role
       : null;
   const isApprovedProvider =

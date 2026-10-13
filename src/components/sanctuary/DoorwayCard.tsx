@@ -1,7 +1,7 @@
 import Link from "next/link";
 import ProviderBadge from "./ProviderBadge";
 
-export type DoorwayRole = "COMPANION" | "PROFESSIONAL" | "REFLECTOR" | null;
+export type DoorwayRole = "PENDAMPING" | "PRAKTISI" | "PENULIS" | null;
 
 export interface DoorwayCardProps {
   username: string;
@@ -16,7 +16,7 @@ export default function DoorwayCard({
   isVerified,
   hasSlots,
 }: DoorwayCardProps) {
-  if (!isVerified || (role !== "COMPANION" && role !== "PROFESSIONAL")) {
+  if (!isVerified || (role !== "PENDAMPING" && role !== "PRAKTISI")) {
     return (
       <section className="mt-12 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6">
         <h3 className="text-lg font-bold">Merasa terhubung dengan cerita ini?</h3>
@@ -33,7 +33,7 @@ export default function DoorwayCard({
     );
   }
 
-  const isProfessional = role === "PROFESSIONAL";
+  const isProfessional = role === "PRAKTISI";
   const sessionLabel = isProfessional ? "Sesi Konseling" : "Sesi Dengar";
   const companionLabel = isProfessional ? "Praktisi" : "Pendamping Sebaya";
   const ctaLabel = hasSlots ? "Ajak Bicara" : "Lihat Jadwal";

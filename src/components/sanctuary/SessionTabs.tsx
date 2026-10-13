@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export type SessionRole = "COMPANION" | "PROFESSIONAL";
+export type SessionRole = "PENDAMPING" | "PRAKTISI";
 
 export interface SessionSlot {
   id: string;
@@ -45,11 +45,11 @@ function formatIdr(value: number): string {
 }
 
 export default function SessionTabs({ username, role, slots }: SessionTabsProps) {
-  if (role !== "COMPANION" && role !== "PROFESSIONAL") {
+  if (role !== "PENDAMPING" && role !== "PRAKTISI") {
     return null;
   }
 
-  const isProfessional = role === "PROFESSIONAL";
+  const isProfessional = role === "PRAKTISI";
   const sessionLabel = isProfessional ? "Sesi Konseling" : "Sesi Dengar";
   const description = isProfessional
     ? `Jadwalkan sesi konseling bersama @${username}. Setiap sesi berlangsung privat dan terjadwal.`

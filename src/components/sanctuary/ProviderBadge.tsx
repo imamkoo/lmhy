@@ -1,4 +1,4 @@
-export type ProviderRole = "COMPANION" | "PROFESSIONAL";
+export type ProviderRole = "PENDAMPING" | "PRAKTISI";
 
 export interface ProviderBadgeProps {
   role: ProviderRole;
@@ -6,8 +6,8 @@ export interface ProviderBadgeProps {
 }
 
 const ROLE_LABEL: Record<ProviderRole, string> = {
-  COMPANION: "Pendamping Sebaya Terverifikasi",
-  PROFESSIONAL: "Praktisi Terverifikasi",
+  PENDAMPING: "Pendamping Sebaya Terverifikasi",
+  PRAKTISI: "Praktisi Terverifikasi",
 };
 
 export default function ProviderBadge({
