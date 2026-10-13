@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS public.creator_subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   provider_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  tier text NOT NULL DEFAULT 'FREE' CHECK (tier IN ('FREE','PRO')),
+  tier text NOT NULL DEFAULT 'SAPA' CHECK (tier IN ('SAPA','CERITA','DENGAR')),
   current_period_end timestamptz,
   status text NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','EXPIRED','CANCELLED')),
   created_at timestamptz DEFAULT now(),
@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS public.guided_prompts (
 );
 
 ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS creator_role text NOT NULL DEFAULT 'REFLECTOR' CHECK (creator_role IN ('REFLECTOR','COMPANION','PROFESSIONAL')),
-  ADD COLUMN IF NOT EXISTS service_track text CHECK (service_track IN ('PEER','CLINICAL')),
+  ADD COLUMN IF NOT EXISTS creator_role text NOT NULL DEFAULT 'PENULIS' CHECK (creator_role IN ('PENULIS','PENDAMPING','PRAKTISI')),
+  ADD COLUMN IF NOT EXISTS service_track text CHECK (service_track IN ('SEBAYA','KLINIS')),
   ADD COLUMN IF NOT EXISTS credential_type text,
   ADD COLUMN IF NOT EXISTS credential_number text,
   ADD COLUMN IF NOT EXISTS credential_document_url text,
