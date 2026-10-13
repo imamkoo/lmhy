@@ -59,7 +59,7 @@ export function FollowButton({
         ) {
           setShowLoginPrompt(true);
         } else {
-          alert(res.error);
+          setShowLoginPrompt(false);
         }
         return;
       }

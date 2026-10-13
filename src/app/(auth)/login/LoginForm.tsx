@@ -102,10 +102,19 @@ function LoginFormContent() {
       if (mode === 'signin') {
         const res = await signInWithEmailAction({ email, password });
         if (!res.success) {
-          setErrorMessage(res.error || 'Email atau kata sandi tidak cocok.');
           if (res.retryAfterSeconds) {
             setCooldownSeconds(res.retryAfterSeconds);
           }
+          const isInvalidCredential = (res.error || '').toLowerCase().includes('invalid login credentials');
+          if (isInvalidCredential && !res.retryAfterSeconds) {
+            setMode('signup');
+            setErrorMessage(null);
+            setSuccessNotice(
+              `Email "${email}" belum terdaftar. Silakan lengkapi pendaftaran — email dan kata sandi Anda sudah kami siapkan.`
+            );
+            return;
+          }
+          setErrorMessage(res.error || 'Email atau kata sandi tidak cocok.');
           return;
         }
 
