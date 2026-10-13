@@ -135,7 +135,7 @@ export async function initiateSessionBooking(input: {
     .eq('provider_id', reservedSlot.provider_id)
     .maybeSingle();
 
-  const tier = (subscription as unknown as SubscriptionRow | null)?.tier ?? 'FREE';
+  const tier = (subscription as unknown as SubscriptionRow | null)?.tier ?? 'SAPA';
   void tier;
 
   const { data: booking, error: bookingError } = await admin
