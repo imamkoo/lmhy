@@ -20,8 +20,8 @@ export interface Database {
           website: string | null
           facebook_profile_url: string | null
           facebook_access_token: string | null
-          creator_role: 'REFLECTOR' | 'COMPANION' | 'PROFESSIONAL'
-          service_track: 'PEER' | 'CLINICAL' | null
+          creator_role: 'PENULIS' | 'PENDAMPING' | 'PRAKTISI'
+          service_track: 'SEBAYA' | 'KLINIS' | null
           credential_type: string | null
           credential_number: string | null
           credential_document_url: string | null
@@ -43,8 +43,8 @@ export interface Database {
           website?: string | null
           facebook_profile_url?: string | null
           facebook_access_token?: string | null
-          creator_role?: 'REFLECTOR' | 'COMPANION' | 'PROFESSIONAL'
-          service_track?: 'PEER' | 'CLINICAL' | null
+          creator_role?: 'PENULIS' | 'PENDAMPING' | 'PRAKTISI'
+          service_track?: 'SEBAYA' | 'KLINIS' | null
           credential_type?: string | null
           credential_number?: string | null
           credential_document_url?: string | null
@@ -66,8 +66,8 @@ export interface Database {
           website?: string | null
           facebook_profile_url?: string | null
           facebook_access_token?: string | null
-          creator_role?: 'REFLECTOR' | 'COMPANION' | 'PROFESSIONAL'
-          service_track?: 'PEER' | 'CLINICAL' | null
+          creator_role?: 'PENULIS' | 'PENDAMPING' | 'PRAKTISI'
+          service_track?: 'SEBAYA' | 'KLINIS' | null
           credential_type?: string | null
           credential_number?: string | null
           credential_document_url?: string | null
@@ -271,7 +271,7 @@ export interface Database {
         Row: {
           id: string
           provider_id: string
-          tier: 'FREE' | 'PRO'
+          tier: 'SAPA' | 'CERITA' | 'DENGAR'
           current_period_end: string | null
           status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
           created_at: string
@@ -280,7 +280,7 @@ export interface Database {
         Insert: {
           id?: string
           provider_id: string
-          tier?: 'FREE' | 'PRO'
+          tier?: 'SAPA' | 'CERITA' | 'DENGAR'
           current_period_end?: string | null
           status?: 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
           created_at?: string
@@ -289,7 +289,7 @@ export interface Database {
         Update: {
           id?: string
           provider_id?: string
-          tier?: 'FREE' | 'PRO'
+          tier?: 'SAPA' | 'CERITA' | 'DENGAR'
           current_period_end?: string | null
           status?: 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
           created_at?: string

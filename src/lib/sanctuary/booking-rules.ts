@@ -1,4 +1,4 @@
-const PROVIDER_ROLES = new Set(["COMPANION", "PROFESSIONAL"]);
+const PROVIDER_ROLES = new Set(["PENDAMPING", "PRAKTISI"]);
 
 export interface ProviderEligibility {
   creator_role?: string | null;

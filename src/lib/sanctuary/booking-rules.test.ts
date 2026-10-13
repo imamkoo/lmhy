@@ -2,11 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { canProviderCreateSlot, isSlotReservationExpired } from "./booking-rules";
 
-test("only approved companions and professionals may create slots", () => {
-  assert.equal(canProviderCreateSlot({ creator_role: "COMPANION", verification_status: "APPROVED" }), true);
-  assert.equal(canProviderCreateSlot({ creator_role: "PROFESSIONAL", verification_status: "APPROVED" }), true);
-  assert.equal(canProviderCreateSlot({ creator_role: "REFLECTOR", verification_status: "APPROVED" }), false);
-  assert.equal(canProviderCreateSlot({ creator_role: "COMPANION", verification_status: "PENDING" }), false);
+test("only approved PENDAMPING and PRAKTISI may create slots", () => {
+  assert.equal(canProviderCreateSlot({ creator_role: "PENDAMPING", verification_status: "APPROVED" }), true);
+  assert.equal(canProviderCreateSlot({ creator_role: "PRAKTISI", verification_status: "APPROVED" }), true);
+  assert.equal(canProviderCreateSlot({ creator_role: "PENULIS", verification_status: "APPROVED" }), false);
+  assert.equal(canProviderCreateSlot({ creator_role: "PENDAMPING", verification_status: "PENDING" }), false);
+  assert.equal(canProviderCreateSlot({ creator_role: "PRAKTISI", verification_status: "PENDING" }), false);
   assert.equal(canProviderCreateSlot({ creator_role: null, verification_status: null }), false);
 });
 
