@@ -12,6 +12,7 @@ import { SocialShareBar } from "../components/SocialShareBar";
 import { CommentSection } from "../components/CommentSection";
 import { FollowButton } from "../components/FollowButton";
 import { ArticleCoverImage } from "../components/ArticleCoverImage";
+import DoorwayCard from "@/components/sanctuary/DoorwayCard";
 
 export async function generateMetadata({
   params,
@@ -104,6 +105,27 @@ export default async function TenantArticlePage({
   // 2. Fetch author profile
   const authorProfile = await getProfileByUsername(normalizedUser);
   const authorId = authorProfile?.id || dbArticle?.author_id;
+
+  const authorRole = authorProfile?.creator_role ?? null;
+  const isVerifiedProvider =
+    authorProfile?.verification_status === "APPROVED" &&
+    (authorRole === "PENDAMPING" || authorRole === "PRAKTISI");
+
+  let authorHasAvailableSlot = false;
+  if (authorId && isVerifiedProvider) {
+    try {
+      const supabase = await createClient();
+      const { count } = await supabase
+        .from("listening_slots")
+        .select("id", { count: "exact", head: true })
+        .eq("provider_id", authorId)
+        .eq("status", "AVAILABLE");
+
+      authorHasAvailableSlot = (count ?? 0) > 0;
+    } catch (err) {
+      console.error("[TenantArticlePage] Slot availability lookup failed:", err);
+    }
+  }
 
   // 3. Fetch visitor auth session. A transient auth/DB failure must never
   // 500 the article — degrade to guest view instead.
@@ -252,6 +274,13 @@ export default async function TenantArticlePage({
             </p>
           ))}
         </div>
+
+        <DoorwayCard
+          username={normalizedUser}
+          role={authorRole}
+          isVerified={isVerifiedProvider}
+          hasSlots={authorHasAvailableSlot}
+        />
 
         {/* Requirement: Display SocialShareBar under article content */}
         <SocialShareBar

@@ -19,6 +19,9 @@ import { TemplatePickerDialog } from "@/app/builder/TemplatePickerDialog";
 import { createClient } from "@/lib/supabase/client";
 import { uploadProfileImage } from "@/lib/profile-media";
 import { signOutAction } from "@/app/actions/auth";
+import { canProviderCreateSlot } from "@/lib/sanctuary/booking-rules";
+import SlotCalendar from "@/components/sanctuary/SlotCalendar";
+import type { GuidedPrompt } from "@/lib/supabase/types";
 
 const STORAGE_KEY = "lmhy_builder_draft_v3";
 
@@ -26,15 +29,27 @@ export function WebBuilderClient({
   initialUsername,
   initialUser,
   initialProfile,
+  initialCreatorRole,
+  initialVerificationStatus,
 }: {
   initialUsername?: string;
   initialUser?: { id: string; email?: string } | null;
   initialProfile?: { username: string; display_name: string } | null;
+  initialCreatorRole?: string | null;
+  initialVerificationStatus?: string | null;
 }) {
   // 0. Auth & Session State
   const [authLoading, setAuthLoading] = useState(!initialUser);
   const [authUser, setAuthUser] = useState<{ id: string; email?: string } | null>(initialUser || null);
   const [authProfile, setAuthProfile] = useState<{ username: string; display_name: string } | null>(initialProfile || null);
+  const [providerEligibility, setProviderEligibility] = useState<{
+    creator_role: string | null;
+    verification_status: string | null;
+  }>({
+    creator_role: initialCreatorRole ?? null,
+    verification_status: initialVerificationStatus ?? null,
+  });
+  const [guidedPrompts, setGuidedPrompts] = useState<GuidedPrompt[]>([]);
   const [showPublishSuccessModal, setShowPublishSuccessModal] = useState(false);
   const [showConfirmPublishModal, setShowConfirmPublishModal] = useState(false);
   const [publishedData, setPublishedData] = useState<{
@@ -140,12 +155,16 @@ export function WebBuilderClient({
           setAuthUser(user);
           const { data: profile } = await supabase
             .from("profiles")
-            .select("username, display_name")
+            .select("username, display_name, creator_role, verification_status")
             .eq("id", user.id)
             .maybeSingle();
 
           if (profile?.username) {
-            setAuthProfile(profile);
+            setAuthProfile({ username: profile.username, display_name: profile.display_name });
+            setProviderEligibility({
+              creator_role: profile.creator_role,
+              verification_status: profile.verification_status,
+            });
             setUsername(profile.username);
             setTempUsername(profile.username);
             setIsSubdomainConfirmed(true);
@@ -178,6 +197,34 @@ export function WebBuilderClient({
       subscription.unsubscribe();
     };
   }, [initialUser]);
+
+  // Load active guided prompts for the reflection editor
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function loadGuidedPrompts() {
+      try {
+        const { data, error: promptsError } = await supabase
+          .from("guided_prompts")
+          .select("id, slug, title, prompt_body, category, is_active, created_at")
+          .eq("is_active", true)
+          .order("category", { ascending: true });
+
+        if (!cancelled && !promptsError && data) {
+          setGuidedPrompts(data);
+        }
+      } catch (err) {
+        console.warn("Error loading guided prompts:", err);
+      }
+    }
+
+    loadGuidedPrompts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 6. Local Storage Persistence & Litera SSO Callback Detection (Restore on Mount)
   useEffect(() => {
@@ -414,6 +461,13 @@ export function WebBuilderClient({
     setTags("Refleksi, Jurnal, Kesehatan Mental");
   };
 
+  const handleApplyGuidedPrompt = (prompt: GuidedPrompt) => {
+    setContent(prompt.prompt_body);
+    if (!title.trim()) {
+      setTitle(prompt.title);
+    }
+  };
+
   const handleToggleLitera = (enabled: boolean) => {
     setRegisterLitera(enabled);
     if (enabled && !creatorWallet) {
@@ -453,6 +507,12 @@ export function WebBuilderClient({
   const cleanUser = username.trim() || "nama-domain";
   const domainPreview = `https://${cleanUser}.${activeBaseDomain}`;
   const activeTemplate: WebDesignTemplate = getDesignTemplate(selectedTemplateId);
+
+  const canScheduleSessions = canProviderCreateSlot(providerEligibility);
+  const isProfessionalRole = providerEligibility.creator_role === "PRAKTISI";
+  const guidedPromptCopy = isProfessionalRole
+    ? "Pilih template untuk memulai, lalu sesuaikan dengan pendekatan konseling Anda."
+    : "Pilih template ruang aman untuk memulai, lalu sesuaikan dengan cerita Anda.";
 
   // Handle Form Submission with Strict Security Hardening
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -1314,6 +1374,29 @@ export function WebBuilderClient({
                       </span>
                       <span className="shrink-0 font-bold text-[#3F3766]/60">Muat →</span>
                     </button>
+
+                    {guidedPrompts.length > 0 && (
+                      <div className="pt-2 mt-1 border-t border-[#3F3766]/10 space-y-1.5">
+                        <p className="px-1 text-[10px] font-bold text-[#3F3766]/70 leading-snug">
+                          {guidedPromptCopy}
+                        </p>
+                        {guidedPrompts.map((prompt) => (
+                          <button
+                            key={prompt.id}
+                            type="button"
+                            onClick={() => handleApplyGuidedPrompt(prompt)}
+                            className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#3F3766]/15 bg-[#F5E7C6]/30 px-3 py-2 text-left text-[10px] text-[#3F3766] transition hover:bg-[#F5E7C6]/60 active:scale-[0.99]"
+                          >
+                            <span className="min-w-0 flex-1 font-semibold leading-snug">
+                              {prompt.title}
+                            </span>
+                            <span className="shrink-0 rounded-full border border-[#3F3766]/20 bg-white px-1.5 py-px text-[9px] font-bold text-[#3F3766]/70">
+                              {prompt.category}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </details>
               </div>
@@ -1778,6 +1861,21 @@ export function WebBuilderClient({
                 </div>
               )}
             </div>
+
+            {/* SECTION 4: JADWAL SESI (PENDAMPING / PRAKTISI) */}
+            {canScheduleSessions && (
+              <div className="rounded-3xl bg-white p-4 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
+                    Jadwal Sesi
+                  </span>
+                  <span className="shrink-0 rounded-full border border-[#3F3766]/20 bg-[#F7ABC5] px-1.5 py-px text-[9px] font-bold text-[#3F3766]">
+                    {isProfessionalRole ? "Praktisi" : "Pendamping"}
+                  </span>
+                </div>
+                <SlotCalendar canSchedule={canScheduleSessions} />
+              </div>
+            )}
 
           </div>
 

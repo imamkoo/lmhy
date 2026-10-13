@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUsername, getProfileStats } from "@/lib/profile-storage";
 import { getArticlesByUsername } from "@/lib/article-storage";
+import ProviderBadge from "@/components/sanctuary/ProviderBadge";
+import SessionTabs, { type SessionSlot } from "@/components/sanctuary/SessionTabs";
 import { ProfileBanner } from "./components/ProfileBanner";
 import { ProfileTabs } from "./components/ProfileTabs";
 import { EditProfileModal } from "./components/EditProfileModal";
@@ -83,6 +85,38 @@ export default async function TenantProfilePage({
     console.error("[TenantProfilePage] Visitor session lookup failed, rendering as guest:", err);
   }
 
+  const providerRole =
+    profile.creator_role === "PENDAMPING" || profile.creator_role === "PRAKTISI"
+      ? profile.creator_role
+      : null;
+  const isApprovedProvider =
+    profile.verification_status === "APPROVED" && providerRole !== null;
+
+  let providerSlots: SessionSlot[] = [];
+
+  if (isApprovedProvider) {
+    try {
+      const supabase = await createClient();
+      const { data: slots } = await supabase
+        .from("listening_slots")
+        .select("id, start_time, duration_min, price_idr")
+        .eq("provider_id", profile.id)
+        .eq("status", "AVAILABLE")
+        .gte("start_time", new Date().toISOString())
+        .order("start_time", { ascending: true })
+        .limit(20);
+
+      providerSlots = (slots ?? []).map((slot) => ({
+        id: slot.id,
+        start_time: slot.start_time,
+        duration_min: slot.duration_min,
+        price_idr: slot.price_idr,
+      }));
+    } catch (err) {
+      console.error("[TenantProfilePage] Slot lookup failed, rendering without sessions:", err);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#fbf8f5] px-4 py-8 text-slate-900 sm:px-6 md:px-12 md:py-12">
       <div className="mx-auto max-w-4xl">
@@ -102,6 +136,12 @@ export default async function TenantProfilePage({
           </a>
         </div>
 
+        {isApprovedProvider && providerRole ? (
+          <div className="mb-3 flex items-center justify-end">
+            <ProviderBadge role={providerRole} />
+          </div>
+        ) : null}
+
         {/* Profile Banner with Cover, Avatar, Bio, Subdomain, & Actions */}
         <ProfileBanner
           profile={profile}
@@ -117,6 +157,14 @@ export default async function TenantProfilePage({
           username={username}
           isOwnProfile={isOwnProfile}
         />
+
+        {isApprovedProvider && providerRole ? (
+          <SessionTabs
+            username={username}
+            role={providerRole}
+            slots={providerSlots}
+          />
+        ) : null}
 
         {/* Modal for Creator to update profile details */}
         {isOwnProfile && <EditProfileModal profile={profile} />}
