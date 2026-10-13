@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getBuilderUrl } from "@/lib/builder";
 import type { Profile } from "@/lib/supabase/types";
@@ -23,10 +24,12 @@ export function ProfileBanner({
   initialIsFollowing = false,
   onEditClick,
 }: ProfileBannerProps) {
+  const router = useRouter();
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [followersCount, setFollowersCount] = useState(stats.followersCount);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const displayName = profile.display_name || profile.username;
   const username = profile.username;
@@ -37,6 +40,7 @@ export function ProfileBanner({
   const handleToggleFollow = async () => {
     if (!profile.id || isFollowLoading) return;
     setIsFollowLoading(true);
+    setShowLoginPrompt(false);
 
     try {
       const res = await toggleFollowAction(profile.id);
@@ -44,7 +48,12 @@ export function ProfileBanner({
         setIsFollowing(res.isFollowing);
         setFollowersCount((prev) => (res.isFollowing ? prev + 1 : Math.max(0, prev - 1)));
       } else if (res.error) {
-        alert(res.error);
+        const lower = res.error.toLowerCase();
+        if (lower.includes("masuk") || lower.includes("sesi")) {
+          setShowLoginPrompt(true);
+        } else {
+          setShowLoginPrompt(false);
+        }
       }
     } catch (err: unknown) {
       console.error("Failed to follow:", err);
@@ -179,25 +188,66 @@ export function ProfileBanner({
               </>
             ) : (
               <>
-                <button
-                  onClick={handleToggleFollow}
-                  disabled={isFollowLoading}
-                  className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition sm:px-5 sm:py-2.5 ${
-                    isFollowing
-                      ? "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
-                      : "bg-[#F7ABC5] text-[#3F3766] hover:bg-[#F5E7C6]"
-                  }`}
-                >
-                  {isFollowing ? (
-                    <>
-                      <span>✓ Mengikuti</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>+ Ikuti</span>
-                    </>
+                <div className="relative inline-block">
+                  <button
+                    onClick={handleToggleFollow}
+                    disabled={isFollowLoading}
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition sm:px-5 sm:py-2.5 ${
+                      isFollowing
+                        ? "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
+                        : "bg-[#F7ABC5] text-[#3F3766] hover:bg-[#F5E7C6]"
+                    }`}
+                  >
+                    {isFollowing ? (
+                      <>
+                        <span>✓ Mengikuti</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>+ Ikuti</span>
+                      </>
+                    )}
+                  </button>
+                  {showLoginPrompt && (
+                    <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+                      <div className="flex items-start justify-between">
+                        <span className="text-xs font-bold text-slate-900">Ikuti @{username}</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPrompt(false)}
+                          className="text-slate-400 hover:text-slate-600 text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                        Masuk atau daftar terlebih dahulu untuk mengikuti kreator ini dan mendapatkan kabar refleksi terbaru.
+                      </p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = typeof window !== "undefined" ? window.location.pathname : "/";
+                            router.push(`/login?next=${encodeURIComponent(current)}`);
+                          }}
+                          className="flex-1 rounded-xl bg-[#F7ABC5] py-1.5 text-center text-xs font-bold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px] transition"
+                        >
+                          Masuk
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = typeof window !== "undefined" ? window.location.pathname : "/";
+                            router.push(`/login?next=${encodeURIComponent(current)}`);
+                          }}
+                          className="flex-1 rounded-xl border border-[#3F3766]/15 bg-white py-1.5 text-center text-xs font-bold text-[#3F3766] hover:bg-slate-50 transition"
+                        >
+                          Daftar
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
 
                 <button
                   onClick={handleShare}
