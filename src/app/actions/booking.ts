@@ -136,6 +136,7 @@ export async function initiateSessionBooking(input: {
     .maybeSingle();
 
   const tier = (subscription as unknown as SubscriptionRow | null)?.tier ?? 'FREE';
+  void tier;
 
   const { data: booking, error: bookingError } = await admin
     .from('session_bookings')
@@ -147,7 +148,7 @@ export async function initiateSessionBooking(input: {
       consent_accepted: true,
       status: 'PENDING',
       amount_idr: reservedSlot.price_idr,
-      take_rate_bps: resolveTakeRateBps(tier),
+      take_rate_bps: resolveTakeRateBps(),
     })
     .select('id')
     .single();
