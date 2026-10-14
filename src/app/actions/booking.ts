@@ -253,3 +253,92 @@ export async function createListeningSlot(input: {
 
   return { ok: true };
 }
+
+export async function cancelListeningSlot(slotId: string): Promise<CreateSlotResult> {
+  if (!slotId) {
+    return { ok: false, message: 'ID jadwal tidak valid.' };
+  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { ok: false, message: 'Silakan masuk terlebih dahulu.' };
+  }
+  const { data: slot } = await supabase
+    .from('listening_slots')
+    .select('id, provider_id, status')
+    .eq('id', slotId)
+    .maybeSingle();
+  const slotRow = slot as unknown as { id: string; provider_id: string; status: string } | null;
+  if (!slotRow || slotRow.provider_id !== user.id) {
+    return { ok: false, message: 'Jadwal tidak ditemukan.' };
+  }
+  if (slotRow.status !== 'AVAILABLE') {
+    return { ok: false, message: 'Hanya jadwal dengan status tersedia yang dapat dibatalkan.' };
+  }
+  const { error: deleteError } = await supabase
+    .from('listening_slots')
+    .delete()
+    .eq('id', slotId)
+    .eq('provider_id', user.id);
+  if (deleteError) {
+    return { ok: false, message: 'Gagal membatalkan jadwal. Silakan coba lagi.' };
+  }
+  return { ok: true };
+}
+
+export async function updateListeningSlot(input: {
+  slotId: string;
+  startTime: string;
+  durationMin: number;
+  priceIdr: number;
+}): Promise<CreateSlotResult> {
+  if (!input.slotId) {
+    return { ok: false, message: 'ID jadwal tidak valid.' };
+  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { ok: false, message: 'Silakan masuk terlebih dahulu.' };
+  }
+  const { data: slot } = await supabase
+    .from('listening_slots')
+    .select('id, provider_id, status')
+    .eq('id', input.slotId)
+    .maybeSingle();
+  const slotRow = slot as unknown as { id: string; provider_id: string; status: string } | null;
+  if (!slotRow || slotRow.provider_id !== user.id) {
+    return { ok: false, message: 'Jadwal tidak ditemukan.' };
+  }
+  if (slotRow.status !== 'AVAILABLE') {
+    return { ok: false, message: 'Hanya jadwal dengan status tersedia yang dapat diubah.' };
+  }
+  const start = new Date(input.startTime);
+  if (Number.isNaN(start.getTime()) || start.getTime() <= Date.now()) {
+    return { ok: false, message: 'Waktu mulai sesi harus berupa tanggal yang valid di masa depan.' };
+  }
+  if (!Number.isInteger(input.durationMin) || input.durationMin < MIN_DURATION_MIN || input.durationMin > MAX_DURATION_MIN) {
+    return { ok: false, message: `Durasi sesi harus antara ${MIN_DURATION_MIN} dan ${MAX_DURATION_MIN} menit.` };
+  }
+  if (!Number.isFinite(input.priceIdr) || input.priceIdr < 0) {
+    return { ok: false, message: 'Harga sesi tidak boleh negatif.' };
+  }
+  const { error: updateError } = await supabase
+    .from('listening_slots')
+    .update({
+      start_time: start.toISOString(),
+      duration_min: input.durationMin,
+      price_idr: Math.floor(input.priceIdr),
+    })
+    .eq('id', input.slotId)
+    .eq('provider_id', user.id);
+  if (updateError) {
+    return { ok: false, message: 'Gagal menyimpan perubahan jadwal. Silakan coba lagi.' };
+  }
+  return { ok: true };
+}

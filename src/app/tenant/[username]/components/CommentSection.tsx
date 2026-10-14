@@ -83,25 +83,25 @@ export function CommentSection({
   };
 
   return (
-    <section className="mt-14 border-t border-slate-200/90 pt-10" id="refleksi-pembaca">
+    <section className="mt-14 border-t border-current/15 pt-10" id="refleksi-pembaca">
       <div className="flex items-center justify-between pb-6">
         <div>
-          <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          <h3 className="text-xl font-bold tracking-tight text-inherit sm:text-2xl">
             Tanggapan & Diskusi Pembaca
           </h3>
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+          <p className="mt-1 text-xs opacity-70 sm:text-sm">
             Ruang berbagi pemikiran, refleksi, dan apresiasi terhadap tulisan ini.
           </p>
         </div>
         {comments.length > 0 && (
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+          <span className="rounded-full bg-white/10 border border-current/15 px-3 py-1 text-xs font-bold opacity-80">
             {comments.length} Komentar
           </span>
         )}
       </div>
 
       {/* Input Box / Invitation Form */}
-      <div className="mb-10 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+      <div className="mb-10 rounded-3xl border border-white/10 bg-white p-5 shadow-xs sm:p-6 dark:border-[#30363D] dark:bg-[#161B22]">
         {currentUser ? (
           <form onSubmit={handlePostComment} className="space-y-4">
             <div className="flex items-center gap-3">
@@ -137,7 +137,7 @@ export function CommentSection({
               onChange={(e) => setNewContent(e.target.value)}
               placeholder="Tuliskan refleksi, tanggapan mendalam, atau kesan yang Anda rasakan setelah membaca tulisan ini..."
               maxLength={2000}
-              className="w-full resize-y rounded-2xl border border-slate-200 p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
+              className="w-full resize-y rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20 dark:border-[#30363D] dark:bg-[#0D1117] dark:text-[#E6EDF3] dark:placeholder:text-[#6B7280]"
             />
 
             {feedbackError && (
@@ -147,7 +147,7 @@ export function CommentSection({
             )}
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-400 dark:text-[#8B949E]">
                 {newContent.length}/2000 karakter
               </span>
               <button
@@ -183,10 +183,10 @@ export function CommentSection({
         ) : (
           <div className="flex flex-col items-center justify-between gap-4 py-2 sm:flex-row text-center sm:text-left">
             <div>
-              <h4 className="text-sm font-bold text-slate-900">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-[#E6EDF3]">
                 Ingin berbagi pandangan atau menyapa penulis?
               </h4>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-[#8B949E]">
                 Masuk ke akun Anda untuk meninggalkan jejak refleksi dan berdialog bersama @{creatorUsername}.
               </p>
             </div>
@@ -203,12 +203,12 @@ export function CommentSection({
 
       {/* Comments List */}
       {comments.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-200 bg-white/50 p-8 text-center">
+        <div className="rounded-3xl border border-dashed border-slate-200 bg-white/50 p-8 text-center dark:border-[#30363D] dark:bg-[#161B22]">
           <p className="text-2xl">🌱</p>
-          <p className="mt-2 text-sm font-semibold text-slate-700">
+          <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-[#E6EDF3]">
             Belum ada refleksi untuk tulisan ini
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-400 dark:text-[#8B949E]">
             Jadilah pembaca pertama yang meninggalkan jejak resonansi batin di sini.
           </p>
         </div>

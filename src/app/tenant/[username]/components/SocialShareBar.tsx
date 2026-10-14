@@ -71,15 +71,15 @@ export function SocialShareBar({
 
   return (
     <div
-      className={`my-8 rounded-3xl border border-slate-200/90 bg-white/80 p-5 shadow-sm backdrop-blur-xs transition sm:p-6 ${className}`}
+      className={`my-8 rounded-3xl border border-slate-200/90 bg-white/80 p-5 shadow-sm backdrop-blur-xs transition sm:p-6 dark:border-[#30363D] dark:bg-[#161B22] ${className}`}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Share Title and Explanation */}
         <div>
-          <h4 className="text-sm font-bold text-slate-900">
+          <h4 className="text-sm font-bold text-slate-900 dark:text-[#E6EDF3]">
             Bagikan Refleksi Ini
           </h4>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-[#8B949E]">
             Sebarkan wawasan dan ketenangan pikiran ke jejaring sosial Anda.
           </p>
         </div>
