@@ -1283,7 +1283,7 @@ export function WebBuilderClient({
                 <button
                   type="submit"
                   title="Keluar dari akun"
-                  className="rounded-xl border-2 border-[#3F3766]/20 bg-white/70 px-3 py-2 text-[11px] font-bold text-[#3F3766]/70 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition"
+                  className="rounded-xl border-2 border-[#3F3766]/20 bg-white/70 px-3 py-2 text-[11px] font-bold text-[#3F3766]/70 shadow-sm transition hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:shadow active:scale-[0.97] active:shadow-none active:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
                 >
                   Keluar
                 </button>
