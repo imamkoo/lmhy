@@ -237,8 +237,14 @@ export async function middleware(req: NextRequest) {
       return sessionResponse;
     }
 
+    if (url.pathname.startsWith("/tenant/")) {
+      return NextResponse.rewrite(
+        new URL(`${url.pathname}${url.search}`, req.url)
+      );
+    }
+
     return NextResponse.rewrite(
-      new URL(`/tenant/${subdomain}${url.pathname}`, req.url)
+      new URL(`/tenant/${subdomain}${url.pathname}${url.search}`, req.url)
     );
   }
 
