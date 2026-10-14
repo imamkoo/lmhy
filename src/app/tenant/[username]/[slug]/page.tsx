@@ -12,6 +12,7 @@ import { SocialShareBar } from "../components/SocialShareBar";
 import { CommentSection } from "../components/CommentSection";
 import { FollowButton } from "../components/FollowButton";
 import { ArticleCoverImage } from "../components/ArticleCoverImage";
+import { BackToProfileLink } from "./BackToProfileLink";
 import DoorwayCard from "@/components/sanctuary/DoorwayCard";
 
 export async function generateMetadata({
@@ -181,13 +182,7 @@ export default async function TenantArticlePage({
       <article className="mx-auto max-w-3xl">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between pb-4 border-b border-current/10">
-          <Link
-            href="/"
-            prefetch={false}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-bold text-[#3F3766] shadow-sm ring-1 ring-[#3F3766]/10 backdrop-blur-sm transition hover:bg-[#F7ABC5]/20 active:scale-[0.97] active:bg-[#F7ABC5]/30 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7ABC5]"
-          >
-            ← Kembali ke profil @{normalizedUser}
-          </Link>
+          <BackToProfileLink username={normalizedUser} />
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline-block text-[10px] uppercase font-bold opacity-60">
               Tema: {activeTemplate.name}
