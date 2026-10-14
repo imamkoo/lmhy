@@ -143,19 +143,19 @@ export default async function TenantProfilePage({
           initialIsFollowing={isFollowing}
         />
 
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] lg:items-start lg:gap-6">
-          <div className="min-w-0 order-2 lg:order-1">
-            <div className="[&>div]:mt-0">
-              <ProfileTabs
-                articles={articles}
-                profile={profile}
-                username={username}
-                isOwnProfile={isOwnProfile}
-              />
+        {isApprovedProvider && providerRole ? (
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+            <div className="min-w-0 order-2 lg:order-1">
+              <div className="[&>div]:mt-0">
+                <ProfileTabs
+                  articles={articles}
+                  profile={profile}
+                  username={username}
+                  isOwnProfile={isOwnProfile}
+                />
+              </div>
             </div>
-          </div>
 
-          {isApprovedProvider && providerRole ? (
             <div className="order-1 lg:order-2 lg:sticky lg:top-6">
               <SessionTabs
                 username={username}
@@ -163,8 +163,17 @@ export default async function TenantProfilePage({
                 slots={providerSlots}
               />
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : (
+          <div className="mt-8">
+            <ProfileTabs
+              articles={articles}
+              profile={profile}
+              username={username}
+              isOwnProfile={isOwnProfile}
+            />
+          </div>
+        )}
 
         {/* Modal for Creator to update profile details */}
         {isOwnProfile && <EditProfileModal profile={profile} />}
