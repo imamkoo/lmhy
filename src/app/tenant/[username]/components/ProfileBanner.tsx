@@ -92,6 +92,7 @@ export function ProfileBanner({
     : username.slice(0, 2).toUpperCase();
 
   const isBannerContain = profile.banner_url?.includes("fit=contain");
+  const cleanBannerSrc = profile.banner_url ? profile.banner_url.split("#")[0] : null;
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition">
@@ -108,8 +109,10 @@ export function ProfileBanner({
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={profile.banner_url}
+              src={cleanBannerSrc!}
               alt={`${displayName} Cover Banner`}
+              loading="eager"
+              decoding="async"
               className={
                 isBannerContain
                   ? "relative z-10 h-full w-full object-contain p-2 sm:p-4"
