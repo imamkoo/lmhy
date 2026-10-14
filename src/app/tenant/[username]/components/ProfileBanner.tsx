@@ -295,6 +295,37 @@ export function ProfileBanner({
               </svg>
               <span>@{username}</span>
             </div>
+            {(() => {
+              const providerRole =
+                (profile.creator_role === "PENDAMPING" || profile.creator_role === "PRAKTISI") &&
+                profile.verification_status === "APPROVED"
+                  ? (profile.creator_role as "PENDAMPING" | "PRAKTISI")
+                  : null;
+              if (!providerRole) return null;
+              const isProfessional = providerRole === "PRAKTISI";
+              return (
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-wide shadow-[0_6px_16px_-8px_rgba(63,55,102,0.5),0_2px_8px_-4px_rgba(63,55,102,0.18),inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-md ${
+                    isProfessional
+                      ? "border-[#3f3766]/12 bg-gradient-to-br from-[#3f3766] via-[#5b4fa0] to-[#8a7cc8] text-white"
+                      : "border-[#3f3766]/10 bg-gradient-to-br from-white via-[#f7f3ff] to-[#efe8ff] text-[#3F3766]"
+                  }`}
+                  title={providerRole === "PRAKTISI" ? "Praktisi Terverifikasi" : "Pendamping Sebaya Terverifikasi"}
+                  aria-label={providerRole === "PRAKTISI" ? "Praktisi Terverifikasi" : "Pendamping Sebaya Terverifikasi"}
+                >
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ring-1 backdrop-blur-sm ${
+                    isProfessional ? "bg-white/18 ring-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]" : "bg-[#3F3766] ring-[#3F3766]/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]"
+                  }`}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className={`h-2.5 w-2.5 ${isProfessional ? "text-white" : "text-white"}`}>
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  </span>
+                  <span>{providerRole === "PRAKTISI" ? "Praktisi" : "Pendamping"}</span>
+                  <span aria-hidden="true" className={`h-3 w-px shrink-0 ${isProfessional ? "bg-white/25" : "bg-[#3F3766]/15"}`} />
+                  <span className={`text-[8px] font-black tracking-[0.13em] ${isProfessional ? "text-white/80" : "text-[#3F3766]/55"}`}>TERVERIFIKASI</span>
+                </span>
+              );
+            })()}
           </div>
 
           <p className="mt-1 text-xs text-slate-500 font-medium">
@@ -302,8 +333,8 @@ export function ProfileBanner({
           </p>
         </div>
 
-        {/* Bio */}
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+        {/* Bio — keep hierarchy */}
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
           {bio}
         </p>
 
