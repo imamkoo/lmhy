@@ -117,6 +117,115 @@ Refleksi hari ini adalah tentang memberi diri izin:
 Kerapuhan bukanlah kebalikan dari keberanian; itu adalah pintu masuk paling tulus menuju penyembuhan dan kedamaian batin.`,
   },
   {
+    id: "anxiety-future",
+    name: "Menjinakkan Cemas akan Masa Depan",
+    tagline: "Saat khawatir tentang esok mencuri tenang hari ini.",
+    icon: "🌊",
+    defaultTitle: "Cemas tentang Esok: Belajar Berlabuh di Hari Ini",
+    defaultExcerpt: "Masa depan belum tiba, tapi kecemasan membuat kita hidup di sana duluan — lelah oleh bayangan yang belum tentu terjadi.",
+    defaultTags: "Kecemasan, Mindfulness, Ketenangan, Refleksi",
+    content: `Pikiran saya sering melompat jauh ke depan: bagaimana kalau gagal, bagaimana kalau mengecewakan, bagaimana kalau semua berantakan.
+
+Padahal hari ini — detik ini — saya masih di sini, masih bernapas, masih bisa memilih satu hal kecil yang bisa saya lakukan.
+
+Yang ingin saya latih hari ini:
+1. Menamai cemas: "oh, ini pikiran cemas, bukan ramalan."
+2. Kembali ke indera: apa yang saya lihat, dengar, dan rasakan sekarang.
+3. Satu langkah kecil saja, bukan seluruh tangga.
+
+Masa depan akan diurus oleh diri saya di masa depan. Hari ini, cukup jaga hari ini.`,
+  },
+  {
+    id: "grief-loss",
+    name: "Merawat Duka dengan Lembut",
+    tagline: "Kehilangan tidak harus segera disembuhkan — ia perlu ditemani.",
+    icon: "🍂",
+    defaultTitle: "Saat Kehilangan Menyapa: Menemani Duka Tanpa Tergesa",
+    defaultExcerpt: "Duka bukan tugas yang harus selesai cepat, melainkan musim yang perlu dilewati pelan-pelan.",
+    defaultTags: "Duka, Kehilangan, Penerimaan, Penyembuhan",
+    content: `Ada hari di mana rindu terasa lebih berat dari biasanya. Ada momen di mana air mata datang tanpa diundang.
+
+Saya belajar bahwa duka tidak butuh diusir, ia butuh ditemani:
+- Mengizinkan diri mengenang tanpa menghakimi.
+- Menulis satu kenangan baik tentang yang telah pergi.
+- Meminta ditemani orang terpercaya, bukan memikul sendirian.
+
+Jika kamu sedang berduka, tidak ada jadwal baku untuk sembuh. Pelan tidak apa-apa. Menangis tidak apa-apa. Kamu tetap berjalan, dengan caramu.`,
+  },
+  {
+    id: "relationship-distance",
+    name: "Jarak dalam Hubungan",
+    tagline: "Ketika dekat terasa jauh — belajar bicara jujur tanpa menyakiti.",
+    icon: "💬",
+    defaultTitle: "Dekat tapi Jauh: Merawat Percakapan yang Jujur",
+    defaultExcerpt: "Hubungan tidak retak karena perbedaan, tapi karena percakapan jujur yang terus ditunda.",
+    defaultTags: "Hubungan, Komunikasi, Batasan, Empati",
+    content: `Akhir-akhir ini saya merasa ada jarak yang tak terucapkan. Kata-kata jadi hemat, asumsi jadi ramai.
+
+Yang ingin saya coba perbaiki:
+1. Mengganti "kamu selalu..." dengan "aku merasa... ketika..."
+2. Mendengarkan untuk memahami, bukan untuk membalas.
+3. Menyepakati waktu bicara yang aman untuk keduanya, bukan saat emosi di puncak.
+
+Hubungan yang sehat bukan tanpa konflik, tapi punya cara pulang setelah konflik.`,
+  },
+  {
+    id: "inner-child",
+    name: "Menyapa Luka Lama",
+    tagline: "Anak kecil di dalam diri masih menunggu didengarkan.",
+    icon: "🧸",
+    defaultTitle: "Menyapa Anak Kecil di Dalam Diri: Luka Lama yang Minta Didengar",
+    defaultExcerpt: "Reaksi kita hari ini sering kali adalah gema dari kebutuhan kecil yang dulu tak terpenuhi.",
+    defaultTags: "Inner Child, Penerimaan Diri, Penyembuhan, Refleksi",
+    content: `Saya menyadari pola yang berulang: takut ditinggalkan, haus validasi, sulit berkata cukup.
+
+Mungkin itu bukan salah saya yang sekarang, tapi suara lama yang belum ditemani.
+
+Hari ini saya ingin berkata pada diri kecil itu:
+- "Terima kasih sudah bertahan sejauh ini."
+- "Kamu tidak harus sempurna untuk pantas dicintai."
+- "Aku di sini sekarang, menemanimu."
+
+Menyembuhkan luka lama bukan memutar waktu, tapi memberi diri apa yang dulu kurang: kehadiran dan kelembutan.`,
+  },
+  {
+    id: "gentle-discipline",
+    name: "Disiplin yang Lembut",
+    tagline: "Konsisten tanpa menghukum diri — perubahan kecil yang bertahan.",
+    icon: "🪴",
+    defaultTitle: "Disiplin Tanpa Hukuman: Perubahan Kecil yang Bertahan Lama",
+    defaultExcerpt: "Disiplin bukan cambuk, melainkan janji kecil yang kita tepati pada diri sendiri setiap hari.",
+    defaultTags: "Kebiasaan, Disiplin, Self-Care, Produktivitas Lembut",
+    content: `Saya lelah dengan target besar yang berakhir rasa bersalah. Kali ini saya ingin lebih lembut.
+
+Bukan "harus 1 jam olahraga", tapi "pakai sepatu dan jalan 7 menit".
+Bukan "harus baca 1 buku", tapi "buka 2 halaman sebelum tidur".
+
+Aturan main baru saya:
+1. Mulai sangat kecil hingga tidak ada alasan menolak.
+2. Rayakan selesai, bukan sempurna.
+3. Jika bolong sehari, lanjut esok — bukan mengulang dari nol.
+
+Konsistensi lahir dari kebaikan, bukan kekerasan pada diri.`,
+  },
+  {
+    id: "meaning-purpose",
+    name: "Mencari Makna di Tengah Ragu",
+    tagline: "Saat hidup terasa hampa — menenun makna dari hal yang masih bisa dipilih.",
+    icon: "🔭",
+    defaultTitle: "Ketika Hidup Terasa Hampa: Menenun Makna dari Hal Kecil",
+    defaultExcerpt: "Makna tidak selalu ditemukan, kadang ia diciptakan — dari pilihan kecil yang selaras dengan nilai kita.",
+    defaultTags: "Makna Hidup, Nilai, Refleksi, Penerimaan",
+    content: `Ada fase di mana pertanyaan "untuk apa?" datang lebih sering. Semua terasa menjemukan, meski dari luar tampak baik-baik saja.
+
+Saya mencoba tidak menunggu motivasi besar datang, tapi bertanya:
+- Nilai apa yang ingin saya hidupi minggu ini — kejujuran, kepedulian, keingintahuan?
+- Satu tindakan kecil apa yang selaras dengan nilai itu hari ini?
+- Siapa yang akan ikut terbantu jika saya melakukannya?
+
+Makna sering lahir bukan dari jawaban besar, tapi dari keberanian memilih hal kecil yang jujur.`,
+  },
+  {
     id: "blank-canvas",
     name: "Kanvas Kosong (Mulai dari Nol)",
     tagline: "Tuliskan cerita, wawasan, atau gagasan reflektif bebas sesuai suara hati Anda.",
