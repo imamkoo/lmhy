@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUsername, getProfileStats } from "@/lib/profile-storage";
 import { getArticlesByUsername } from "@/lib/article-storage";
-import ProviderBadge from "@/components/sanctuary/ProviderBadge";
 import SessionTabs, { type SessionSlot } from "@/components/sanctuary/SessionTabs";
 import { ProfileBanner } from "./components/ProfileBanner";
 import { ProfileTabs } from "./components/ProfileTabs";
@@ -135,12 +134,6 @@ export default async function TenantProfilePage({
             <span>Beranda</span>
           </a>
         </div>
-
-        {isApprovedProvider && providerRole ? (
-          <div className="mb-3 flex items-center justify-end">
-            <ProviderBadge role={providerRole} />
-          </div>
-        ) : null}
 
         {/* Profile Banner with Cover, Avatar, Bio, Subdomain, & Actions */}
         <ProfileBanner
