@@ -58,7 +58,7 @@ export default function SessionTabs({ username, role, slots }: SessionTabsProps)
   return (
     <section
       id="sesi-dengar"
-      className="mt-8 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6"
+      className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6"
     >
       <h2 className="text-lg font-bold">{sessionLabel}</h2>
       <p className="mt-2 text-sm leading-relaxed opacity-80">{description}</p>

@@ -26,7 +26,7 @@ export function ProfileTabs({
   const literaArticles = articles.filter((a) => Boolean(a.register_litera));
 
   return (
-    <div className="mt-10">
+    <div>
       {/* Tabs Navigation Header */}
       <div className="border-b border-slate-200">
         <nav className="flex space-x-4 sm:space-x-8 overflow-x-auto no-scrollbar py-1" aria-label="Tabs Profil">
