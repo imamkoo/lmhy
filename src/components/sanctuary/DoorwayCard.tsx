@@ -18,7 +18,7 @@ export default function DoorwayCard({
 }: DoorwayCardProps) {
   if (!isVerified || (role !== "PENDAMPING" && role !== "PRAKTISI")) {
     return (
-      <section className="mt-12 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6">
+      <section className="mt-12 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6 dark:border-[#30363D] dark:bg-[#161B22] dark:text-[#E6EDF3]">
         <h3 className="text-lg font-bold">Merasa terhubung dengan cerita ini?</h3>
         <p className="mt-2 text-sm leading-relaxed opacity-80">
           Kamu tidak harus melewatinya sendirian.
@@ -39,7 +39,7 @@ export default function DoorwayCard({
   const ctaLabel = hasSlots ? "Ajak Bicara" : "Lihat Jadwal";
 
   return (
-    <section className="mt-12 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6">
+    <section className="mt-12 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6 dark:border-[#30363D] dark:bg-[#161B22] dark:text-[#E6EDF3]">
       <ProviderBadge role={role} />
       <h3 className="mt-3 text-lg font-bold">
         {sessionLabel} bersama @{username}
