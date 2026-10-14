@@ -15,6 +15,7 @@ declare global {
 interface BookingClientProps {
   slotId: string;
   providerName: string;
+  providerRole?: string | null;
   startTime: string;
   durationMin: number;
   priceIdr: number;
@@ -68,12 +69,21 @@ function loadSnapScript(src: string, clientKey: string): Promise<void> {
 export default function BookingClient({
   slotId,
   providerName,
+  providerRole,
   startTime,
   durationMin,
   priceIdr,
   snapScriptUrl,
   clientKey,
 }: BookingClientProps) {
+  const isProfessional = providerRole === "PRAKTISI";
+  const sessionLabel = isProfessional ? "Sesi Konseling" : "Sesi Dengar";
+  const noteLabel = isProfessional
+    ? "Catatan untuk praktisi"
+    : "Catatan untuk pendamping";
+  const consentLabel = isProfessional
+    ? "Saya memahami bahwa sesi ini adalah sesi konseling terjadwal, BUKAN layanan darurat. Jika saya sedang dalam kondisi krisis, saya akan menghubungi LISA 0811-3815-472 atau Kemenkes 119 ext 8."
+    : "Saya memahami bahwa sesi ini adalah sesi dengar terjadwal, BUKAN layanan darurat. Jika saya sedang dalam kondisi krisis, saya akan menghubungi LISA 0811-3815-472 atau Kemenkes 119 ext 8.";
   const [pseudonym, setPseudonym] = useState("");
   const [contact, setContact] = useState("");
   const [note, setNote] = useState("");
@@ -152,7 +162,7 @@ export default function BookingClient({
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
-      <h1 className="text-xl font-bold sm:text-2xl">Pesan Sesi Dengar</h1>
+      <h1 className="text-xl font-bold sm:text-2xl">Pesan {sessionLabel}</h1>
       <p className="mt-2 text-sm leading-relaxed text-slate-600">
         Sesi terjadwal bersama {providerName} · {slotTimeLabel} · {durationMin}{" "}
         menit
@@ -198,7 +208,7 @@ export default function BookingClient({
 
         <div>
           <label htmlFor="booking-note" className="mb-1 block text-sm font-semibold">
-            Catatan untuk pendamping
+            {noteLabel}
           </label>
           <textarea
             id="booking-note"
@@ -219,9 +229,7 @@ export default function BookingClient({
             className="mt-1 h-4 w-4 shrink-0"
           />
           <label htmlFor="booking-consent" className="text-xs leading-relaxed">
-            Saya memahami bahwa sesi ini adalah sesi dengar terjadwal, BUKAN
-            layanan darurat. Jika saya sedang dalam kondisi krisis, saya akan
-            menghubungi LISA 0811-3815-472 atau Kemenkes 119 ext 8.
+            {consentLabel}
           </label>
         </div>
 

@@ -77,6 +77,7 @@ export default async function TenantBookingPage({
         <BookingClient
           slotId={slotRow.id}
           providerName={providerName}
+          providerRole={providerRow.creator_role}
           startTime={slotRow.start_time}
           durationMin={slotRow.duration_min}
           priceIdr={slotRow.price_idr}
