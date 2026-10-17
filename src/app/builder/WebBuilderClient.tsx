@@ -581,11 +581,21 @@ export function WebBuilderClient({
           : selectedCollection || "Let Me Hear You";
 
       const validQuestions = questions
-        .map((q) => ({
-          question: q.question.trim(),
-          options: q.options.map((o) => o.trim()).filter(Boolean),
-          correctIndex: q.correctIndex,
-        }))
+        .map((q) => {
+          const trimmedOptions = q.options.map((o) => o.trim()).filter(Boolean);
+          const safeCorrectIndex =
+            typeof q.correctIndex === "number" &&
+            q.correctIndex >= 0 &&
+            q.correctIndex < trimmedOptions.length
+              ? q.correctIndex
+              : 0;
+          return {
+            question: q.question.trim(),
+            options: trimmedOptions,
+            correctIndex: safeCorrectIndex,
+            correctOption: trimmedOptions[safeCorrectIndex] || "",
+          };
+        })
         .filter((q) => q.question.length > 0 && q.options.length >= 2);
 
       const quizPayload =
@@ -597,6 +607,7 @@ export function WebBuilderClient({
               question: validQuestions[0]?.question,
               options: validQuestions[0]?.options,
               correctIndex: validQuestions[0]?.correctIndex ?? 0,
+              correctOption: validQuestions[0]?.correctOption || "",
             }
           : undefined;
 
@@ -638,9 +649,11 @@ export function WebBuilderClient({
         }
       }
 
-      // Pastikan blob: lokal tidak pernah terkirim ke backend / Litera
+      // Pastikan blob: lokal atau path relatif tidak pernah terkirim ke backend / Litera
       if (uploadedMediaUrl && uploadedMediaUrl.startsWith("blob:")) {
-        uploadedMediaUrl = "/assets/lmhy-cover.jpg";
+        uploadedMediaUrl = "https://letmehearyou.id/assets/lmhy-cover.jpg";
+      } else if (uploadedMediaUrl && uploadedMediaUrl.startsWith("/")) {
+        uploadedMediaUrl = `https://letmehearyou.id${uploadedMediaUrl}`;
       }
 
       const res = await publishTenantArticle({
