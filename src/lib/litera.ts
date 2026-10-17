@@ -10,7 +10,7 @@ export interface LiteraQuizQuestionInput {
   question: string;
   options: string[];
   correctIndex?: number;
-  correctOption?: number;
+  correctOption?: string | number;
   explanation?: string;
 }
 
@@ -21,7 +21,7 @@ export interface LiteraQuizInput {
   question?: string;
   options?: string[];
   correctIndex?: number;
-  correctOption?: number;
+  correctOption?: string | number;
   explanation?: string;
 }
 
