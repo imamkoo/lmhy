@@ -176,9 +176,9 @@ export function ArticleConnectedCarousel({
   };
 
   const activeDimensions = {
-    desktop: { width: 780, height: 480 },
-    tablet: { width: 680, height: 460 },
-    mobile: { width: Math.min(360, viewportWidth - 32), height: 510 },
+    desktop: { width: 780, height: 440 },
+    tablet: { width: 680, height: 430 },
+    mobile: { width: Math.min(360, viewportWidth - 32), height: 480 },
   }[tier];
 
   if (!items || items.length === 0) {
@@ -220,7 +220,7 @@ export function ArticleConnectedCarousel({
               const activeH = activeDimensions.height;
               const gap = 12;
               const peekW = 44;
-              const peekH = 430;
+              const peekH = 410;
 
               if (offset === 0) {
                 return {
@@ -271,10 +271,10 @@ export function ArticleConnectedCarousel({
 
             if (tier === "tablet") {
               const activeW = 680;
-              const activeH = 460;
+              const activeH = 430;
               const gap = 18;
               const sideW = 90;
-              const sideH = 340;
+              const sideH = 330;
 
               if (offset === 0) {
                 return {
@@ -325,13 +325,13 @@ export function ArticleConnectedCarousel({
 
             // Desktop tier (>= 1120px)
             const activeW = 780;
-            const activeH = 480;
+            const activeH = 440;
             const gap = 20;
             const sideW = 105;
-            const sideH = 350;
+            const sideH = 340;
             const outerGap = 16;
             const outerW = 72;
-            const outerH = 210;
+            const outerH = 200;
 
             switch (offset) {
               case 0:
@@ -413,17 +413,17 @@ export function ArticleConnectedCarousel({
                 transformStyle: "preserve-3d",
               }}
               className={cn(
-                "group/card rounded-[32px] bg-white dark:bg-[#1a1528] text-slate-800 dark:text-slate-100 border border-white/80 dark:border-white/10 overflow-visible transition-all duration-300",
+                "group/card rounded-[32px] bg-white dark:bg-[#1a1528] text-slate-800 dark:text-slate-100 border border-black/[0.05] dark:border-white/10 overflow-visible transition-all duration-300",
                 isActive
-                  ? "shadow-[0_24px_60px_-15px_rgba(60,49,99,0.18),0_12px_28px_-8px_rgba(60,49,99,0.10)] ring-1 ring-black/5 dark:ring-white/10"
-                  : "cursor-pointer shadow-[0_12px_30px_-10px_rgba(60,49,99,0.12)] hover:border-purple-300"
+                  ? "shadow-[0_24px_50px_-12px_rgba(60,49,99,0.16),0_10px_24px_-6px_rgba(60,49,99,0.08)] ring-1 ring-black/5 dark:ring-white/10"
+                  : "cursor-pointer shadow-[0_10px_25px_-8px_rgba(60,49,99,0.10)] hover:border-purple-300"
               )}
             >
               {/* 3D Ambient Glow Halo on Active Card */}
               {isActive && (
                 <div
                   aria-hidden="true"
-                  className="absolute -inset-1.5 rounded-[36px] bg-gradient-to-tr from-[hsl(257,68%,73%)]/30 via-[hsl(344,81%,87%)]/20 to-[hsl(42,73%,74%)]/25 blur-xl pointer-events-none -z-10 opacity-75"
+                  className="absolute -inset-2 rounded-[36px] bg-gradient-to-tr from-[hsl(257,68%,73%)]/25 via-[hsl(344,81%,87%)]/15 to-[hsl(42,73%,74%)]/20 blur-xl pointer-events-none -z-10 opacity-75"
                 />
               )}
 
@@ -542,7 +542,7 @@ export function ArticleConnectedCarousel({
                   </div>
                 </motion.div>
 
-                {/* ACTIVE CARD DETAIL CONTENT (Inspired by Reference Image 2) */}
+                {/* ACTIVE CARD DETAIL CONTENT - Minimalist Figma Auto-Layout */}
                 <div
                   className="absolute inset-0"
                   style={{
@@ -562,8 +562,8 @@ export function ArticleConnectedCarousel({
                       !isActive && "pointer-events-none"
                     )}
                   >
-                    {/* Background Landscape / Cover Image with Ethereal Mist Gradient Blend (Like Image 2) */}
-                    <div className="absolute top-0 right-0 bottom-0 w-full md:w-[58%] h-[200px] md:h-full z-0 overflow-hidden pointer-events-none">
+                    {/* Right Background Cover Image with Ethereal Gradient Blend */}
+                    <div className="absolute top-0 right-0 bottom-0 w-full md:w-[56%] h-[180px] md:h-full z-0 overflow-hidden pointer-events-none">
                       <Image
                         alt={item.author}
                         src={item.selectedImage}
@@ -574,51 +574,31 @@ export function ArticleConnectedCarousel({
                         className="size-full object-cover object-center transition-transform duration-700 ease-out group-hover/card:scale-105"
                       />
 
-                      {/* Ethereal Misty Fade to Left Content (Light & Dark theme adapted) */}
+                      {/* Ethereal Horizontal Misty Fade to Left Content */}
                       <div
                         className="absolute inset-0 hidden md:block"
                         style={{
                           background:
-                            "linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.96) 22%, rgba(255,255,255,0.6) 48%, rgba(255,255,255,0.05) 85%, transparent 100%)",
+                            "linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.98) 25%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0.05) 85%, transparent 100%)",
                         }}
                       />
                       <div
                         className="absolute inset-0 hidden dark:md:block"
                         style={{
                           background:
-                            "linear-gradient(90deg, #1a1528 0%, rgba(26,21,40,0.96) 22%, rgba(26,21,40,0.6) 48%, rgba(26,21,40,0.05) 85%, transparent 100%)",
+                            "linear-gradient(90deg, #1a1528 0%, rgba(26,21,40,0.98) 25%, rgba(26,21,40,0.65) 50%, rgba(26,21,40,0.05) 85%, transparent 100%)",
                         }}
                       />
 
                       {/* Mobile Gradient (Top to Bottom) */}
-                      <div className="absolute inset-0 md:hidden bg-gradient-to-t from-white dark:from-[#1a1528] via-white/50 dark:via-[#1a1528]/50 to-transparent" />
+                      <div className="absolute inset-0 md:hidden bg-gradient-to-t from-white dark:from-[#1a1528] via-white/60 dark:via-[#1a1528]/60 to-transparent" />
                     </div>
 
-                    {/* Floating Top-Right Glassmorphic Bookmark / Share Pill (Like Image 2) */}
-                    <Link
-                      href={item.href}
-                      aria-label="Simpan atau Buka Catatan"
-                      className="absolute top-5 right-5 z-20 size-10 rounded-full bg-white/90 dark:bg-black/60 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.12)] border border-white/60 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-white hover:scale-110 active:scale-95 transition-transform"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="size-4"
-                      >
-                        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-                      </svg>
-                    </Link>
-
-                    {/* Left Content Side: High Clarity Editorial Layout (Like Image 2) */}
-                    <div className="relative z-10 w-full md:w-[60%] lg:w-[58%] h-full p-6 sm:p-7 md:p-8 flex flex-col justify-between">
-                      {/* Top: Avatar & Author Identity */}
-                      <div className="flex items-center gap-3.5">
-                        <div className="relative size-12 rounded-full overflow-hidden shadow-md ring-2 ring-white/90 dark:ring-purple-900/60 shrink-0 bg-slate-200">
+                    {/* Left Auto-Layout Content Column (Centered & Balanced with Zero Clipping) */}
+                    <div className="relative z-10 w-full md:w-[56%] lg:w-[53%] h-full p-6 sm:p-7 md:p-8 flex flex-col justify-center gap-4 sm:gap-5">
+                      {/* 1. Auto-Layout Row: Author Profile Meta */}
+                      <div className="flex items-center gap-3">
+                        <div className="relative size-10 rounded-full overflow-hidden shadow-sm ring-1 ring-black/10 dark:ring-white/20 shrink-0 bg-slate-200">
                           <Image
                             alt={item.author}
                             src={item.defaultImage}
@@ -632,77 +612,42 @@ export function ArticleConnectedCarousel({
 
                         <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
                               {item.author}
                             </span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[hsl(257,68%,73%)]/25 text-[#3c3163] dark:text-purple-300 shrink-0">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-[#3c3163] dark:bg-purple-900/40 dark:text-purple-300 shrink-0">
                               {item.tag || "Refleksi"}
                             </span>
                           </div>
-                          <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {item.role || "Penulis Komunitas"}
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                            3 mnt baca • Terverifikasi
                           </span>
                         </div>
                       </div>
 
-                      {/* Middle: Title & Reflective Quote Excerpt */}
-                      <div className="my-auto py-2">
-                        <Link href={item.href} className="group/title block">
-                          <h3
-                            title={item.stat}
-                            className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover/title:text-purple-700 dark:group-hover/title:text-purple-400 transition-colors mb-2.5"
-                          >
-                            {item.stat}
-                          </h3>
-                        </Link>
+                      {/* 2. Auto-Layout Row: Title */}
+                      <Link href={item.href} className="group/title block">
+                        <h3
+                          title={item.stat}
+                          className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover/title:text-purple-700 dark:group-hover/title:text-purple-400 transition-colors"
+                        >
+                          {item.stat}
+                        </h3>
+                      </Link>
 
-                        <p className="font-serif text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-3">
-                          “{item.quote}”
-                        </p>
-                      </div>
+                      {/* 3. Auto-Layout Row: Reflective Excerpt */}
+                      <p className="font-serif text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2 sm:line-clamp-3">
+                        “{item.quote}”
+                      </p>
 
-                      {/* Meta Tags Strip (Like Image 2: "Product designer • In the feedback loop") */}
-                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium py-1">
-                        <span className="inline-flex items-center gap-1">
-                          <svg className="size-3.5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          3 mnt baca
-                        </span>
-                        <span>•</span>
-                        <span className="inline-flex items-center gap-1">
-                          <svg className="size-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Terverifikasi Litera
-                        </span>
-                      </div>
-
-                      {/* Bottom Row: Stats Divider + Pill Button (Like Image 2: "Get in touch") */}
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-white/10 mt-1">
-                        <div className="flex items-center gap-3 text-xs">
-                          <div>
-                            <span className="font-bold text-slate-900 dark:text-white block text-sm">
-                              ★ 4.9
-                            </span>
-                            <span className="text-[10px] text-slate-400">Refleksi</span>
-                          </div>
-                          <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
-                          <div>
-                            <span className="font-bold text-slate-900 dark:text-white block text-sm">
-                              Publik
-                            </span>
-                            <span className="text-[10px] text-slate-400">Akses Gratis</span>
-                          </div>
-                        </div>
-
-                        {/* White Floating Pill Button (Directly matching Image 2 "Get in touch") */}
+                      {/* 4. Auto-Layout Row: Minimalist Pill CTA Button */}
+                      <div className="pt-1">
                         <Link
                           href={item.href}
-                          className="px-5 py-2.5 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs sm:text-sm shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/80 dark:border-white/15 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 shrink-0"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#3c3163] hover:bg-[#4d3f7d] dark:bg-purple-600 dark:hover:bg-purple-500 text-white font-medium text-xs sm:text-sm shadow-sm transition-all hover:gap-3 w-fit"
                         >
-                          <span>Baca Tulisan</span>
-                          <span aria-hidden="true" className="text-purple-600 dark:text-purple-400 font-extrabold">→</span>
+                          <span>Baca Selengkapnya</span>
+                          <span aria-hidden="true">→</span>
                         </Link>
                       </div>
                     </div>
@@ -714,13 +659,13 @@ export function ArticleConnectedCarousel({
         })}
       </div>
 
-      {/* Navigation Controls: Arrows & Progress Indicators */}
+      {/* Navigation Controls: Minimalist Arrows & Progress Indicators */}
       <div className="flex items-center justify-center gap-3 mt-6 sm:mt-7">
         <button
           type="button"
           onClick={handlePrev}
           aria-label="Artikel sebelumnya"
-          className="size-9 rounded-full flex items-center justify-center text-[#3c3163] dark:text-purple-200 bg-white dark:bg-[#1a1528] hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-md border border-purple-100 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-purple-400 outline-none"
+          className="size-8 sm:size-9 rounded-full flex items-center justify-center text-[#3c3163] dark:text-purple-200 bg-white dark:bg-[#1a1528] hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm border border-black/[0.06] dark:border-white/10 focus-visible:ring-2 focus-visible:ring-purple-400 outline-none"
         >
           <span className="text-sm font-bold">←</span>
         </button>
@@ -747,10 +692,10 @@ export function ArticleConnectedCarousel({
                 aria-label={`Slide ${idx + 1}`}
                 tabIndex={isSelected ? 0 : -1}
                 className={cn(
-                  "h-[8px] rounded-[4px] overflow-hidden border-0 p-0 cursor-pointer transition-[width] duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-purple-400",
+                  "h-[7px] sm:h-[8px] rounded-[4px] overflow-hidden border-0 p-0 cursor-pointer transition-[width] duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-purple-400",
                   isSelected
-                    ? "w-[64px] sm:w-[80px] bg-purple-200 dark:bg-purple-950"
-                    : "w-[12px] bg-purple-200/60 dark:bg-slate-800 hover:bg-purple-300"
+                    ? "w-[56px] sm:w-[72px] bg-purple-200 dark:bg-purple-950"
+                    : "w-[10px] sm:w-[12px] bg-purple-200/60 dark:bg-slate-800 hover:bg-purple-300"
                 )}
               >
                 {isSelected && (
@@ -771,7 +716,7 @@ export function ArticleConnectedCarousel({
           type="button"
           onClick={handleNext}
           aria-label="Artikel selanjutnya"
-          className="size-9 rounded-full flex items-center justify-center text-[#3c3163] dark:text-purple-200 bg-white dark:bg-[#1a1528] hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-md border border-purple-100 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-purple-400 outline-none"
+          className="size-8 sm:size-9 rounded-full flex items-center justify-center text-[#3c3163] dark:text-purple-200 bg-white dark:bg-[#1a1528] hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm border border-black/[0.06] dark:border-white/10 focus-visible:ring-2 focus-visible:ring-purple-400 outline-none"
         >
           <span className="text-sm font-bold">→</span>
         </button>
