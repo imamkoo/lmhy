@@ -22,8 +22,7 @@ export function rankShowcaseArticles(
   articles: Article[],
   commentCounts: Record<string, number>,
   topCount = 3,
-  newestCount = 2,
-  pinnedSlug?: string
+  newestCount = 2
 ): ShowcaseArticle[] {
   const countOf = (article: Article) => commentCounts[article.id] ?? 0;
   const isMinted = (article: Article) =>
@@ -40,19 +39,6 @@ export function rankShowcaseArticles(
 
     return timeOf(b) - timeOf(a);
   });
-
-  if (pinnedSlug) {
-    const target = pinnedSlug.trim().toLowerCase();
-    const pinIndex = ranked.findIndex(
-      (a) =>
-        (a.slug || "").trim().toLowerCase() === target ||
-        (a.username || "").trim().toLowerCase() === target
-    );
-    if (pinIndex > 0) {
-      const [pinnedItem] = ranked.splice(pinIndex, 1);
-      ranked.unshift(pinnedItem);
-    }
-  }
 
   const top = ranked.slice(0, Math.min(topCount, ranked.length));
   const topIds = new Set(top.map((article) => article.id));
