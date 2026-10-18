@@ -19,6 +19,8 @@ export interface CarouselArticleItem {
   username: string;
   tag?: string;
   href: string;
+  badge?: string;
+  badgeTone?: "top" | "newest";
 }
 
 export interface CalendlyCarouselProps extends HTMLAttributes<HTMLDivElement> {
@@ -59,6 +61,7 @@ export function ArticleConnectedCarousel({
 
   const total = items.length;
   const activeIndex = total > 0 ? ((page % total) + total) % total : 0;
+  const slotRadius = total >= 5 ? 2 : total >= 3 ? 1 : 0;
 
   useEffect(() => {
     const handleResize = () => {
@@ -217,6 +220,18 @@ export function ArticleConnectedCarousel({
           const isActive = offset === 0;
 
           const getVariant = () => {
+            if (Math.abs(offset) > slotRadius) {
+              return {
+                x: offset < 0 ? -900 : 900,
+                y: -200,
+                width: 60,
+                height: 200,
+                opacity: 0,
+                zIndex: 0,
+                pointerEvents: "none" as const,
+              };
+            }
+
             if (tier === "mobile") {
               const activeW = activeDimensions.width;
               const activeH = activeDimensions.height;
@@ -541,6 +556,20 @@ export function ArticleConnectedCarousel({
                       className="size-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
+                    {item.badge && (
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "absolute top-2 left-1/2 -translate-x-1/2 px-1.5 py-2 rounded-full text-[8px] font-bold uppercase tracking-[0.18em] shadow-sm ring-1 ring-black/10",
+                          item.badgeTone === "top"
+                            ? "bg-[hsl(42,73%,72%)] text-[#3c3163]"
+                            : "bg-[hsl(257,68.1%,72.9%)] text-white"
+                        )}
+                        style={{ writingMode: "vertical-rl" }}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
                   </div>
                 </motion.div>
 
@@ -642,6 +671,19 @@ export function ArticleConnectedCarousel({
                         “{item.quote}”
                       </p>
                     </div>
+
+                    {item.badge && (
+                      <span
+                        className={cn(
+                          "absolute z-20 top-8 left-8 sm:top-10 sm:left-10 md:top-12 md:left-12 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.14em] shadow-sm ring-1 ring-black/5",
+                          item.badgeTone === "top"
+                            ? "bg-[hsl(42,73%,72%)] text-[#3c3163]"
+                            : "bg-[hsl(257,68.1%,72.9%)] text-white"
+                        )}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
                   </motion.div>
                 </div>
               </div>

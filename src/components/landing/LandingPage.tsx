@@ -27,6 +27,7 @@ export function LandingPage({
     excerpt?: string | null;
     media_url?: string | null;
     tags?: string[] | null;
+    showcase_badge?: "top" | "newest";
   }>;
 } = {}) {
   const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(
@@ -383,6 +384,13 @@ export function LandingPage({
                     username: art.username,
                     slug: art.slug,
                     href: `/tenant/${art.username}/${art.slug}`,
+                    badge:
+                      art.showcase_badge === "top"
+                        ? "TOP"
+                        : art.showcase_badge === "newest"
+                          ? "TERBARU"
+                          : undefined,
+                    badgeTone: art.showcase_badge,
                     defaultImage:
                       art.media_url ||
                       "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
