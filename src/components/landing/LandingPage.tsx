@@ -365,7 +365,7 @@ export function LandingPage({
           </motion.div>
         </div>
         <motion.section
-          className="cards-wrapper"
+          className="cards-wrapper !max-w-6xl !w-full !px-4 sm:!px-6 !gap-8 sm:!gap-10 !my-4"
           initial="hidden"
           whileInView="visible"
           variants={staggerParent}
@@ -410,47 +410,71 @@ export function LandingPage({
                 },
               ]
           ).map((card) => (
-            <motion.div key={card.title} className="card-grid-space" variants={staggerChild}>
-              <a
-                className="card group relative overflow-hidden"
+            <motion.div
+              key={card.title}
+              className="card-grid-space w-full flex justify-center"
+              variants={staggerChild}
+              style={{ perspective: 1200 }}
+            >
+              <Link
                 href={card.href}
-                style={
-                  {
-                    "--bg-img": `url(${card.bg})`,
-                  } as React.CSSProperties
-                }
+                className="group relative w-full max-w-[340px] h-[440px] rounded-[28px] overflow-hidden p-6 flex flex-col justify-between text-left transition-all duration-500 ease-out border border-white/40 dark:border-white/10"
+                style={{
+                  transformStyle: "preserve-3d",
+                  boxShadow:
+                    "0 20px 40px -15px rgba(60, 49, 99, 0.25), 0 0 25px 0 rgba(200, 185, 255, 0.20)",
+                }}
               >
-                {/* High contrast scrim gradient overlay to ensure text legibility */}
+                {/* Background image cover */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={card.bg}
+                  alt={card.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
+
+                {/* Multilayer Glassmorphism & Scrim Vignette */}
                 <div
-                  className="absolute inset-0 z-0 pointer-events-none"
+                  className="absolute inset-0 z-10 transition-opacity duration-300"
                   style={{
                     background:
-                      "linear-gradient(to top, rgba(18, 15, 29, 0.95) 0%, rgba(18, 15, 29, 0.70) 50%, rgba(18, 15, 29, 0.35) 100%)",
+                      "linear-gradient(180deg, rgba(18, 15, 29, 0.25) 0%, rgba(18, 15, 29, 0.65) 55%, rgba(18, 15, 29, 0.96) 100%)",
                   }}
                 />
-                <div className="relative z-10 w-full flex flex-col justify-end">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] uppercase tracking-wider text-purple-200 font-bold opacity-90">
-                      {card.author}
-                    </span>
-                  </div>
-                  <h1 className="!text-white !drop-shadow-md !font-bold line-clamp-2">
+
+                {/* Ambient 3D Glow on Hover */}
+                <div className="absolute -inset-1 rounded-[30px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-tr from-[hsl(257,68%,73%)]/40 via-[hsl(344,81%,87%)]/30 to-transparent blur-xl pointer-events-none z-0" />
+
+                {/* Top Badge & Author Meta */}
+                <div className="relative z-20 flex items-center justify-between w-full">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider backdrop-blur-md bg-white/20 dark:bg-black/40 text-white border border-white/30 shadow-sm">
+                    {card.tag}
+                  </span>
+                  <span className="text-[11px] font-semibold text-purple-200/90 backdrop-blur-md bg-black/30 px-2.5 py-0.5 rounded-full">
+                    {card.author}
+                  </span>
+                </div>
+
+                {/* Bottom Content Area */}
+                <div className="relative z-20 flex flex-col gap-2.5 transform transition-transform duration-300 group-hover:translate-y-[-4px]">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-snug line-clamp-2 drop-shadow-md group-hover:text-purple-200 transition-colors">
                     {card.title}
-                  </h1>
-                  <p className="!text-slate-200 !line-clamp-2 !drop-shadow">
+                  </h3>
+                  <p className="text-xs text-slate-200/90 font-light leading-relaxed line-clamp-2 drop-shadow">
                     {card.excerpt}
                   </p>
-                  <div className="tags mt-2">
-                    <div className="tag !bg-white/20 !text-white !backdrop-blur-sm">
-                      {card.tag}
-                    </div>
+                  <div className="pt-2 flex items-center justify-between text-xs font-bold text-[hsl(42,73%,74%)] group-hover:text-white transition-colors">
+                    <span>Baca Artikel</span>
+                    <span className="transform transition-transform group-hover:translate-x-1.5 duration-300">
+                      →
+                    </span>
                   </div>
                 </div>
-              </a>
+              </Link>
             </motion.div>
           ))}
         </motion.section>
-        <div className="container mt-8 text-center">
+        <div className="container mt-16 pb-6 text-center">
           <Link href="/articles" className="learn-more" style={{ display: "inline-block" }}>
             Lihat Semua Tulisan Penulis →
           </Link>
