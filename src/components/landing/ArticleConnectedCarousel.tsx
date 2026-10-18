@@ -641,17 +641,6 @@ export function ArticleConnectedCarousel({
                       <p className="font-serif text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2 sm:line-clamp-3">
                         “{item.quote}”
                       </p>
-
-                      {/* 4. Minimalist Pill CTA Button with comfortable padding */}
-                      <div className="pt-2">
-                        <Link
-                          href={item.href}
-                          className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full bg-[#3c3163] hover:bg-[#2c234a] dark:bg-purple-600 dark:hover:bg-purple-500 text-white font-semibold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all hover:gap-3.5 w-fit"
-                        >
-                          <span>Baca Selengkapnya</span>
-                          <span aria-hidden="true">→</span>
-                        </Link>
-                      </div>
                     </div>
                   </motion.div>
                 </div>

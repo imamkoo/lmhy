@@ -1213,8 +1213,10 @@ textarea.input-control {
 }
 
 /* ARTICLES CSS */
-.landing-page-wrapper a {
-  color: inherit;
+@layer components {
+  .landing-page-wrapper a {
+    color: inherit;
+  }
 }
 
 .cards-wrapper {
