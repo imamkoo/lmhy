@@ -7,6 +7,7 @@ import { LandingEffects } from "./LandingEffects";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/app/actions/auth";
 import { motion } from "motion/react";
+import { ArticleConnectedCarousel } from "./ArticleConnectedCarousel";
 import { fadeUp, fadeDown, blurIn, slideRight, staggerParent, staggerChild, triggerOnly, viewportOnce } from "./motion-variants";
 
 const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
@@ -364,117 +365,86 @@ export function LandingPage({
             <p className="sub-title">Our Article</p>
           </motion.div>
         </div>
-        <motion.section
-          className="cards-wrapper !max-w-6xl !w-full !px-4 sm:!px-6 !gap-8 sm:!gap-10 !my-4"
-          initial="hidden"
-          whileInView="visible"
-          variants={staggerParent}
-          viewport={viewportOnce}
-        >
-          {(recentArticles && recentArticles.length > 0
-            ? recentArticles.slice(0, 3).map((art) => ({
-                title: art.title,
-                href: `/tenant/${art.username}/${art.slug}`,
-                tag: (art.tags && art.tags[0]) || "Warta",
-                bg: art.media_url || "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-                excerpt: art.excerpt || "Baca selengkapnya tulisan inspiratif dan reflektif di portal warta Let Me Hear You...",
-                author: `@${art.username}`,
-              }))
-            : [
-                {
-                  title: "Mental illness",
-                  href: "/articles",
-                  tag: "Mental Illness",
-                  bg: "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-                  excerpt:
-                    "Mental illness atau yang disebut juga gangguan kesehatan mental adalah istilah yang mengacu pada berbagai kondisi yang memengaruhi pemikiran ...",
-                  author: "@editorial",
-                },
-                {
-                  title: "Mental Health",
-                  href: "/articles",
-                  tag: "Mental Health",
-                  bg: "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-                  excerpt:
-                    "Mental Health yang baik adalah kondisi ketika batin kita berada dalam keadaan tentram dan tenang...",
-                  author: "@editorial",
-                },
-                {
-                  title: "Mental Disorder",
-                  href: "/articles",
-                  tag: "Mental Disorder",
-                  bg: "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-                  excerpt:
-                    "Salah satu masalah kesehatan yang penting diperhatikan oleh masyarakat adalah mental disorder...",
-                  author: "@editorial",
-                },
-              ]
-          ).map((card, idx) => (
-            <motion.div
-              key={`${card.title}-${idx}`}
-              className="card-grid-space w-full flex justify-center"
-              variants={staggerChild}
-              style={{ perspective: 1200 }}
-            >
-              <Link
-                href={card.href}
-                className="group relative w-full max-w-[340px] h-[440px] rounded-[28px] overflow-hidden p-6 flex flex-col justify-between text-left transition-all duration-500 ease-out border border-white/40 dark:border-white/10"
-                style={{
-                  transformStyle: "preserve-3d",
-                  boxShadow:
-                    "0 20px 40px -15px rgba(60, 49, 99, 0.25), 0 0 25px 0 rgba(200, 185, 255, 0.20)",
-                }}
-              >
-                {/* Background image cover */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={card.bg}
-                  alt={card.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                />
 
-                {/* Multilayer Glassmorphism & Scrim Vignette */}
-                <div
-                  className="absolute inset-0 z-10 transition-opacity duration-300"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, rgba(18, 15, 29, 0.25) 0%, rgba(18, 15, 29, 0.65) 55%, rgba(18, 15, 29, 0.96) 100%)",
-                  }}
-                />
+        {/* 21st.dev Connected Tab Carousel Showcase */}
+        <div className="w-full my-6">
+          <ArticleConnectedCarousel
+            items={
+              recentArticles && recentArticles.length > 0
+                ? recentArticles.map((art, idx) => ({
+                    id: art.id || `${art.slug}-${idx}`,
+                    stat: art.title,
+                    quote:
+                      art.excerpt ||
+                      "Menyediakan ruang refleksi terbuka untuk mendengarkan, merawat jiwa, dan menemukan ketenangan kembali.",
+                    author: `@${art.username}`,
+                    role: (art.tags && art.tags[0]) || "Penulis Komunitas",
+                    tag: (art.tags && art.tags[0]) || "Refleksi",
+                    username: art.username,
+                    slug: art.slug,
+                    href: `/tenant/${art.username}/${art.slug}`,
+                    defaultImage:
+                      art.media_url ||
+                      "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    selectedImage:
+                      art.media_url ||
+                      "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                  }))
+                : [
+                    {
+                      id: "art-1",
+                      stat: "Mengenali Sinyal Tubuh: Catatan Pemulihan dari Kelelahan",
+                      quote:
+                        "Terkadang lelah bukan sekadar butuh tidur semalam, melainkan tanda bahwa jiwa kita menuntut jeda dari ritme yang terlalu cepat.",
+                      author: "@axaalexxa",
+                      role: "Pendamping Sebaya",
+                      tag: "Burnout",
+                      username: "axaalexxa",
+                      slug: "mengenali-sinyal-tubuh-catatan-pemulihan-dari-kelelahan",
+                      href: "/articles",
+                      defaultImage:
+                        "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                      selectedImage:
+                        "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    },
+                    {
+                      id: "art-2",
+                      stat: "Hal-Hal Kecil yang Terlupakan: Catatan Bersyukur di Tengah Kesibukan",
+                      quote:
+                        "Kebahagiaan sering kali tidak bersembunyi dalam pencapaian megah, melainkan dalam kemampuan kita menyadari keindahan momen-momen biasa.",
+                      author: "@axaalexxa",
+                      role: "Penulis Komunitas",
+                      tag: "Gratitude",
+                      username: "axaalexxa",
+                      slug: "hal-hal-kecil-yang-terlupakan-catatan-bersyukur-di-tengah-kesibukan",
+                      href: "/articles",
+                      defaultImage:
+                        "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                      selectedImage:
+                        "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    },
+                    {
+                      id: "art-3",
+                      stat: "Berdamai dengan Kekurangan Diri: Perjalanan Menuju Penerimaan Penuh",
+                      quote:
+                        "Melepaskan beban untuk selalu tampak kuat dan sempurna di mata orang lain adalah langkah pertama mencintai diri sendiri.",
+                      author: "@axaalexxa",
+                      role: "Praktisi Jiwa",
+                      tag: "Self-Love",
+                      username: "axaalexxa",
+                      slug: "berdamai-dengan-kekurangan-diri-perjalanan-menuju-penerimaan-penuh",
+                      href: "/articles",
+                      defaultImage:
+                        "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                      selectedImage:
+                        "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    },
+                  ]
+            }
+          />
+        </div>
 
-                {/* Ambient 3D Glow on Hover */}
-                <div className="absolute -inset-1 rounded-[30px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-tr from-[hsl(257,68%,73%)]/40 via-[hsl(344,81%,87%)]/30 to-transparent blur-xl pointer-events-none z-0" />
-
-                {/* Top Badge & Author Meta */}
-                <div className="relative z-20 flex items-center justify-between w-full">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider backdrop-blur-md bg-white/20 dark:bg-black/40 text-white border border-white/30 shadow-sm">
-                    {card.tag}
-                  </span>
-                  <span className="text-[11px] font-semibold text-purple-200/90 backdrop-blur-md bg-black/30 px-2.5 py-0.5 rounded-full">
-                    {card.author}
-                  </span>
-                </div>
-
-                {/* Bottom Content Area */}
-                <div className="relative z-20 flex flex-col gap-2.5 transform transition-transform duration-300 group-hover:translate-y-[-4px]">
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-snug line-clamp-2 drop-shadow-md group-hover:text-purple-200 transition-colors">
-                    {card.title}
-                  </h3>
-                  <p className="text-xs text-slate-200/90 font-light leading-relaxed line-clamp-2 drop-shadow">
-                    {card.excerpt}
-                  </p>
-                  <div className="pt-2 flex items-center justify-between text-xs font-bold text-[hsl(42,73%,74%)] group-hover:text-white transition-colors">
-                    <span>Baca Artikel</span>
-                    <span className="transform transition-transform group-hover:translate-x-1.5 duration-300">
-                      →
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.section>
-        <div className="container mt-16 pb-6 text-center">
+        <div className="container mt-12 pb-6 text-center">
           <Link href="/articles" className="learn-more" style={{ display: "inline-block" }}>
             Lihat Semua Tulisan Penulis →
           </Link>
