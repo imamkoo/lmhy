@@ -21,16 +21,96 @@ interface ArticlesPortalClientProps {
   initialProfile: { username: string | null; display_name: string | null } | null;
 }
 
-// 7 Category Pills matching Maga template structure but with LMHY emotional themes & Warm Sanctuary tokens
-const CATEGORIES = [
-  { id: "ALL", label: "Semua Warta", icon: "/assets/portal/icons/heart.svg" },
-  { id: "Refleksi Diri", label: "Refleksi Diri", icon: "/assets/portal/icons/heart.svg" },
-  { id: "Kecemasan", label: "Kecemasan", icon: "/assets/portal/icons/status-up.svg" },
-  { id: "Hubungan Jiwa", label: "Hubungan Jiwa", icon: "/assets/portal/icons/global.svg" },
-  { id: "Duka & Pulih", label: "Duka & Pulih", icon: "/assets/portal/icons/coffee.svg" },
-  { id: "Penerimaan", label: "Penerimaan", icon: "/assets/portal/icons/courthouse.svg" },
-  { id: "Mindfulness", label: "Mindfulness", icon: "/assets/portal/icons/cup.svg" },
-];
+// Map a raw article tag to a matching visual icon (fallback: heart).
+function iconForTag(tag: string): string {
+  const t = tag.toLowerCase();
+
+  if (/(mindfulness|ketenangan|meditasi|relaksasi|sadar)/.test(t)) return "cup";
+  if (/(burnout|kelelahan|stress|lelah|pemulihan|pulih|cemas|kecemasan)/.test(t)) return "status";
+  if (/(gratitude|bersyukur|self-care|perawatan)/.test(t)) return "coffee";
+  if (/(acceptance|penerimaan|self-love|mencintai)/.test(t)) return "heart";
+  if (/(pendidikan|sosial|budaya|digital|empati|media|kemanusiaan|pancasila|persatuan)/.test(t)) return "courthouse";
+  if (/(hubungan|jiwa|ruang|dengar|komunitas|cerita|refleksi|kesehatan)/.test(t)) return "globe";
+
+  return "heart";
+}
+
+function CategoryIcon({ name, className }: { name: string; className?: string }) {
+  const common = {
+    className,
+    viewBox: "0 0 24 24",
+    fill: "none" as const,
+    stroke: "currentColor" as const,
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  switch (name) {
+    case "status":
+      return (
+        <svg {...common}>
+          <path d="M6.88 18.15V16.08" strokeWidth={2} />
+          <path d="M12 18.15V14.01" strokeWidth={2} />
+          <path d="M17.12 18.15V11.93" strokeWidth={2} />
+          <path d="M17.12 5.85L16.66 6.39C14.11 9.37 10.69 11.48 6.88 12.43" strokeWidth={2} />
+          <path d="M14.19 5.85H17.12V8.77" strokeWidth={2} />
+          <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" strokeWidth={2} />
+        </svg>
+      );
+    case "globe":
+      return (
+        <svg {...common}>
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" />
+          <path d="M8 3H9C7.05 8.84 7.05 15.16 9 21H8" />
+          <path d="M15 3C16.95 8.84 16.95 15.16 15 21" />
+          <path d="M3 16V15C8.84 16.95 15.16 16.95 21 15V16" />
+          <path d="M3 9.00001C8.84 7.05001 15.16 7.05001 21 9.00001" />
+        </svg>
+      );
+    case "coffee":
+      return (
+        <svg {...common}>
+          <path d="M17.79 10.47V17.79C17.79 20.12 15.9 22 13.58 22H6.21C3.89 22 2 20.11 2 17.79V10.47C2 8.14 3.89 6.26 6.21 6.26H13.58C15.9 6.26 17.79 8.15 17.79 10.47Z" />
+          <path d="M5.5 4V2.25" />
+          <path d="M9.5 4V2.25" />
+          <path d="M13.5 4V2.25" />
+          <path d="M22 13.16C22 15.48 20.11 17.37 17.79 17.37V8.95001C20.11 8.95001 22 10.83 22 13.16Z" />
+          <path d="M2 12H17.51" />
+        </svg>
+      );
+    case "courthouse":
+      return (
+        <svg {...common}>
+          <path d="M2 22H22" />
+          <path d="M12 2C13.6 2.64 15.4 2.64 17 2V5C15.4 5.64 13.6 5.64 12 5V2Z" />
+          <path d="M12 5V8" />
+          <path d="M17 8H7C5 8 4 9 4 11V22H20V11C20 9 19 8 17 8Z" />
+          <path d="M4.58 12H19.42" />
+          <path d="M7.99 12V22" />
+          <path d="M11.99 12V22" />
+          <path d="M15.99 12V22" />
+        </svg>
+      );
+    case "cup":
+      return (
+        <svg {...common}>
+          <path d="M12.15 16.5V18.6" />
+          <path d="M7.15 22H17.15V21C17.15 19.9 16.25 19 15.15 19H9.15C8.05 19 7.15 19.9 7.15 21V22V22Z" />
+          <path d="M6.15 22H18.15" />
+          <path d="M12 16C8.13 16 5 12.87 5 9V6C5 3.79 6.79 2 9 2H15C17.21 2 19 3.79 19 6V9C19 12.87 15.87 16 12 16Z" />
+          <path d="M5.47 11.65C4.72 11.41 4.06 10.97 3.54 10.45C2.64 9.45 2.04 8.25 2.04 6.85C2.04 5.45 3.14 4.35 4.54 4.35H5.19C4.99 4.81 4.89 5.32 4.89 5.85V8.85C4.89 9.85 5.1 10.79 5.47 11.65Z" />
+          <path d="M18.53 11.65C19.28 11.41 19.94 10.97 20.46 10.45C21.36 9.45 21.96 8.25 21.96 6.85C21.96 5.45 20.86 4.35 19.46 4.35H18.81C19.01 4.81 19.11 5.32 19.11 5.85V8.85C19.11 9.85 18.9 10.79 18.53 11.65Z" />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...common}>
+          <path d="M12.62 20.81C12.28 20.93 11.72 20.93 11.38 20.81C8.48 19.82 2 15.69 2 8.69C2 5.6 4.49 3.1 7.56 3.1C9.38 3.1 10.99 3.98 12 5.34C13.01 3.98 14.63 3.1 16.44 3.1C19.51 3.1 22 5.6 22 8.69C22 15.69 15.52 19.82 12.62 20.81Z" />
+        </svg>
+      );
+  }
+}
 
 export function ArticlesPortalClient({
   articles,
@@ -47,6 +127,26 @@ export function ArticlesPortalClient({
     const timer = setTimeout(() => setIsLoading(false), 200);
     return () => clearTimeout(timer);
   }, []);
+
+  // Dynamic category pills generated from real article tags so every pill always has content.
+  const categoryList = useMemo(() => {
+    const seen = new Set<string>();
+    const list: Array<{ id: string; label: string; icon: string }> = [
+      { id: "ALL", label: "Semua Warta", icon: "heart" },
+    ];
+
+    for (const art of articles) {
+      for (const tag of art.tags || []) {
+        const normalized = tag.trim();
+        const key = normalized.toLowerCase();
+        if (!normalized || seen.has(key)) continue;
+        seen.add(key);
+        list.push({ id: normalized, label: normalized, icon: iconForTag(normalized) });
+      }
+    }
+
+    return list;
+  }, [articles]);
 
   // Filtered articles based on search & category
   const filteredArticles = useMemo(() => {
@@ -155,12 +255,18 @@ export function ArticlesPortalClient({
             {/* Maga Search Bar */}
             <div className="hidden md:flex items-center flex-1 max-w-[420px]">
               <div className="w-full flex items-center rounded-full border border-[#E8EBF4] dark:border-white/10 bg-white/60 dark:bg-slate-900/60 px-4 py-2.5 gap-2.5 focus-within:ring-2 focus-within:ring-[hsl(257,68%,73%)] focus-within:border-transparent transition-all">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/assets/portal/icons/search-normal.svg"
-                  alt="search"
-                  className="w-5 h-5 opacity-50 shrink-0"
-                />
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-5 h-5 text-slate-400 shrink-0"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
                 <input
                   type="text"
                   value={searchQuery}
@@ -186,12 +292,18 @@ export function ArticlesPortalClient({
               href="/builder"
               className="rounded-full px-5 py-2.5 flex items-center gap-2 font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#3c3163] to-[hsl(257,68%,65%)] shadow-md shadow-purple-900/20 hover:shadow-lg hover:shadow-purple-900/30 hover:scale-105 transition-all"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/assets/portal/icons/favorite-chart.svg"
-                alt="write"
-                className="w-4 h-4 invert shrink-0"
-              />
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4 shrink-0"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
               <span>Tulis Karya</span>
             </Link>
 
@@ -217,8 +329,18 @@ export function ArticlesPortalClient({
         {/* Mobile Search Input */}
         <div className="md:hidden px-4 pb-3">
           <div className="w-full flex items-center rounded-full border border-[#E8EBF4] dark:border-white/10 bg-white dark:bg-slate-900 px-3.5 py-2 gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/portal/icons/search-normal.svg" alt="search" className="w-4 h-4 opacity-50" />
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-4 h-4 text-slate-400 shrink-0"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
             <input
               type="text"
               value={searchQuery}
@@ -234,7 +356,7 @@ export function ArticlesPortalClient({
           id="Category"
           className="max-w-[1130px] mx-auto px-4 sm:px-6 flex justify-start sm:justify-center items-center gap-3 py-2.5 overflow-x-auto no-scrollbar border-t border-black/[0.04] dark:border-white/[0.04]"
         >
-          {CATEGORIES.map((cat) => {
+          {categoryList.map((cat) => {
             const active = selectedCategory === cat.id;
             return (
               <button
@@ -247,11 +369,11 @@ export function ArticlesPortalClient({
                 }`}
               >
                 <div className="w-4 h-4 flex shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={cat.icon}
-                    alt={cat.label}
-                    className={`w-full h-full object-contain ${active ? "brightness-200" : "opacity-80"}`}
+                  <CategoryIcon
+                    name={cat.icon}
+                    className={`w-full h-full object-contain ${
+                      active ? "text-white" : "text-slate-500 dark:text-slate-300"
+                    }`}
                   />
                 </div>
                 <span>{cat.label}</span>
