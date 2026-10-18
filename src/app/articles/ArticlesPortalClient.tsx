@@ -128,24 +128,30 @@ export function ArticlesPortalClient({
     return () => clearTimeout(timer);
   }, []);
 
-  // Dynamic category pills generated from real article tags so every pill always has content.
+  // Top dynamic categories: "Semua Tulisan" + the 6 most frequent article tags so every pill has content.
   const categoryList = useMemo(() => {
-    const seen = new Set<string>();
-    const list: Array<{ id: string; label: string; icon: string }> = [
-      { id: "ALL", label: "Semua Warta", icon: "heart" },
-    ];
+    const counts = new Map<string, string[]>();
 
     for (const art of articles) {
       for (const tag of art.tags || []) {
         const normalized = tag.trim();
+        if (!normalized) continue;
         const key = normalized.toLowerCase();
-        if (!normalized || seen.has(key)) continue;
-        seen.add(key);
-        list.push({ id: normalized, label: normalized, icon: iconForTag(normalized) });
+        const arr = counts.get(key) ?? [];
+        arr.push(normalized);
+        counts.set(key, arr);
       }
     }
 
-    return list;
+    const topCategories = Array.from(counts.values())
+      .sort((a, b) => b.length - a.length)
+      .slice(0, 6)
+      .map((tags) => {
+        const label = tags[0];
+        return { id: label, label, icon: iconForTag(label) };
+      });
+
+    return [{ id: "ALL", label: "Semua Tulisan", icon: "heart" }, ...topCategories];
   }, [articles]);
 
   // Filtered articles based on search & category
