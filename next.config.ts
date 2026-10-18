@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     "@coinbase/cdp-sdk",
     "@x402/core",
     "@x402/evm",
+    "sharp",
   ],
   images: {
     remotePatterns: [

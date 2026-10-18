@@ -12,6 +12,7 @@ import { SocialShareBar } from "../components/SocialShareBar";
 import { CommentSection } from "../components/CommentSection";
 import { FollowButton } from "../components/FollowButton";
 import { ArticleCoverImage } from "../components/ArticleCoverImage";
+import { getAdaptiveCoverPosition } from "@/lib/media-focal";
 import { BackToProfileLink } from "./BackToProfileLink";
 import DoorwayCard from "@/components/sanctuary/DoorwayCard";
 
@@ -94,6 +95,10 @@ export default async function TenantArticlePage({
   const tags = dbArticle?.tags || legacyArticle?.tags || ["Refleksi", "Kesehatan Mental"];
   const mediaUrl = dbArticle?.media_url || legacyArticle?.mediaUrl;
   const mediaType = dbArticle?.media_type || legacyArticle?.mediaType || "IMAGE";
+  const coverPosition =
+    mediaUrl && mediaType === "IMAGE" && !mediaUrl.startsWith("blob:")
+      ? await getAdaptiveCoverPosition(mediaUrl)
+      : null;
   const isLiteraRegistered = Boolean(dbArticle?.register_litera ?? legacyArticle?.isLiteraRegistered);
   const publishedAt = dbArticle?.published_at || legacyArticle?.createdAt;
   const templateId = dbArticle?.template_id || legacyArticle?.templateId || "warm-sanctuary";
@@ -189,6 +194,26 @@ export default async function TenantArticlePage({
         <div className="flex items-center justify-between pb-4 border-b border-current/10">
           <BackToProfileLink username={normalizedUser} />
           <div className="flex items-center gap-2">
+            <a
+              href="https://letmehearyou.id"
+              aria-label="Ke beranda Let Me Hear You"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-current/15 px-2.5 py-1 text-[11px] font-semibold opacity-80 transition hover:opacity-100 hover:border-current/40"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3.5 w-3.5"
+                aria-hidden="true"
+              >
+                <path d="M3 10.5 12 3l9 7.5" />
+                <path d="M5.5 9.5V20h13V9.5" />
+              </svg>
+              <span>Beranda</span>
+            </a>
             <span className="hidden sm:inline-block text-[10px] uppercase font-bold opacity-60">
               Tema: {activeTemplate.name}
             </span>
@@ -261,7 +286,11 @@ export default async function TenantArticlePage({
               />
             ) : (
               <div className="relative w-full overflow-hidden flex items-center justify-center">
-                <ArticleCoverImage src={mediaUrl} alt={title} />
+                <ArticleCoverImage
+                  src={mediaUrl}
+                  alt={title}
+                  objectPosition={coverPosition ?? undefined}
+                />
               </div>
             )}
           </div>
