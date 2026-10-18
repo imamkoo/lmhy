@@ -367,7 +367,7 @@ export function LandingPage({
         </div>
 
         {/* 21st.dev Connected Tab Carousel Showcase */}
-        <div className="w-full flex justify-center items-center my-6">
+        <div className="w-full flex justify-center items-center mt-6 sm:mt-8 mb-8 sm:mb-12">
           <ArticleConnectedCarousel
             items={
               recentArticles && recentArticles.length > 0
@@ -444,7 +444,7 @@ export function LandingPage({
           />
         </div>
 
-        <div className="container mt-12 pb-6 text-center">
+        <div className="container mt-10 sm:mt-14 pb-12 sm:pb-16 text-center">
           <Link href="/articles" className="learn-more" style={{ display: "inline-block" }}>
             Lihat Semua Tulisan Penulis →
           </Link>

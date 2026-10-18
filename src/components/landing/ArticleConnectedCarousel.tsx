@@ -29,7 +29,8 @@ export interface CalendlyCarouselProps extends HTMLAttributes<HTMLDivElement> {
 
 type ScreenTier = "mobile" | "tablet" | "desktop";
 
-const VISIBLE_OFFSETS = [-4, -3, -2, -1, 0, 1, 2, 3, 4] as const;
+// Refined 3-card layout: left peek card (-1), active center card (0), right peek card (1)
+const VISIBLE_OFFSETS = [-2, -1, 0, 1, 2] as const;
 
 const TRANSITION_SPRING = {
   type: "spring",
@@ -175,10 +176,11 @@ export function ArticleConnectedCarousel({
     }
   };
 
+  // Expansive, luxurious dimensions preventing cramped text and tight components
   const activeDimensions = {
-    desktop: { width: 780, height: 440 },
-    tablet: { width: 680, height: 430 },
-    mobile: { width: Math.min(360, viewportWidth - 32), height: 480 },
+    desktop: { width: 940, height: 460 },
+    tablet: { width: 720, height: 440 },
+    mobile: { width: Math.min(360, viewportWidth - 32), height: 500 },
   }[tier];
 
   if (!items || items.length === 0) {
@@ -196,7 +198,7 @@ export function ArticleConnectedCarousel({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        "relative w-full max-w-[1260px] mx-auto flex flex-col items-center select-none outline-none py-4 px-2 sm:px-4 overflow-hidden",
+        "relative w-full max-w-[1360px] mx-auto flex flex-col items-center select-none outline-none py-6 px-3 sm:px-6 overflow-hidden",
         className
       )}
       {...props}
@@ -219,8 +221,8 @@ export function ArticleConnectedCarousel({
               const activeW = activeDimensions.width;
               const activeH = activeDimensions.height;
               const gap = 12;
-              const peekW = 44;
-              const peekH = 410;
+              const peekW = 40;
+              const peekH = 420;
 
               if (offset === 0) {
                 return {
@@ -240,7 +242,7 @@ export function ArticleConnectedCarousel({
                   y: -peekH / 2,
                   width: peekW,
                   height: peekH,
-                  opacity: 0.85,
+                  opacity: 0.8,
                   zIndex: 5,
                   pointerEvents: "auto" as const,
                 };
@@ -252,7 +254,7 @@ export function ArticleConnectedCarousel({
                   y: -peekH / 2,
                   width: peekW,
                   height: peekH,
-                  opacity: 0.85,
+                  opacity: 0.8,
                   zIndex: 5,
                   pointerEvents: "auto" as const,
                 };
@@ -270,11 +272,11 @@ export function ArticleConnectedCarousel({
             }
 
             if (tier === "tablet") {
-              const activeW = 680;
-              const activeH = 430;
-              const gap = 18;
-              const sideW = 90;
-              const sideH = 330;
+              const activeW = 720;
+              const activeH = 440;
+              const gap = 20;
+              const sideW = 85;
+              const sideH = 340;
 
               if (offset === 0) {
                 return {
@@ -313,7 +315,7 @@ export function ArticleConnectedCarousel({
               }
 
               return {
-                x: offset < 0 ? -activeW / 2 - 260 : activeW / 2 + 260,
+                x: offset < 0 ? -activeW / 2 - 240 : activeW / 2 + 240,
                 y: -sideH / 2,
                 width: 60,
                 height: 200,
@@ -323,15 +325,12 @@ export function ArticleConnectedCarousel({
               };
             }
 
-            // Desktop tier (>= 1120px)
-            const activeW = 780;
-            const activeH = 440;
-            const gap = 20;
-            const sideW = 105;
-            const sideH = 340;
-            const outerGap = 16;
-            const outerW = 72;
-            const outerH = 200;
+            // Desktop tier (>= 1120px) — 940px wide expansive card
+            const activeW = 940;
+            const activeH = 460;
+            const gap = 24;
+            const sideW = 95;
+            const sideH = 350;
 
             switch (offset) {
               case 0:
@@ -350,7 +349,7 @@ export function ArticleConnectedCarousel({
                   y: -sideH / 2,
                   width: sideW,
                   height: sideH,
-                  opacity: 0.95,
+                  opacity: 0.92,
                   zIndex: 5,
                   pointerEvents: "auto" as const,
                 };
@@ -360,36 +359,16 @@ export function ArticleConnectedCarousel({
                   y: -sideH / 2,
                   width: sideW,
                   height: sideH,
-                  opacity: 0.95,
+                  opacity: 0.92,
                   zIndex: 5,
-                  pointerEvents: "auto" as const,
-                };
-              case -2:
-                return {
-                  x: -activeW / 2 - gap - sideW - outerGap - outerW,
-                  y: -outerH / 2,
-                  width: outerW,
-                  height: outerH,
-                  opacity: 0.8,
-                  zIndex: 2,
-                  pointerEvents: "auto" as const,
-                };
-              case 2:
-                return {
-                  x: activeW / 2 + gap + sideW + outerGap,
-                  y: -outerH / 2,
-                  width: outerW,
-                  height: outerH,
-                  opacity: 0.8,
-                  zIndex: 2,
                   pointerEvents: "auto" as const,
                 };
               default:
                 return {
-                  x: offset < 0 ? -860 : 860,
-                  y: -outerH / 2,
-                  width: outerW,
-                  height: outerH,
+                  x: offset < 0 ? -750 : 750,
+                  y: -sideH / 2,
+                  width: sideW,
+                  height: sideH,
                   opacity: 0,
                   zIndex: 0,
                   pointerEvents: "none" as const,
@@ -413,9 +392,9 @@ export function ArticleConnectedCarousel({
                 transformStyle: "preserve-3d",
               }}
               className={cn(
-                "group/card rounded-[32px] bg-white dark:bg-[#1a1528] text-slate-800 dark:text-slate-100 border border-black/[0.05] dark:border-white/10 overflow-visible transition-all duration-300",
+                "group/card rounded-[32px] bg-white dark:bg-[#1a1528] text-slate-800 dark:text-slate-100 border border-black/[0.06] dark:border-white/10 overflow-visible transition-all duration-300",
                 isActive
-                  ? "shadow-[0_24px_50px_-12px_rgba(60,49,99,0.16),0_10px_24px_-6px_rgba(60,49,99,0.08)] ring-1 ring-black/5 dark:ring-white/10"
+                  ? "shadow-[0_24px_55px_-12px_rgba(60,49,99,0.18),0_10px_24px_-6px_rgba(60,49,99,0.08)] ring-1 ring-black/5 dark:ring-white/10"
                   : "cursor-pointer shadow-[0_10px_25px_-8px_rgba(60,49,99,0.10)] hover:border-purple-300"
               )}
             >
@@ -471,49 +450,6 @@ export function ArticleConnectedCarousel({
                 </div>
               )}
 
-              {/* Outer tabs for desktop */}
-              {offset === -2 && tier === "desktop" && (
-                <div
-                  aria-hidden="true"
-                  className="absolute top-0 bottom-0 flex items-center text-white dark:text-[#1a1528] pointer-events-none z-[100]"
-                  style={{
-                    width: 18,
-                    height: 28,
-                    margin: "auto 0",
-                    left: "calc(100% - 1px)",
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 16 28"
-                    preserveAspectRatio="none"
-                    className="size-full fill-current overflow-visible block"
-                  >
-                    <path d="M0 0C0 0 0.993759 10.1818 8 10.1818C15.0062 10.1818 16 0 16 0V28C16 28 15.0062 17.8182 8 17.8182C0.993759 17.8182 0 28 0 28V0Z" />
-                  </svg>
-                </div>
-              )}
-
-              {offset === 2 && tier === "desktop" && (
-                <div
-                  aria-hidden="true"
-                  className="absolute top-0 bottom-0 flex items-center text-white dark:text-[#1a1528] pointer-events-none z-[100]"
-                  style={{
-                    width: 18,
-                    height: 28,
-                    margin: "auto 0",
-                    right: "calc(100% - 1px)",
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 16 28"
-                    preserveAspectRatio="none"
-                    className="size-full fill-current overflow-visible block"
-                  >
-                    <path d="M0 0C0 0 0.993759 10.1818 8 10.1818C15.0062 10.1818 16 0 16 0V28C16 28 15.0062 17.8182 8 17.8182C0.993759 17.8182 0 28 0 28V0Z" />
-                  </svg>
-                </div>
-              )}
-
               <div
                 className="size-full overflow-hidden relative rounded-[32px]"
                 style={{ borderRadius: "inherit" }}
@@ -542,7 +478,7 @@ export function ArticleConnectedCarousel({
                   </div>
                 </motion.div>
 
-                {/* ACTIVE CARD DETAIL CONTENT - Minimalist Figma Auto-Layout */}
+                {/* ACTIVE CARD DETAIL CONTENT - Spacious, Airy Figma Auto-Layout */}
                 <div
                   className="absolute inset-0"
                   style={{
@@ -562,8 +498,8 @@ export function ArticleConnectedCarousel({
                       !isActive && "pointer-events-none"
                     )}
                   >
-                    {/* Right Background Cover Image with Ethereal Gradient Blend */}
-                    <div className="absolute top-0 right-0 bottom-0 w-full md:w-[56%] h-[180px] md:h-full z-0 overflow-hidden pointer-events-none">
+                    {/* Right Background Cover Image with Ethereal Gradient Fade */}
+                    <div className="absolute top-0 right-0 bottom-0 w-full md:w-[48%] h-[190px] md:h-full z-0 overflow-hidden pointer-events-none">
                       <Image
                         alt={item.author}
                         src={item.selectedImage}
@@ -579,14 +515,14 @@ export function ArticleConnectedCarousel({
                         className="absolute inset-0 hidden md:block"
                         style={{
                           background:
-                            "linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.98) 25%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0.05) 85%, transparent 100%)",
+                            "linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.98) 22%, rgba(255,255,255,0.7) 48%, rgba(255,255,255,0.05) 85%, transparent 100%)",
                         }}
                       />
                       <div
                         className="absolute inset-0 hidden dark:md:block"
                         style={{
                           background:
-                            "linear-gradient(90deg, #1a1528 0%, rgba(26,21,40,0.98) 25%, rgba(26,21,40,0.65) 50%, rgba(26,21,40,0.05) 85%, transparent 100%)",
+                            "linear-gradient(90deg, #1a1528 0%, rgba(26,21,40,0.98) 22%, rgba(26,21,40,0.7) 48%, rgba(26,21,40,0.05) 85%, transparent 100%)",
                         }}
                       />
 
@@ -594,11 +530,11 @@ export function ArticleConnectedCarousel({
                       <div className="absolute inset-0 md:hidden bg-gradient-to-t from-white dark:from-[#1a1528] via-white/60 dark:via-[#1a1528]/60 to-transparent" />
                     </div>
 
-                    {/* Left Auto-Layout Content Column (Centered & Balanced with Zero Clipping) */}
-                    <div className="relative z-10 w-full md:w-[56%] lg:w-[53%] h-full p-6 sm:p-7 md:p-8 flex flex-col justify-center gap-4 sm:gap-5">
-                      {/* 1. Auto-Layout Row: Author Profile Meta */}
-                      <div className="flex items-center gap-3">
-                        <div className="relative size-10 rounded-full overflow-hidden shadow-sm ring-1 ring-black/10 dark:ring-white/20 shrink-0 bg-slate-200">
+                    {/* Left Auto-Layout Content Column (Expansive & Generously Spaced) */}
+                    <div className="relative z-10 w-full md:w-[62%] lg:w-[60%] h-full p-8 sm:p-10 md:p-12 flex flex-col justify-center gap-6 sm:gap-7">
+                      {/* 1. Meta row: Author profile, category pill, reading time */}
+                      <div className="flex items-center gap-3.5 sm:gap-4">
+                        <div className="relative size-12 rounded-full overflow-hidden shadow-sm ring-2 ring-white/90 dark:ring-white/10 shrink-0 bg-slate-200">
                           <Image
                             alt={item.author}
                             src={item.defaultImage}
@@ -611,40 +547,40 @@ export function ArticleConnectedCarousel({
                         </div>
 
                         <div className="flex flex-col min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">
                               {item.author}
                             </span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-[#3c3163] dark:bg-purple-900/40 dark:text-purple-300 shrink-0">
+                            <span className="px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-100 text-[#3c3163] dark:bg-purple-900/40 dark:text-purple-300 shrink-0">
                               {item.tag || "Refleksi"}
                             </span>
                           </div>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                            3 mnt baca • Terverifikasi
+                          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            3 mnt baca • Terverifikasi Komunitas
                           </span>
                         </div>
                       </div>
 
-                      {/* 2. Auto-Layout Row: Title */}
+                      {/* 2. Title with generous line height and clear letter spacing */}
                       <Link href={item.href} className="group/title block">
                         <h3
                           title={item.stat}
-                          className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover/title:text-purple-700 dark:group-hover/title:text-purple-400 transition-colors"
+                          className="text-xl sm:text-2xl lg:text-[27px] font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.38] line-clamp-2 group-hover/title:text-purple-700 dark:group-hover/title:text-purple-400 transition-colors"
                         >
                           {item.stat}
                         </h3>
                       </Link>
 
-                      {/* 3. Auto-Layout Row: Reflective Excerpt */}
-                      <p className="font-serif text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2 sm:line-clamp-3">
+                      {/* 3. Reflective Quote with relaxed, breathable line-height */}
+                      <p className="font-serif text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2 sm:line-clamp-3">
                         “{item.quote}”
                       </p>
 
-                      {/* 4. Auto-Layout Row: Minimalist Pill CTA Button */}
-                      <div className="pt-1">
+                      {/* 4. Minimalist Pill CTA Button with comfortable padding */}
+                      <div className="pt-2">
                         <Link
                           href={item.href}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#3c3163] hover:bg-[#4d3f7d] dark:bg-purple-600 dark:hover:bg-purple-500 text-white font-medium text-xs sm:text-sm shadow-sm transition-all hover:gap-3 w-fit"
+                          className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full bg-[#3c3163] hover:bg-[#2c234a] dark:bg-purple-600 dark:hover:bg-purple-500 text-white font-semibold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all hover:gap-3.5 w-fit"
                         >
                           <span>Baca Selengkapnya</span>
                           <span aria-hidden="true">→</span>
@@ -660,12 +596,12 @@ export function ArticleConnectedCarousel({
       </div>
 
       {/* Navigation Controls: Minimalist Arrows & Progress Indicators */}
-      <div className="flex items-center justify-center gap-3 mt-6 sm:mt-7">
+      <div className="flex items-center justify-center gap-3 mt-10 sm:mt-12">
         <button
           type="button"
           onClick={handlePrev}
           aria-label="Artikel sebelumnya"
-          className="size-8 sm:size-9 rounded-full flex items-center justify-center text-[#3c3163] dark:text-purple-200 bg-white dark:bg-[#1a1528] hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm border border-black/[0.06] dark:border-white/10 focus-visible:ring-2 focus-visible:ring-purple-400 outline-none"
+          className="size-9 rounded-full flex items-center justify-center text-[#3c3163] dark:text-purple-200 bg-white dark:bg-[#1a1528] hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm border border-black/[0.06] dark:border-white/10 focus-visible:ring-2 focus-visible:ring-purple-400 outline-none"
         >
           <span className="text-sm font-bold">←</span>
         </button>
@@ -716,7 +652,7 @@ export function ArticleConnectedCarousel({
           type="button"
           onClick={handleNext}
           aria-label="Artikel selanjutnya"
-          className="size-8 sm:size-9 rounded-full flex items-center justify-center text-[#3c3163] dark:text-purple-200 bg-white dark:bg-[#1a1528] hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm border border-black/[0.06] dark:border-white/10 focus-visible:ring-2 focus-visible:ring-purple-400 outline-none"
+          className="size-9 rounded-full flex items-center justify-center text-[#3c3163] dark:text-purple-200 bg-white dark:bg-[#1a1528] hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm border border-black/[0.06] dark:border-white/10 focus-visible:ring-2 focus-visible:ring-purple-400 outline-none"
         >
           <span className="text-sm font-bold">→</span>
         </button>
