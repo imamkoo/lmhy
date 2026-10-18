@@ -2,6 +2,8 @@
 @import url('https://fonts.googleapis.com/css?family=Heebo:400,700|Open+Sans:400,700');
 @import url("https://fonts.googleapis.com/css?family=Rubik:700&display=swap");
 
+@layer theme, base, components, utilities;
+
 /* 01. = fonts */
 
 
@@ -39,11 +41,13 @@ html {
   scroll-behavior: smooth;
 }
 
-.landing-page-wrapper,
-.landing-page-wrapper * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  .landing-page-wrapper,
+  .landing-page-wrapper * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 .landing-page-wrapper ::before,
@@ -62,25 +66,26 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
-.landing-page-wrapper h1,
-.landing-page-wrapper h2,
-.landing-page-wrapper h3,
-.landing-page-wrapper h4,
-.landing-page-wrapper h5,
-.landing-page-wrapper h6 {
-  line-height: 1.2;
-  color: var(--black-90);
-}
+@layer components {
+  .landing-page-wrapper h1,
+  .landing-page-wrapper h2,
+  .landing-page-wrapper h3,
+  .landing-page-wrapper h4,
+  .landing-page-wrapper h5,
+  .landing-page-wrapper h6 {
+    line-height: 1.2;
+    color: var(--black-90);
+  }
 
-.landing-page-wrapper h3 {
-  font-size: 20px;
-  font-weight: 500;
+  .landing-page-wrapper h3 {
+    font-size: 20px;
+    font-weight: 500;
+  }
 
-}
-
-.landing-page-wrapper a {
-  text-decoration: none;
-  color: var(--main-color);
+  .landing-page-wrapper a {
+    text-decoration: none;
+    color: var(--main-color);
+  }
 }
 
 .landing-page-wrapper img {

@@ -176,9 +176,9 @@ export function ArticleConnectedCarousel({
     }
   };
 
-  // Expansive, luxurious dimensions preventing cramped text and tight components
+  // Spacious active card; narrow enough for 5 visible cards on desktop
   const activeDimensions = {
-    desktop: { width: 940, height: 460 },
+    desktop: { width: 820, height: 460 },
     tablet: { width: 720, height: 440 },
     mobile: { width: Math.min(360, viewportWidth - 32), height: 500 },
   }[tier];
@@ -325,12 +325,15 @@ export function ArticleConnectedCarousel({
               };
             }
 
-            // Desktop tier (>= 1120px) — 940px wide expansive card
-            const activeW = 940;
+            // Desktop tier (>= 1120px) — 820px active card, 5 cards visible
+            const activeW = 820;
             const activeH = 460;
-            const gap = 24;
-            const sideW = 95;
+            const gap = 22;
+            const sideW = 92;
             const sideH = 350;
+            const outerGap = 14;
+            const outerW = 68;
+            const outerH = 210;
 
             switch (offset) {
               case 0:
@@ -363,12 +366,32 @@ export function ArticleConnectedCarousel({
                   zIndex: 5,
                   pointerEvents: "auto" as const,
                 };
+              case -2:
+                return {
+                  x: -activeW / 2 - gap - sideW - outerGap - outerW,
+                  y: -outerH / 2,
+                  width: outerW,
+                  height: outerH,
+                  opacity: 0.75,
+                  zIndex: 2,
+                  pointerEvents: "auto" as const,
+                };
+              case 2:
+                return {
+                  x: activeW / 2 + gap + sideW + outerGap,
+                  y: -outerH / 2,
+                  width: outerW,
+                  height: outerH,
+                  opacity: 0.75,
+                  zIndex: 2,
+                  pointerEvents: "auto" as const,
+                };
               default:
                 return {
-                  x: offset < 0 ? -750 : 750,
-                  y: -sideH / 2,
-                  width: sideW,
-                  height: sideH,
+                  x: offset < 0 ? -760 : 760,
+                  y: -outerH / 2,
+                  width: outerW,
+                  height: outerH,
                   opacity: 0,
                   zIndex: 0,
                   pointerEvents: "none" as const,
@@ -446,6 +469,49 @@ export function ArticleConnectedCarousel({
                     className="size-full fill-current overflow-visible block"
                   >
                     <path d="M0 0C0 0 1.2422 13.5759 10 13.5759C18.7578 13.5759 20 0 20 0V37.3338C20 37.3338 18.7578 23.7578 10 23.7578C1.2422 23.7578 0 37.3338 0 37.3338V0Z" />
+                  </svg>
+                </div>
+              )}
+
+              {/* Outer tab connectors for desktop (attached to cards -2 and 2) */}
+              {offset === -2 && tier === "desktop" && (
+                <div
+                  aria-hidden="true"
+                  className="absolute top-0 bottom-0 flex items-center text-white dark:text-[#1a1528] pointer-events-none z-[100]"
+                  style={{
+                    width: 16,
+                    height: 28,
+                    margin: "auto 0",
+                    left: "calc(100% - 1px)",
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 16 28"
+                    preserveAspectRatio="none"
+                    className="size-full fill-current overflow-visible block"
+                  >
+                    <path d="M0 0C0 0 0.993759 10.1818 8 10.1818C15.0062 10.1818 16 0 16 0V28C16 28 15.0062 17.8182 8 17.8182C0.993759 17.8182 0 28 0 28V0Z" />
+                  </svg>
+                </div>
+              )}
+
+              {offset === 2 && tier === "desktop" && (
+                <div
+                  aria-hidden="true"
+                  className="absolute top-0 bottom-0 flex items-center text-white dark:text-[#1a1528] pointer-events-none z-[100]"
+                  style={{
+                    width: 16,
+                    height: 28,
+                    margin: "auto 0",
+                    right: "calc(100% - 1px)",
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 16 28"
+                    preserveAspectRatio="none"
+                    className="size-full fill-current overflow-visible block"
+                  >
+                    <path d="M0 0C0 0 0.993759 10.1818 8 10.1818C15.0062 10.1818 16 0 16 0V28C16 28 15.0062 17.8182 8 17.8182C0.993759 17.8182 0 28 0 28V0Z" />
                   </svg>
                 </div>
               )}
