@@ -1,5 +1,6 @@
 import { LandingPage } from "@/components/landing/LandingPage";
 import { createClient } from "@/lib/supabase/server";
+import { getAllPublicArticles } from "@/lib/article-storage";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -17,5 +18,14 @@ export default async function HomePage() {
     initialProfile = profile;
   }
 
-  return <LandingPage initialUser={user} initialProfile={initialProfile} />;
+  // Fetch recent public articles for landing page showcase
+  const recentArticles = await getAllPublicArticles(3);
+
+  return (
+    <LandingPage
+      initialUser={user}
+      initialProfile={initialProfile}
+      recentArticles={recentArticles}
+    />
+  );
 }

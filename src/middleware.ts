@@ -21,6 +21,7 @@ const ROOT_DOMAINS = [
  */
 const ROOT_ROUTES = [
   "/builder",
+  "/articles",
   "/blog",
   "/creator",
   "/admin",

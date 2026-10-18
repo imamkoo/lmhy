@@ -14,9 +14,19 @@ const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
 export function LandingPage({
   initialUser,
   initialProfile,
+  recentArticles,
 }: {
   initialUser?: { id: string; email?: string } | null;
   initialProfile?: { username?: string; display_name?: string } | null;
+  recentArticles?: Array<{
+    id?: string;
+    title: string;
+    slug: string;
+    username: string;
+    excerpt?: string | null;
+    media_url?: string | null;
+    tags?: string[] | null;
+  }>;
 } = {}) {
   const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(
     initialUser
@@ -361,43 +371,79 @@ export function LandingPage({
           variants={staggerParent}
           viewport={viewportOnce}
         >
-          {[
-            {
-              title: "Mental illness",
-              slug: "memahami-kesehatan-mental",
-              tag: "Mental Illness",
-              bg: "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Mental illness atau yang disebut juga gangguan kesehatan mental adalah istilah yang mengacu pada berbagai kondisi yang memengaruhi pemikiran ...",
-            },
-            {
-              title: "Mental Health",
-              slug: "mengenali-tanda-burnout",
-              tag: "Mental Health",
-              bg: "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Mental Health yang baik adalah kondisi ketika batin kita berada dalam keadaan tentram dan tenang...",
-            },
-            {
-              title: "Mental Disorder",
-              slug: "memahami-kesehatan-mental",
-              tag: "Mental Disorder",
-              bg: "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Salah satu masalah kesehatan yang penting diperhatikan oleh masyarakat adalah mental disorder...",
-            },
-          ].map((card) => (
+          {(recentArticles && recentArticles.length > 0
+            ? recentArticles.slice(0, 3).map((art) => ({
+                title: art.title,
+                href: `/tenant/${art.username}/${art.slug}`,
+                tag: (art.tags && art.tags[0]) || "Warta",
+                bg: art.media_url || "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                excerpt: art.excerpt || "Baca selengkapnya tulisan inspiratif dan reflektif di portal warta Let Me Hear You...",
+                author: `@${art.username}`,
+              }))
+            : [
+                {
+                  title: "Mental illness",
+                  href: "/articles",
+                  tag: "Mental Illness",
+                  bg: "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                  excerpt:
+                    "Mental illness atau yang disebut juga gangguan kesehatan mental adalah istilah yang mengacu pada berbagai kondisi yang memengaruhi pemikiran ...",
+                  author: "@editorial",
+                },
+                {
+                  title: "Mental Health",
+                  href: "/articles",
+                  tag: "Mental Health",
+                  bg: "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                  excerpt:
+                    "Mental Health yang baik adalah kondisi ketika batin kita berada dalam keadaan tentram dan tenang...",
+                  author: "@editorial",
+                },
+                {
+                  title: "Mental Disorder",
+                  href: "/articles",
+                  tag: "Mental Disorder",
+                  bg: "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                  excerpt:
+                    "Salah satu masalah kesehatan yang penting diperhatikan oleh masyarakat adalah mental disorder...",
+                  author: "@editorial",
+                },
+              ]
+          ).map((card) => (
             <motion.div key={card.title} className="card-grid-space" variants={staggerChild}>
               <a
-                className="card"
-                href={`/blog/${card.slug}`}
-                style={{ "--bg-img": `url(${card.bg})` } as React.CSSProperties}
+                className="card group relative overflow-hidden"
+                href={card.href}
+                style={
+                  {
+                    "--bg-img": `url(${card.bg})`,
+                  } as React.CSSProperties
+                }
               >
-                <div>
-                  <h1>{card.title}</h1>
-                  <p>{card.excerpt}</p>
-                  <div className="tags">
-                    <div className="tag">{card.tag}</div>
+                {/* High contrast scrim gradient overlay to ensure text legibility */}
+                <div
+                  className="absolute inset-0 z-0 pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgba(18, 15, 29, 0.95) 0%, rgba(18, 15, 29, 0.70) 50%, rgba(18, 15, 29, 0.35) 100%)",
+                  }}
+                />
+                <div className="relative z-10 w-full flex flex-col justify-end">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] uppercase tracking-wider text-purple-200 font-bold opacity-90">
+                      {card.author}
+                    </span>
+                  </div>
+                  <h1 className="!text-white !drop-shadow-md !font-bold line-clamp-2">
+                    {card.title}
+                  </h1>
+                  <p className="!text-slate-200 !line-clamp-2 !drop-shadow">
+                    {card.excerpt}
+                  </p>
+                  <div className="tags mt-2">
+                    <div className="tag !bg-white/20 !text-white !backdrop-blur-sm">
+                      {card.tag}
+                    </div>
                   </div>
                 </div>
               </a>
@@ -405,8 +451,8 @@ export function LandingPage({
           ))}
         </motion.section>
         <div className="container mt-8 text-center">
-          <Link href="/blog" className="learn-more" style={{ display: "inline-block" }}>
-            Lihat Semua Artikel →
+          <Link href="/articles" className="learn-more" style={{ display: "inline-block" }}>
+            Lihat Semua Tulisan Penulis →
           </Link>
         </div>
       </motion.section>

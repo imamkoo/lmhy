@@ -1,8 +1,21 @@
 import type { MetadataRoute } from "next";
-import { getAllPosts } from "@/lib/blog";
 import { siteUrl } from "@/lib/site";
+import { getAllPublicArticles } from "@/lib/article-storage";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  let articlesSitemap: MetadataRoute.Sitemap = [];
+  try {
+    const articles = await getAllPublicArticles(50);
+    articlesSitemap = articles.map((art) => ({
+      url: `${siteUrl}/tenant/${art.username}/${art.slug}`,
+      lastModified: art.published_at ? new Date(art.published_at) : new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    }));
+  } catch (err) {
+    console.error("[sitemap] Failed to load articles for sitemap:", err);
+  }
+
   return [
     {
       url: siteUrl,
@@ -11,10 +24,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: `${siteUrl}/blog`,
+      url: `${siteUrl}/articles`,
       lastModified: new Date(),
       changeFrequency: "daily",
-      priority: 0.8,
+      priority: 0.9,
     },
     {
       url: `${siteUrl}/privacy`,
@@ -22,11 +35,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.3,
     },
-    ...getAllPosts().map((post) => ({
-      url: `${siteUrl}/blog/${post.slug}`,
-      lastModified: new Date(post.date),
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    })),
+    ...articlesSitemap,
   ];
 }

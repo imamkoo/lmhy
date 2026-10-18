@@ -98,6 +98,40 @@ export async function getArticlesByUsername(username: string): Promise<Article[]
 }
 
 /**
+ * Fetch recent public articles across all creators for the main newsroom/articles portal.
+ * Combines DB records and fallback seeded articles, sorted newest first.
+ */
+export async function getAllPublicArticles(limit = 30): Promise<Article[]> {
+  let dbArticles: Article[] = [];
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('published_at', { ascending: false })
+      .limit(limit);
+
+    if (!error && data) {
+      dbArticles = data;
+    }
+  } catch (err: unknown) {
+    console.error('[article-storage] Error querying public articles:', err);
+  }
+
+  const existingSlugs = new Set(dbArticles.map((a) => `${a.username}/${a.slug}`));
+  const fallbackArticles = DEFAULT_TENANT_ARTICLES
+    .filter((a) => !existingSlugs.has(`${a.username.toLowerCase()}/${a.slug.toLowerCase()}`))
+    .map((a) => convertTenantArticleToArticle(a));
+
+  const combined = [...dbArticles, ...fallbackArticles].sort(
+    (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+  );
+
+  return combined.slice(0, limit);
+}
+
+/**
  * Fetch a single article by author username and slug.
  */
 export async function getArticleBySlug(
