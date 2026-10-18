@@ -367,7 +367,7 @@ export function LandingPage({
         </div>
 
         {/* 21st.dev Connected Tab Carousel Showcase */}
-        <div className="w-full my-6">
+        <div className="w-full flex justify-center items-center my-6">
           <ArticleConnectedCarousel
             items={
               recentArticles && recentArticles.length > 0
