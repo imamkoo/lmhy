@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBuilderUrl } from "@/lib/builder";
 import { LiteraWidget } from "@/components/litera/LiteraWidget";
-import { getTenantArticleBySlug, getTenantArticles } from "@/lib/tenant-storage";
-import { getArticleBySlug } from "@/lib/article-storage";
+import { getTenantArticleBySlug } from "@/lib/tenant-storage";
+import { getArticleBySlug, getArticlesByUsername } from "@/lib/article-storage";
 import { getProfileByUsername } from "@/lib/profile-storage";
 import { getCommentsByArticle, getFollowStatus } from "@/lib/comment-storage";
 import { getDesignTemplate } from "@/lib/design-templates";
@@ -98,10 +98,11 @@ export default async function TenantArticlePage({
   const publishedAt = dbArticle?.published_at || legacyArticle?.createdAt;
   const templateId = dbArticle?.template_id || legacyArticle?.templateId || "warm-sanctuary";
   const activeTemplate = getDesignTemplate(templateId);
+  const isDarkTemplate = activeTemplate.id === "midnight-serenity";
 
-  const otherArticles = getTenantArticles(normalizedUser).filter(
-    (a) => a.slug !== slug
-  );
+  // Fetch author articles from real database (Supabase) with legacy fallback
+  const authorAllArticles = await getArticlesByUsername(normalizedUser);
+  const otherArticles = authorAllArticles.filter((a) => a.slug !== slug);
 
   // 2. Fetch author profile
   const authorProfile = await getProfileByUsername(normalizedUser);
@@ -178,7 +179,11 @@ export default async function TenantArticlePage({
   const articleCanonicalUrl = `https://${normalizedUser}.letmehearyou.id/${slug}`;
 
   return (
-    <main className={`min-h-screen px-4 sm:px-6 py-8 sm:py-12 transition-colors ${activeTemplate.previewClass.container}`}>
+    <main
+      className={`min-h-screen px-4 sm:px-6 py-8 sm:py-12 transition-colors ${
+        isDarkTemplate ? "dark " : ""
+      }${activeTemplate.previewClass.container}`}
+    >
       <article className="mx-auto max-w-3xl">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between pb-4 border-b border-current/10">
@@ -252,10 +257,10 @@ export default async function TenantArticlePage({
               <video
                 src={mediaUrl}
                 controls
-                className="w-full max-h-[480px] object-cover bg-black"
+                className="w-full max-h-[540px] sm:max-h-[620px] object-cover bg-black"
               />
             ) : (
-              <div className="relative w-full h-64 sm:h-80 md:h-96 flex items-center justify-center">
+              <div className="relative w-full overflow-hidden flex items-center justify-center">
                 <ArticleCoverImage src={mediaUrl} alt={title} />
               </div>
             )}
@@ -315,29 +320,64 @@ export default async function TenantArticlePage({
         {/* Rekomendasi Tulisan Lain dari Penulis Ini */}
         {otherArticles.length > 0 && (
           <section className="mt-16 border-t border-current/15 pt-8">
-            <h3 className="mb-4 text-lg font-bold text-inherit">
-              Tulisan Lain oleh @{normalizedUser}
-            </h3>
-            <div className="space-y-3">
-              {otherArticles.slice(0, 3).map((other) => (
-                <div
-                  key={other.id}
-                  className="flex items-center justify-between rounded-xl border border-current/15 bg-white/40 backdrop-blur-sm p-4 transition hover:border-current/40"
-                >
-                  <Link
-                    href={`/${other.slug}`}
-                    className="font-semibold hover:underline"
-                  >
-                    {other.title}
-                  </Link>
-                  <span className="text-xs opacity-60">
-                    {new Date(other.createdAt).toLocaleDateString("id-ID", {
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg sm:text-xl font-bold text-inherit">
+                Tulisan Lain oleh @{normalizedUser}
+              </h3>
+              <Link
+                href={`/tenant/${normalizedUser}`}
+                className="text-xs font-semibold opacity-70 hover:opacity-100 hover:underline transition"
+              >
+                Lihat Semua ({otherArticles.length}) →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {otherArticles.slice(0, 4).map((other) => {
+                const dateStr = other.published_at;
+                const formattedDate = dateStr
+                  ? new Date(dateStr).toLocaleDateString("id-ID", {
                       day: "numeric",
                       month: "short",
-                    })}
-                  </span>
-                </div>
-              ))}
+                      year: "numeric",
+                    })
+                  : "Baru saja";
+                const primaryTag = (other.tags && other.tags[0]) || "Refleksi";
+
+                return (
+                  <Link
+                    key={other.id}
+                    href={`/tenant/${normalizedUser}/${other.slug}`}
+                    className="group flex flex-col justify-between rounded-2xl border border-current/15 bg-white/40 dark:bg-white/5 backdrop-blur-sm p-4 transition-all hover:border-current/40 hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div>
+                      {other.media_url && !other.media_url.startsWith("blob:") && (
+                        <div className="relative mb-3 h-32 w-full overflow-hidden rounded-xl bg-black/5 dark:bg-white/5">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={other.media_url}
+                            alt={other.title}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      )}
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-inherit opacity-60 mb-1">
+                        #{primaryTag}
+                      </span>
+                      <h4 className="font-bold text-sm sm:text-base leading-snug line-clamp-2 text-inherit group-hover:underline">
+                        {other.title}
+                      </h4>
+                      {other.excerpt && (
+                        <p className="mt-1 text-xs opacity-70 line-clamp-2 leading-relaxed">
+                          {other.excerpt}
+                        </p>
+                      )}
+                    </div>
+                    <span className="mt-3 text-[11px] opacity-60 font-medium">
+                      {formattedDate}
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}
