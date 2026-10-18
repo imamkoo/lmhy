@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
 import { WebBuilderClient } from "./WebBuilderClient";
 
 export const metadata: Metadata = {
@@ -13,9 +14,36 @@ export default async function WebBuilderPage({
 }) {
   const { username } = await searchParams;
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let initialProfile = null;
+  let initialCreatorRole: string | null = null;
+  let initialVerificationStatus: string | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username, display_name, creator_role, verification_status")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profile) {
+      initialProfile = { username: profile.username, display_name: profile.display_name };
+      initialCreatorRole = profile.creator_role;
+      initialVerificationStatus = profile.verification_status;
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#F5E7C6] text-[#3F3766] selection:bg-[#F7ABC5] selection:text-[#3F3766]">
-      <WebBuilderClient initialUsername={username} />
+      <WebBuilderClient
+        initialUsername={username || initialProfile?.username}
+        initialUser={user}
+        initialProfile={initialProfile}
+        initialCreatorRole={initialCreatorRole}
+        initialVerificationStatus={initialVerificationStatus}
+      />
     </main>
   );
 }

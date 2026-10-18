@@ -142,13 +142,15 @@ body {
   font-family: var(--font-poppins), "Poppins", system-ui, sans-serif;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: var(--black-90);
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--black-90);
+  }
 }
 
 /* App UI helpers */

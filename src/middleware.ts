@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
+import { getSessionCookieOptions, SESSION_MAX_AGE } from "@/lib/supabase/cookie";
 
 const ROOT_DOMAINS = [
   "letmehearyou.id",
@@ -20,6 +21,7 @@ const ROOT_DOMAINS = [
  */
 const ROOT_ROUTES = [
   "/builder",
+  "/articles",
   "/blog",
   "/creator",
   "/admin",
@@ -105,11 +107,13 @@ export async function middleware(req: NextRequest) {
   });
 
   if (supabaseUrl && supabaseAnonKey) {
+    const cookieOptions = getSessionCookieOptions(hostname);
     try {
       const supabase = createServerClient<Database>(
         supabaseUrl,
         supabaseAnonKey,
         {
+          cookieOptions,
           cookies: {
             getAll() {
               return req.cookies.getAll();
@@ -124,7 +128,10 @@ export async function middleware(req: NextRequest) {
                 },
               });
               cookiesToSet.forEach(({ name, value, options }) =>
-                sessionResponse.cookies.set(name, value, options)
+                sessionResponse.cookies.set(name, value, {
+                  ...options,
+                  ...(cookieOptions.domain ? { domain: cookieOptions.domain } : {}),
+                })
               );
             },
           },
@@ -136,6 +143,48 @@ export async function middleware(req: NextRequest) {
       } = await supabase.auth.getUser();
 
       if (user) {
+        // Enforce 24-hour session expiration hardening
+        const lastSignInAt = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : 0;
+        const now = Date.now();
+        const isSessionExpired = lastSignInAt > 0 && (now - lastSignInAt) > (SESSION_MAX_AGE * 1000);
+
+        if (isSessionExpired) {
+          await supabase.auth.signOut();
+          const expiredRedirect = NextResponse.redirect(new URL("/login?expired=1", req.url));
+          req.cookies.getAll().forEach((c) => {
+            expiredRedirect.cookies.delete(c.name);
+          });
+          return expiredRedirect;
+        }
+
+        // User sudah login tidak boleh melihat halaman login: arahkan ke situs
+        // artikel miliknya (subdomain username); bila belum punya username, ke onboarding.
+        if (url.pathname === "/login") {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          const username = profile?.username;
+          let destination = "/onboarding";
+          if (username && SAFE_USERNAME.test(username)) {
+            const port = hostname.match(/:\d+$/)?.[0] || "";
+            const isRootHost =
+              hostname === "letmehearyou.id" ||
+              hostname.includes(".letmehearyou.id");
+            destination = isRootHost
+              ? `https://${username}.letmehearyou.id/`
+              : `http://${username}.localhost${port}/`;
+          }
+
+          const loginRedirect = NextResponse.redirect(new URL(destination, req.url));
+          sessionResponse.cookies.getAll().forEach((cookie) => {
+            loginRedirect.cookies.set(cookie.name, cookie.value, cookie);
+          });
+          return loginRedirect;
+        }
+
         // Hanya gate rute studio/kreator (/builder) yang mewajibkan profil kreator & username.
         // Halaman umum seperti landing page (/), blog (/blog), dll TIDAK boleh membajak pengunjung ke /onboarding.
         const isBuilderPath = url.pathname.startsWith("/builder");
@@ -164,10 +213,22 @@ export async function middleware(req: NextRequest) {
 
   // (3) Subdomain routing
   if (subdomain && subdomain !== "www") {
-    // Legacy /write di subdomain diarahkan ke Web Builder dengan username
+    // Rute builder di subdomain otomatis diarahkan ke root domain kanonik
+    if (url.pathname === "/builder" || url.pathname.startsWith("/builder/")) {
+      const canonicalBuilderUrl = new URL(
+        `https://www.letmehearyou.id${url.pathname}${url.search}`,
+        req.url
+      );
+      if (!canonicalBuilderUrl.searchParams.has("username")) {
+        canonicalBuilderUrl.searchParams.set("username", subdomain);
+      }
+      return NextResponse.redirect(canonicalBuilderUrl, 307);
+    }
+
+    // Legacy /write di subdomain diarahkan ke Web Builder dengan username di root domain
     if (url.pathname === "/write" || url.pathname === "/write/") {
       return NextResponse.redirect(
-        new URL(`/builder?username=${subdomain}`, req.url),
+        new URL(`https://www.letmehearyou.id/builder?username=${subdomain}`, req.url),
         308
       );
     }
@@ -177,8 +238,14 @@ export async function middleware(req: NextRequest) {
       return sessionResponse;
     }
 
+    if (url.pathname.startsWith("/tenant/")) {
+      return NextResponse.rewrite(
+        new URL(`${url.pathname}${url.search}`, req.url)
+      );
+    }
+
     return NextResponse.rewrite(
-      new URL(`/tenant/${subdomain}${url.pathname}`, req.url)
+      new URL(`/tenant/${subdomain}${url.pathname}${url.search}`, req.url)
     );
   }
 

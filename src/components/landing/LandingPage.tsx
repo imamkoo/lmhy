@@ -6,11 +6,36 @@ import { ContactForm } from "./ContactForm";
 import { LandingEffects } from "./LandingEffects";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/app/actions/auth";
+import { motion } from "motion/react";
+import { fadeUp, fadeDown, blurIn, slideRight, staggerParent, staggerChild, triggerOnly, viewportOnce } from "./motion-variants";
 
 const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
 
-export function LandingPage() {
-  const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(null);
+export function LandingPage({
+  initialUser,
+  initialProfile,
+  recentArticles,
+}: {
+  initialUser?: { id: string; email?: string } | null;
+  initialProfile?: { username?: string; display_name?: string } | null;
+  recentArticles?: Array<{
+    id?: string;
+    title: string;
+    slug: string;
+    username: string;
+    excerpt?: string | null;
+    media_url?: string | null;
+    tags?: string[] | null;
+  }>;
+} = {}) {
+  const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(
+    initialUser
+      ? {
+          username: initialProfile?.username,
+          displayName: initialProfile?.display_name || initialProfile?.username || initialUser.email?.split("@")[0],
+        }
+      : null
+  );
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,17 +49,50 @@ export function LandingPage() {
             .eq("id", user.id)
             .maybeSingle();
 
-          setCurrentUser({
-            username: profile?.username,
-            displayName: profile?.display_name || user.email?.split("@")[0],
+          setCurrentUser((prev) => {
+            const resolvedUsername = profile?.username || prev?.username;
+            const resolvedDisplayName = profile?.display_name || prev?.displayName || resolvedUsername || user.email?.split("@")[0];
+            return {
+              username: resolvedUsername,
+              displayName: resolvedDisplayName,
+            };
           });
+        } else if (!initialUser) {
+          setCurrentUser(null);
         }
       } catch {
         // ignore
       }
     }
     checkUser();
-  }, []);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username, display_name")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        setCurrentUser((prev) => {
+          const resolvedUsername = profile?.username || prev?.username;
+          const resolvedDisplayName = profile?.display_name || prev?.displayName || resolvedUsername || session.user.email?.split("@")[0];
+          return {
+            username: resolvedUsername,
+            displayName: resolvedDisplayName,
+          };
+        });
+      } else if (event === "SIGNED_OUT") {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initialUser]);
 
   return (
     <div className="landing-page-wrapper">
@@ -44,7 +102,7 @@ export function LandingPage() {
         <img src="/assets/LMHY.png" alt="preloader" />
       </div>
 
-      <header className="header">
+      <motion.header className="header" initial="hidden" animate="visible" variants={fadeDown}>
         <div className="container">
           <div className="header-main">
             <div className="logo">
@@ -74,26 +132,42 @@ export function LandingPage() {
                   <a href="#contact">Contact</a>
                 </li>
                 <li style={{ "--item": 5 } as React.CSSProperties}>
-                  <Link href="/builder" className="font-semibold text-[#b86644] hover:text-[#d07954]">
+                  <Link href="/builder" className="font-semibold text-[#3F3766] hover:text-[#3F3766]">
                     Ruang Tulis
                   </Link>
                 </li>
-                <li style={{ "--item": 6, padding: "8px 20px 24px" } as React.CSSProperties}>
+                <li style={{ "--item": 6, padding: "8px 16px 20px" } as React.CSSProperties}>
                   {currentUser ? (
-                    <div className="flex items-center justify-center gap-1.5" style={{ marginTop: 4 }}>
+                    <div className="flex flex-col items-center" style={{ marginTop: 2 }}>
                       <Link
-                        href="/builder"
-                        className="inline-flex items-center gap-1 rounded-full bg-[#F7ABC5]/30 px-3 py-1 text-xs font-bold text-[#3F3766] border border-[#3F3766]/20 hover:bg-[#F7ABC5]/60 transition"
+                        href={currentUser.username ? `https://${currentUser.username}.letmehearyou.id/` : "/builder"}
+                        className="learn-more text-center"
+                        style={{
+                          display: "inline-block",
+                          padding: "0.75em 1.25em",
+                          fontSize: "12px",
+                          letterSpacing: "0.02em",
+                          border: "2px solid #b18597",
+                          borderRadius: "0.75em",
+                          marginBottom: "18px",
+                        }}
+                        title={currentUser.username ? `@${currentUser.username}` : `@${currentUser.displayName || "kreator"}`}
                       >
-                        <span>👤 {currentUser.displayName || `@${currentUser.username}`}</span>
+                        <span
+                          className="relative z-10 block truncate font-bold text-[#382b22]"
+                          style={{ maxWidth: "130px", pointerEvents: "none" }}
+                        >
+                          {currentUser.username
+                            ? `@${currentUser.username}`
+                            : (currentUser.displayName ? `@${currentUser.displayName}` : "@kreator")}
+                        </span>
                       </Link>
-                      <form action={signOutAction} className="inline-flex">
+                      <form action={signOutAction} className="w-full flex justify-center">
                         <button
                           type="submit"
-                          title="Keluar"
-                          className="rounded-full bg-slate-200/60 hover:bg-red-100 hover:text-red-600 text-slate-500 text-[10px] font-bold px-2 py-1 transition border border-slate-300"
+                          className="w-full text-center text-xs font-semibold text-[#3F3766]/70 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg py-1.5 px-2 transition"
                         >
-                          Keluar
+                          Keluar dari Akun
                         </button>
                       </form>
                     </div>
@@ -107,7 +181,7 @@ export function LandingPage() {
                         fontSize: "13px",
                       }}
                     >
-                      Gabung
+                      <span className="relative z-10 block font-bold text-[#382b22]">Gabung</span>
                     </Link>
                   )}
                 </li>
@@ -115,12 +189,19 @@ export function LandingPage() {
             </nav>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      <section className="home" id="home">
+      <motion.section
+        className="home"
+        id="home"
+        initial="hidden"
+        whileInView="visible"
+        variants={staggerParent}
+        viewport={viewportOnce}
+      >
         <div className="container">
           <div className="row">
-            <div className="home-text">
+            <motion.div className="home-text" variants={fadeUp}>
               <h1>We Provide The Best Care For You</h1>
               <p>
                 Kami adalah komunitas yang peduli dengan Kesehatan Mental,
@@ -136,8 +217,8 @@ export function LandingPage() {
                   Tulis Ceritamu
                 </Link>
               </div>
-            </div>
-            <div className="home-img">
+            </motion.div>
+            <motion.div className="home-img" variants={blurIn}>
               <div className="fancy-br-box">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={LOGO} alt="Let Me Hear You" />
@@ -146,12 +227,19 @@ export function LandingPage() {
                   <img src="/assets/sapiens.png" alt="" />
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="about section-padding" id="about">
+      <motion.section
+        className="about section-padding"
+        id="about"
+        initial="hidden"
+        whileInView="visible"
+        variants={slideRight}
+        viewport={viewportOnce}
+      >
         <div className="container">
           <div className="section-title">
             <h2 className="title">About Us</h2>
@@ -199,22 +287,29 @@ export function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="service section-padding" id="services">
+      <motion.section
+        className="service section-padding"
+        id="services"
+        initial="hidden"
+        whileInView="visible"
+        variants={triggerOnly}
+        viewport={viewportOnce}
+      >
         <div className="container">
-          <div className="section-title">
+          <motion.div className="section-title" variants={fadeUp}>
             <h2 className="title">Services</h2>
             <p className="sub-title">What we provide</p>
-          </div>
-          <div className="row">
+          </motion.div>
+          <motion.div className="row" variants={staggerParent}>
             {[
               { img: "1.jpg", title: "Mentoring", text: "Sharing tentang apa yang dirasa memberatkan dalam menjalani kehidupan tanpa mendapatkan penghakiman." },
               { img: "2.jpg", title: "Consultation", text: "Case yang lebih urgent dan serius akan di arahkan dan tangani oleh Psikolog handal." },
               { img: "3.jpg", title: "Sharing", text: "Mendapat sosial support dan komunitas sebagai sarana untuk berdiskusi." },
               { img: "4.jpg", title: "Online Mentoring", text: "Kelas khusus untuk modul atau webinar seputar psikologi dan kesehatan mental." },
             ].map((s) => (
-              <div key={s.img} className="services-item">
+              <motion.div key={s.img} className="services-item" variants={staggerChild}>
                 <div className="img-box">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`/assets/img/service/${s.img}`} alt="" />
@@ -223,91 +318,153 @@ export function LandingPage() {
                   <h3>{s.title}</h3>
                   <p>{s.text}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="fun-fact">
+      <motion.section
+        className="fun-fact"
+        initial="hidden"
+        whileInView="visible"
+        variants={triggerOnly}
+        viewport={viewportOnce}
+      >
         <div className="container">
-          <div className="row">
+          <motion.div className="row" variants={staggerParent}>
             {[
               ["100", "Happy client"],
               ["99", "Mental health"],
               ["5", "Psikolog"],
               ["10", "Loyal clients"],
             ].map(([n, label]) => (
-              <div key={label} className="fun-fact-item">
+              <motion.div key={label} className="fun-fact-item" variants={staggerChild}>
                 <div className="box">
                   <h2>{n}</h2>
                   <p>{label}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="article section-padding" id="article">
+      <motion.section
+        className="article section-padding"
+        id="article"
+        initial="hidden"
+        whileInView="visible"
+        variants={triggerOnly}
+        viewport={viewportOnce}
+      >
         <div className="container">
-          <div className="section-title">
+          <motion.div className="section-title" variants={blurIn}>
             <h2 className="title">Article</h2>
             <p className="sub-title">Our Article</p>
-          </div>
+          </motion.div>
         </div>
-        <section className="cards-wrapper">
-          {[
-            {
-              title: "Mental illness",
-              slug: "memahami-kesehatan-mental",
-              tag: "Mental Illness",
-              bg: "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Mental illness atau yang disebut juga gangguan kesehatan mental adalah istilah yang mengacu pada berbagai kondisi yang memengaruhi pemikiran ...",
-            },
-            {
-              title: "Mental Health",
-              slug: "mengenali-tanda-burnout",
-              tag: "Mental Health",
-              bg: "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Mental Health yang baik adalah kondisi ketika batin kita berada dalam keadaan tentram dan tenang...",
-            },
-            {
-              title: "Mental Disorder",
-              slug: "memahami-kesehatan-mental",
-              tag: "Mental Disorder",
-              bg: "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Salah satu masalah kesehatan yang penting diperhatikan oleh masyarakat adalah mental disorder...",
-            },
-          ].map((card) => (
-            <div key={card.title} className="card-grid-space">
+        <motion.section
+          className="cards-wrapper"
+          initial="hidden"
+          whileInView="visible"
+          variants={staggerParent}
+          viewport={viewportOnce}
+        >
+          {(recentArticles && recentArticles.length > 0
+            ? recentArticles.slice(0, 3).map((art) => ({
+                title: art.title,
+                href: `/tenant/${art.username}/${art.slug}`,
+                tag: (art.tags && art.tags[0]) || "Warta",
+                bg: art.media_url || "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                excerpt: art.excerpt || "Baca selengkapnya tulisan inspiratif dan reflektif di portal warta Let Me Hear You...",
+                author: `@${art.username}`,
+              }))
+            : [
+                {
+                  title: "Mental illness",
+                  href: "/articles",
+                  tag: "Mental Illness",
+                  bg: "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                  excerpt:
+                    "Mental illness atau yang disebut juga gangguan kesehatan mental adalah istilah yang mengacu pada berbagai kondisi yang memengaruhi pemikiran ...",
+                  author: "@editorial",
+                },
+                {
+                  title: "Mental Health",
+                  href: "/articles",
+                  tag: "Mental Health",
+                  bg: "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                  excerpt:
+                    "Mental Health yang baik adalah kondisi ketika batin kita berada dalam keadaan tentram dan tenang...",
+                  author: "@editorial",
+                },
+                {
+                  title: "Mental Disorder",
+                  href: "/articles",
+                  tag: "Mental Disorder",
+                  bg: "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                  excerpt:
+                    "Salah satu masalah kesehatan yang penting diperhatikan oleh masyarakat adalah mental disorder...",
+                  author: "@editorial",
+                },
+              ]
+          ).map((card) => (
+            <motion.div key={card.title} className="card-grid-space" variants={staggerChild}>
               <a
-                className="card"
-                href={`/blog/${card.slug}`}
-                style={{ "--bg-img": `url(${card.bg})` } as React.CSSProperties}
+                className="card group relative overflow-hidden"
+                href={card.href}
+                style={
+                  {
+                    "--bg-img": `url(${card.bg})`,
+                  } as React.CSSProperties
+                }
               >
-                <div>
-                  <h1>{card.title}</h1>
-                  <p>{card.excerpt}</p>
-                  <div className="tags">
-                    <div className="tag">{card.tag}</div>
+                {/* High contrast scrim gradient overlay to ensure text legibility */}
+                <div
+                  className="absolute inset-0 z-0 pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgba(18, 15, 29, 0.95) 0%, rgba(18, 15, 29, 0.70) 50%, rgba(18, 15, 29, 0.35) 100%)",
+                  }}
+                />
+                <div className="relative z-10 w-full flex flex-col justify-end">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] uppercase tracking-wider text-purple-200 font-bold opacity-90">
+                      {card.author}
+                    </span>
+                  </div>
+                  <h1 className="!text-white !drop-shadow-md !font-bold line-clamp-2">
+                    {card.title}
+                  </h1>
+                  <p className="!text-slate-200 !line-clamp-2 !drop-shadow">
+                    {card.excerpt}
+                  </p>
+                  <div className="tags mt-2">
+                    <div className="tag !bg-white/20 !text-white !backdrop-blur-sm">
+                      {card.tag}
+                    </div>
                   </div>
                 </div>
               </a>
-            </div>
+            </motion.div>
           ))}
-        </section>
+        </motion.section>
         <div className="container mt-8 text-center">
-          <Link href="/blog" className="learn-more" style={{ display: "inline-block" }}>
-            Lihat Semua Artikel →
+          <Link href="/articles" className="learn-more" style={{ display: "inline-block" }}>
+            Lihat Semua Tulisan Penulis →
           </Link>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="contact section-padding" id="contact">
+      <motion.section
+        className="contact section-padding"
+        id="contact"
+        initial="hidden"
+        whileInView="visible"
+        variants={fadeUp}
+        viewport={viewportOnce}
+      >
         <div className="container">
           <div className="row">
             <div className="contact-details">
@@ -365,7 +522,7 @@ export function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <footer className="footer">
         <div className="footer-top">

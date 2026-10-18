@@ -1,9 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Profile } from "@/lib/supabase/types";
 import { updateProfileAction } from "@/app/actions/profile";
+import { createClient } from "@/lib/supabase/client";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  extractOwnProfileMediaPath,
+  isOwnProfileMediaUrl,
+  removeProfileMedia,
+  uploadProfileImage,
+  validateProfileImage,
+  type ProfileImageKind,
+} from "@/lib/profile-media";
 
 interface EditProfileModalProps {
   isOpen?: boolean;
@@ -22,22 +32,119 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
   const [bio, setBio] = useState(profile.bio || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || "");
   const [bannerUrl, setBannerUrl] = useState(profile.banner_url || "");
+  const [bannerFit, setBannerFit] = useState<"cover" | "contain">(() => {
+    return profile.banner_url?.includes("fit=contain") ? "contain" : "cover";
+  });
   const [website, setWebsite] = useState(profile.website || "");
   const [facebookUrl, setFacebookUrl] = useState(profile.facebook_profile_url || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [uploading, setUploading] = useState<ProfileImageKind | null>(null);
+  const [pendingUploads, setPendingUploads] = useState<
+    Partial<Record<ProfileImageKind, { url: string; path: string }>>
+  >({});
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const handleClose = useCallback(() => {
+    if (uploading !== null || loading) return;
+    try {
+      for (const entry of Object.values(pendingUploads)) {
+        removeProfileMedia(createClient(), entry.path);
+      }
+    } catch {
+      console.warn("[edit-profile] pending upload cleanup skipped");
+    }
+    onClose();
+  }, [pendingUploads, uploading, loading, onClose]);
 
   // Handle ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        handleClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [handleClose]);
+
+  const handleFileSelect = async (kind: ProfileImageKind, file: File) => {
+    const validation = validateProfileImage(kind, file);
+    if (!validation.ok) {
+      setError(validation.error);
+      return;
+    }
+    setError(null);
+    setUploading(kind);
+    try {
+      const res = await uploadProfileImage(createClient(), profile.id, kind, file);
+      if (!res.ok) {
+        setError("Gagal mengunggah gambar — coba lagi.");
+        return;
+      }
+      const existing = pendingUploads[kind];
+      if (existing) {
+        void removeProfileMedia(createClient(), existing.path);
+      }
+      if (kind === "avatar") {
+        setAvatarUrl(res.url);
+      } else {
+        setBannerUrl(res.url);
+      }
+      setPendingUploads((prev) => {
+        const next = { ...prev };
+        next[kind] = { url: res.url, path: res.path };
+        return next;
+      });
+    } catch {
+      setError("Gagal mengunggah gambar — coba lagi.");
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleRemove = (kind: ProfileImageKind) => {
+    const url = kind === "avatar" ? avatarUrl : bannerUrl;
+    if (url && isOwnProfileMediaUrl(url, profile.id)) {
+      const mediaPath = extractOwnProfileMediaPath(url, profile.id);
+      if (mediaPath) {
+        removeProfileMedia(createClient(), mediaPath);
+      }
+    }
+    if (pendingUploads[kind]) {
+      setPendingUploads((prev) => {
+        const next = { ...prev };
+        delete next[kind];
+        return next;
+      });
+    }
+    if (kind === "avatar") {
+      setAvatarUrl("");
+    } else {
+      setBannerUrl("");
+    }
+  };
+
+  const formatBannerUrl = (url: string, fit: "cover" | "contain"): string => {
+    const clean = url.trim().replace(/[?#]fit=contain/g, "");
+    if (!clean) return "";
+    return fit === "contain" ? `${clean}#fit=contain` : clean;
+  };
+
+  const cleanupReplacedMedia = (oldUrl: string | null, currentUrl: string) => {
+    const current = currentUrl.trim() || null;
+    if (!oldUrl || oldUrl === current) return;
+    if (!isOwnProfileMediaUrl(oldUrl, profile.id)) return;
+    const oldPath = extractOwnProfileMediaPath(oldUrl, profile.id);
+    const currentPath = current ? extractOwnProfileMediaPath(current, profile.id) : null;
+    // Don't delete file if only the URL marker (#fit=contain) changed
+    if (oldPath && currentPath && oldPath === currentPath) return;
+    if (oldPath) {
+      removeProfileMedia(createClient(), oldPath);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,11 +158,13 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
     setSuccess(false);
 
     try {
+      const finalBannerUrl = formatBannerUrl(bannerUrl, bannerFit);
+
       const res = await updateProfileAction({
         displayName: displayName.trim(),
         bio: bio.trim() || null,
         avatarUrl: avatarUrl.trim() || null,
-        bannerUrl: bannerUrl.trim() || null,
+        bannerUrl: finalBannerUrl || null,
         website: website.trim() || null,
         facebookProfileUrl: facebookUrl.trim() || null,
       });
@@ -66,6 +175,9 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
         return;
       }
 
+      setPendingUploads({});
+      cleanupReplacedMedia(profile.avatar_url, avatarUrl);
+      cleanupReplacedMedia(profile.banner_url, finalBannerUrl);
       setSuccess(true);
       router.refresh();
       setTimeout(() => {
@@ -97,7 +209,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={loading}
             aria-label="Tutup modal"
             className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
@@ -120,6 +232,96 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
           </div>
         )}
 
+        {/* Live Real Preview */}
+        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/60 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 bg-white px-3.5 py-1.5">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              Pratinjau Langsung (Live Preview)
+            </span>
+            <span className="text-[10px] text-slate-400">
+              Tampilan nyata di halaman profil
+            </span>
+          </div>
+          <div className="p-3">
+            <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs">
+              {/* Mini Banner */}
+              <div className="relative h-20 w-full overflow-hidden bg-[linear-gradient(120deg,#fae8df_0%,#f4d7c8_55%,#eed2c4_100%)]">
+                {bannerUrl ? (
+                  <>
+                    {bannerFit === "contain" && (
+                      <>
+                        <div className="absolute inset-0 bg-[radial-gradient(#F7ABC5_1px,transparent_1px)] opacity-[.4] [background-size:10px_10px]" />
+                        <div className="absolute -top-6 right-6 h-16 w-16 rounded-full bg-[rgba(247,171,197,0.3)]" />
+                        <div className="absolute -bottom-4 left-8 h-12 w-12 rounded-full bg-[rgba(63,55,102,0.08)]" />
+                      </>
+                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={bannerUrl}
+                      alt="Preview Banner"
+                      className={
+                        bannerFit === "contain"
+                          ? "relative z-10 h-full w-full object-contain p-1.5"
+                          : "h-full w-full object-cover"
+                      }
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="absolute inset-0 bg-[radial-gradient(#F7ABC5_1.3px,transparent_1.3px)] opacity-[.65] [background-size:12px_12px]" />
+                    <div className="absolute -top-6 right-6 h-16 w-16 rounded-full bg-[rgba(247,171,197,0.5)]" />
+                    <div className="absolute -bottom-4 left-8 h-12 w-12 rounded-full bg-[rgba(63,55,102,0.10)]" />
+                  </>
+                )}
+              </div>
+
+              {/* Mini Profile Info Bar */}
+              <div className="px-3 pb-2.5 pt-0">
+                <div className="flex items-end gap-2.5 -mt-6">
+                  {/* Mini Avatar */}
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white bg-[#F7ABC5] shadow-sm flex items-center justify-center text-[#3F3766] font-bold text-sm select-none z-20">
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarUrl}
+                        alt="Preview Avatar"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <span>
+                        {displayName
+                          ? displayName.charAt(0).toUpperCase()
+                          : profile.username.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1 pb-0.5">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="font-bold text-slate-900 text-xs truncate">
+                        {displayName || "Nama Tampilan"}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-[#F7ABC5]/20 px-1.5 py-0.2 text-[9px] font-semibold text-[#3F3766]">
+                        @{profile.username}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 truncate">
+                      {profile.username}.letmehearyou.id
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           {/* Display Name */}
@@ -133,7 +335,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
               onChange={(e) => setDisplayName(e.target.value)}
               required
               placeholder="Contoh: Budi Santoso"
-              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
             />
           </div>
 
@@ -151,17 +353,17 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
               maxLength={300}
               rows={3}
               placeholder="Ceritakan minat menulis, perjalanan batin, atau ruang aman yang Anda bagikan..."
-              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
             />
           </div>
 
-          {/* Avatar URL & Live Preview */}
+          {/* Avatar Upload */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              URL Foto Profil (Avatar)
+              Foto Profil (Avatar)
             </label>
             <div className="mt-1.5 flex items-center gap-3">
-              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-sm">
+              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-sm">
                 {avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -176,42 +378,129 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                   <span>{displayName ? displayName.charAt(0).toUpperCase() : "@"}</span>
                 )}
               </div>
-              <input
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                placeholder="https://images.unsplash.com/... atau link foto"
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
-              />
-            </div>
-          </div>
-
-          {/* Banner URL & Live Preview */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              URL Banner Sampul (Header Cover)
-            </label>
-            <div className="mt-1.5 space-y-2">
-              <input
-                type="url"
-                value={bannerUrl}
-                onChange={(e) => setBannerUrl(e.target.value)}
-                placeholder="https://images.unsplash.com/... atau link banner gambar lebar"
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
-              />
-              {bannerUrl && (
-                <div className="relative h-20 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={bannerUrl}
-                    alt="Preview Banner"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = "none";
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploading !== null}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+                  >
+                    {uploading === "avatar" ? (
+                      <>
+                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        <span>Mengunggah…</span>
+                      </>
+                    ) : (
+                      <span>Pilih Gambar</span>
+                    )}
+                  </button>
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemove("avatar")}
+                      className="text-xs font-semibold text-rose-600 transition hover:text-rose-700 hover:underline"
+                    >
+                      Hapus
+                    </button>
+                  )}
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                    className="hidden"
+                    data-testid="input-avatar"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) handleFileSelect("avatar", file);
                     }}
                   />
                 </div>
+                <p className="text-[10px] text-slate-400">JPG/PNG/WebP · maks 2MB</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Banner Upload */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Banner Sampul
+              </label>
+              {bannerUrl && (
+                <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 text-[11px] font-medium text-slate-600">
+                  <button
+                    type="button"
+                    onClick={() => setBannerFit("cover")}
+                    className={`rounded-md px-2 py-0.5 transition ${
+                      bannerFit === "cover"
+                        ? "bg-white text-slate-900 font-semibold shadow-xs"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    Isi Penuh (Cover)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBannerFit("contain")}
+                    className={`rounded-md px-2 py-0.5 transition ${
+                      bannerFit === "contain"
+                        ? "bg-white text-slate-900 font-semibold shadow-xs"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    Utuh / Pas (Contain)
+                  </button>
+                </div>
               )}
+            </div>
+            <div className="mt-1.5 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  disabled={uploading !== null}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+                >
+                  {uploading === "banner" ? (
+                    <>
+                      <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      <span>Mengunggah…</span>
+                    </>
+                  ) : (
+                    <span>Pilih Gambar</span>
+                  )}
+                </button>
+                {bannerUrl && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemove("banner")}
+                    className="text-xs font-semibold text-rose-600 transition hover:text-rose-700 hover:underline"
+                  >
+                    Hapus
+                  </button>
+                )}
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                  className="hidden"
+                  data-testid="input-banner"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) handleFileSelect("banner", file);
+                  }}
+                />
+              </div>
+              <p className="text-[10px] text-slate-400">JPG/PNG/WebP · maks 5MB</p>
             </div>
           </div>
 
@@ -226,7 +515,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://website-anda.com"
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
               />
             </div>
 
@@ -239,7 +528,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 value={facebookUrl}
                 onChange={(e) => setFacebookUrl(e.target.value)}
                 placeholder="https://facebook.com/username-anda"
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#d07954] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20"
               />
             </div>
           </div>
@@ -248,7 +537,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
           <div className="mt-8 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={loading}
               className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
             >
@@ -256,8 +545,8 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b86644] disabled:opacity-50"
+              disabled={loading || uploading !== null}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-6 py-2.5 text-sm font-semibold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px] disabled:opacity-50"
             >
               {loading ? (
                 <>

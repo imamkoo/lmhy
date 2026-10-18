@@ -83,27 +83,29 @@ export function CommentSection({
   };
 
   return (
-    <section className="mt-14 border-t border-slate-200/90 pt-10" id="refleksi-pembaca">
+    <section className="mt-14 border-t border-current/15 pt-10" id="refleksi-pembaca">
       <div className="flex items-center justify-between pb-6">
         <div>
-          <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Refleksi & Tanggapan Pembaca
+          <h3 className="text-xl font-bold tracking-tight text-inherit sm:text-2xl">
+            Tanggapan & Diskusi Pembaca
           </h3>
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-            Ruang berbagi pemikiran, resonansi emosional, dan apresiasi terhadap tulisan ini.
+          <p className="mt-1 text-xs opacity-70 sm:text-sm">
+            Ruang berbagi pemikiran, refleksi, dan apresiasi terhadap tulisan ini.
           </p>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
-          {comments.length} Resonansi
-        </span>
+        {comments.length > 0 && (
+          <span className="rounded-full bg-white/10 border border-current/15 px-3 py-1 text-xs font-bold opacity-80">
+            {comments.length} Komentar
+          </span>
+        )}
       </div>
 
       {/* Input Box / Invitation Form */}
-      <div className="mb-10 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+      <div className="mb-10 rounded-3xl border border-white/10 bg-white p-5 shadow-xs sm:p-6 dark:border-[#30363D] dark:bg-[#161B22]">
         {currentUser ? (
           <form onSubmit={handlePostComment} className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#d07954] text-xs font-bold text-white">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#F7ABC5] text-xs font-bold text-[#3F3766]">
                 {currentUser.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -135,7 +137,7 @@ export function CommentSection({
               onChange={(e) => setNewContent(e.target.value)}
               placeholder="Tuliskan refleksi, tanggapan mendalam, atau kesan yang Anda rasakan setelah membaca tulisan ini..."
               maxLength={2000}
-              className="w-full resize-y rounded-2xl border border-slate-200 p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#d07954] focus:outline-none focus:ring-2 focus:ring-[#d07954]/20"
+              className="w-full resize-y rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#F7ABC5] focus:outline-none focus:ring-2 focus:ring-[#F7ABC5]/20 dark:border-[#30363D] dark:bg-[#0D1117] dark:text-[#E6EDF3] dark:placeholder:text-[#6B7280]"
             />
 
             {feedbackError && (
@@ -145,13 +147,13 @@ export function CommentSection({
             )}
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-400 dark:text-[#8B949E]">
                 {newContent.length}/2000 karakter
               </span>
               <button
                 type="submit"
                 disabled={isSubmitting || !newContent.trim()}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#d07954] px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#b86644] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#F7ABC5] px-5 py-2 text-xs font-bold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isSubmitting ? (
                   <>
@@ -181,16 +183,16 @@ export function CommentSection({
         ) : (
           <div className="flex flex-col items-center justify-between gap-4 py-2 sm:flex-row text-center sm:text-left">
             <div>
-              <h4 className="text-sm font-bold text-slate-900">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-[#E6EDF3]">
                 Ingin berbagi pandangan atau menyapa penulis?
               </h4>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-[#8B949E]">
                 Masuk ke akun Anda untuk meninggalkan jejak refleksi dan berdialog bersama @{creatorUsername}.
               </p>
             </div>
             <Link
               href={`/login?next=${typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname) : ''}`}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#d07954] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#b86644]"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#F7ABC5] px-5 py-2.5 text-xs font-bold text-[#3F3766] shadow-[0_3px_0_0_#3F3766] transition hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[1px] active:shadow-none active:translate-y-[3px]"
             >
               <span>Masuk untuk Berkomentar</span>
               <span>→</span>
@@ -201,12 +203,12 @@ export function CommentSection({
 
       {/* Comments List */}
       {comments.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-200 bg-white/50 p-8 text-center">
+        <div className="rounded-3xl border border-dashed border-slate-200 bg-white/50 p-8 text-center dark:border-[#30363D] dark:bg-[#161B22]">
           <p className="text-2xl">🌱</p>
-          <p className="mt-2 text-sm font-semibold text-slate-700">
+          <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-[#E6EDF3]">
             Belum ada refleksi untuk tulisan ini
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-400 dark:text-[#8B949E]">
             Jadilah pembaca pertama yang meninggalkan jejak resonansi batin di sini.
           </p>
         </div>
@@ -237,14 +239,14 @@ export function CommentSection({
                 key={comment.id}
                 className={`rounded-2xl border p-4.5 transition sm:p-5 ${
                   isCreator
-                    ? 'border-[#d07954]/40 bg-[#fbf5f1]/60'
+                    ? 'border-[#F7ABC5] bg-[#F5E7C6]/40'
                     : 'border-slate-200/90 bg-white shadow-2xs'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     {/* Commenter Avatar */}
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#d07954] text-xs font-bold text-white select-none">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#F7ABC5] text-xs font-bold text-[#3F3766] select-none">
                       {author?.avatar_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -269,7 +271,7 @@ export function CommentSection({
                           </span>
                         )}
                         {isCreator && (
-                          <span className="inline-flex items-center rounded-full bg-[#d07954]/15 px-2 py-0.5 text-[10px] font-bold text-[#b86644]">
+                          <span className="inline-flex items-center rounded-full bg-[#F7ABC5]/20 px-2 py-0.5 text-[10px] font-bold text-[#3F3766]">
                             Penulis
                           </span>
                         )}

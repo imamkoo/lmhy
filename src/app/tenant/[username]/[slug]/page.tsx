@@ -1,14 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getBuilderUrl } from "@/lib/builder";
 import { LiteraWidget } from "@/components/litera/LiteraWidget";
 import { getTenantArticleBySlug, getTenantArticles } from "@/lib/tenant-storage";
 import { getArticleBySlug } from "@/lib/article-storage";
 import { getProfileByUsername } from "@/lib/profile-storage";
 import { getCommentsByArticle, getFollowStatus } from "@/lib/comment-storage";
+import { getDesignTemplate } from "@/lib/design-templates";
 import { createClient } from "@/lib/supabase/server";
 import { SocialShareBar } from "../components/SocialShareBar";
 import { CommentSection } from "../components/CommentSection";
 import { FollowButton } from "../components/FollowButton";
+import { ArticleCoverImage } from "../components/ArticleCoverImage";
+import { BackToProfileLink } from "./BackToProfileLink";
+import DoorwayCard from "@/components/sanctuary/DoorwayCard";
 
 export async function generateMetadata({
   params,
@@ -63,28 +68,36 @@ export default async function TenantArticlePage({
     notFound();
   }
 
-  // 1. Fetch article from DB or fallback storage
+  // 1. Fetch article from DB or fallback storage.
+  // Unknown slugs must 404 — never render placeholder content.
   const dbArticle = await getArticleBySlug(normalizedUser, slug);
   const legacyArticle = !dbArticle ? getTenantArticleBySlug(normalizedUser, slug) : null;
+
+  if (!dbArticle && !legacyArticle) {
+    notFound();
+  }
 
   const articleId = dbArticle?.id || legacyArticle?.id || `slug_${normalizedUser}_${slug}`;
 
   // Title fallback
-  const title = dbArticle?.title || legacyArticle?.title || slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  const title =
+    dbArticle?.title ||
+    legacyArticle?.title ||
+    slug
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
 
-  // Content fallback
-  const content =
-    dbArticle?.content ||
-    legacyArticle?.content ||
-    `Ini adalah artikel yang diterbitkan melalui subdomain personal @${normalizedUser}. Setiap tulisan di sini dapat dikoleksi oleh pembaca sebagai sertifikat digital permanen melalui jaringan Litera Web3 di blockchain Polygon.`;
+  // Content fallback (unreachable after the notFound guard above)
+  const content = dbArticle?.content || legacyArticle?.content || "";
 
   const tags = dbArticle?.tags || legacyArticle?.tags || ["Refleksi", "Kesehatan Mental"];
   const mediaUrl = dbArticle?.media_url || legacyArticle?.mediaUrl;
   const mediaType = dbArticle?.media_type || legacyArticle?.mediaType || "IMAGE";
+  const isLiteraRegistered = Boolean(dbArticle?.register_litera ?? legacyArticle?.isLiteraRegistered);
   const publishedAt = dbArticle?.published_at || legacyArticle?.createdAt;
+  const templateId = dbArticle?.template_id || legacyArticle?.templateId || "warm-sanctuary";
+  const activeTemplate = getDesignTemplate(templateId);
 
   const otherArticles = getTenantArticles(normalizedUser).filter(
     (a) => a.slug !== slug
@@ -94,35 +107,69 @@ export default async function TenantArticlePage({
   const authorProfile = await getProfileByUsername(normalizedUser);
   const authorId = authorProfile?.id || dbArticle?.author_id;
 
-  // 3. Fetch visitor auth session
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const authorRole = authorProfile?.creator_role ?? null;
+  const isVerifiedProvider =
+    authorProfile?.verification_status === "APPROVED" &&
+    (authorRole === "PENDAMPING" || authorRole === "PRAKTISI");
 
-  let currentUser = null;
-  let isFollowingAuthor = false;
+  let authorHasAvailableSlot = false;
+  if (authorId && isVerifiedProvider) {
+    try {
+      const supabase = await createClient();
+      const { count } = await supabase
+        .from("listening_slots")
+        .select("id", { count: "exact", head: true })
+        .eq("provider_id", authorId)
+        .eq("status", "AVAILABLE");
 
-  if (authUser) {
-    const { data: userProf } = await supabase
-      .from("profiles")
-      .select("id, username, display_name, avatar_url")
-      .eq("id", authUser.id)
-      .maybeSingle();
-
-    currentUser = {
-      id: authUser.id,
-      username: userProf?.username || authUser.user_metadata?.username,
-      display_name:
-        userProf?.display_name ||
-        authUser.user_metadata?.display_name ||
-        authUser.user_metadata?.name,
-      avatar_url: userProf?.avatar_url || authUser.user_metadata?.avatar_url,
-    };
-
-    if (authorId && authUser.id !== authorId) {
-      isFollowingAuthor = await getFollowStatus(authUser.id, authorId);
+      authorHasAvailableSlot = (count ?? 0) > 0;
+    } catch (err) {
+      console.error("[TenantArticlePage] Slot availability lookup failed:", err);
     }
+  }
+
+  // 3. Fetch visitor auth session. A transient auth/DB failure must never
+  // 500 the article — degrade to guest view instead.
+  let currentUser: {
+    id: string;
+    username?: string;
+    display_name?: string;
+    avatar_url?: string | null;
+  } | null = null;
+  let isFollowingAuthor = false;
+  let isOwnArticle = false;
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (authUser) {
+      const { data: userProf } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .eq("id", authUser.id)
+        .maybeSingle();
+
+      currentUser = {
+        id: authUser.id,
+        username: userProf?.username || authUser.user_metadata?.username,
+        display_name:
+          userProf?.display_name ||
+          authUser.user_metadata?.display_name ||
+          authUser.user_metadata?.name,
+        avatar_url: userProf?.avatar_url || authUser.user_metadata?.avatar_url,
+      };
+
+      if (authorId && authUser.id === authorId) {
+        isOwnArticle = true;
+      } else if (authorId && authUser.id !== authorId) {
+        isFollowingAuthor = await getFollowStatus(authUser.id, authorId);
+      }
+    }
+  } catch (err) {
+    console.error("[TenantArticlePage] Visitor session lookup failed, rendering as guest:", err);
   }
 
   // 4. Fetch comments for this article
@@ -131,50 +178,52 @@ export default async function TenantArticlePage({
   const articleCanonicalUrl = `https://${normalizedUser}.letmehearyou.id/${slug}`;
 
   return (
-    <main className="min-h-screen bg-[#fbf8f5] px-6 py-12 text-slate-900 md:px-12">
+    <main className={`min-h-screen px-4 sm:px-6 py-8 sm:py-12 transition-colors ${activeTemplate.previewClass.container}`}>
       <article className="mx-auto max-w-3xl">
         {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-sm font-semibold text-[#b86644] hover:underline"
-          >
-            ← Kembali ke profil @{normalizedUser}
-          </Link>
-          <Link
-            href={`/builder?username=${normalizedUser}`}
-            className="text-xs font-semibold text-slate-500 hover:text-[#d07954]"
-          >
-            + Tulis Baru
-          </Link>
+        <div className="flex items-center justify-between pb-4 border-b border-current/10">
+          <BackToProfileLink username={normalizedUser} />
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-block text-[10px] uppercase font-bold opacity-60">
+              Tema: {activeTemplate.name}
+            </span>
+            {isOwnArticle && (
+              <Link
+                href={getBuilderUrl(normalizedUser)}
+                className="text-xs font-semibold opacity-70 hover:opacity-100 transition"
+              >
+                + Tulis Baru
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Header */}
-        <header className="mb-10 mt-8 border-b border-slate-200 pb-8">
+        <header className={`mb-8 sm:mb-10 mt-6 sm:mt-8 pb-6 sm:pb-8 ${activeTemplate.previewClass.header}`}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-[#d07954]/10 px-3 py-1 text-xs font-bold text-[#b86644]">
+            <span className={activeTemplate.previewClass.badge}>
               Ruang Refleksi @{normalizedUser}
             </span>
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                className={activeTemplate.previewClass.tag}
               >
                 #{tag}
               </span>
             ))}
           </div>
 
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">
+          <h1 className={`text-2xl sm:text-4xl md:text-5xl leading-tight ${activeTemplate.previewClass.title}`}>
             {title}
           </h1>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-500">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm opacity-80">
             <div className="flex flex-wrap items-center gap-3">
-              <span>
-                Ditulis oleh <strong>@{normalizedUser}</strong>
+              <span className={activeTemplate.previewClass.authorName}>
+                Ditulis oleh @{normalizedUser}
               </span>
-              {authorId && authUser?.id !== authorId && (
+              {authorId && currentUser?.id !== authorId && (
                 <FollowButton
                   targetUserId={authorId}
                   targetUsername={normalizedUser}
@@ -185,7 +234,7 @@ export default async function TenantArticlePage({
             </div>
 
             {publishedAt && (
-              <span>
+              <span className="opacity-70">
                 {new Date(publishedAt).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "long",
@@ -197,8 +246,8 @@ export default async function TenantArticlePage({
         </header>
 
         {/* Media Cover (Image or Video) */}
-        {mediaUrl && (
-          <div className="mb-8 overflow-hidden rounded-3xl border-2 border-slate-200 shadow-sm">
+        {mediaUrl && !mediaUrl.startsWith("blob:") && (
+          <div className={`mb-8 ${activeTemplate.previewClass.mediaCard}`}>
             {mediaType === "VIDEO" ? (
               <video
                 src={mediaUrl}
@@ -206,26 +255,28 @@ export default async function TenantArticlePage({
                 className="w-full max-h-[480px] object-cover bg-black"
               />
             ) : (
-              <div className="relative w-full h-72 sm:h-96 bg-slate-100 flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={mediaUrl}
-                  alt={title}
-                  className="w-full h-full object-cover"
-                />
+              <div className="relative w-full h-64 sm:h-80 md:h-96 flex items-center justify-center">
+                <ArticleCoverImage src={mediaUrl} alt={title} />
               </div>
             )}
           </div>
         )}
 
         {/* Konten Tulisan */}
-        <div className="prose prose-slate max-w-none text-lg leading-relaxed text-slate-700">
+        <div className={`text-base sm:text-lg leading-relaxed ${activeTemplate.previewClass.content}`}>
           {content.split("\n\n").map((paragraph, i) => (
             <p key={i} className="mb-6 whitespace-pre-line leading-relaxed">
               {paragraph}
             </p>
           ))}
         </div>
+
+        <DoorwayCard
+          username={normalizedUser}
+          role={authorRole}
+          isVerified={isVerifiedProvider}
+          hasSlots={authorHasAvailableSlot}
+        />
 
         {/* Requirement: Display SocialShareBar under article content */}
         <SocialShareBar
@@ -234,21 +285,23 @@ export default async function TenantArticlePage({
           authorUsername={normalizedUser}
         />
 
-        {/* Litera NFT Widget Resmi Web3 */}
-        <div className="mt-12 border-t border-slate-200 pt-8">
-          <div className="mb-4">
-            <h3 className="text-lg font-bold text-slate-900">
-              Sertifikat Digital & Edisi Koleksi
-            </h3>
-            <p className="text-sm text-slate-600">
-              Dukung penulis dan simpan bukti keterlibatan Anda sebagai sertifikat digital resmi di Polygon melalui Litera.
-            </p>
+        {/* Litera NFT Widget Resmi Web3 (Hanya Tampil Jika Penulis Mengaktifkan Integrasi Web3) */}
+        {isLiteraRegistered && (
+          <div className="mt-12 border-t border-current/15 pt-8">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-inherit">
+                Sertifikat Digital & Edisi Koleksi
+              </h3>
+              <p className="text-sm opacity-75">
+                Dukung penulis dan simpan bukti keterlibatan Anda sebagai sertifikat digital resmi di Polygon melalui Litera.
+              </p>
+            </div>
+            <LiteraWidget
+              title={title}
+              articleUrl={articleCanonicalUrl}
+            />
           </div>
-          <LiteraWidget
-            title={title}
-            articleUrl={articleCanonicalUrl}
-          />
-        </div>
+        )}
 
         {/* Requirement: Display CommentSection under the Litera NFT widget */}
         <CommentSection
@@ -261,23 +314,23 @@ export default async function TenantArticlePage({
 
         {/* Rekomendasi Tulisan Lain dari Penulis Ini */}
         {otherArticles.length > 0 && (
-          <section className="mt-16 border-t border-slate-200 pt-8">
-            <h3 className="mb-4 text-lg font-bold text-slate-900">
+          <section className="mt-16 border-t border-current/15 pt-8">
+            <h3 className="mb-4 text-lg font-bold text-inherit">
               Tulisan Lain oleh @{normalizedUser}
             </h3>
             <div className="space-y-3">
               {otherArticles.slice(0, 3).map((other) => (
                 <div
                   key={other.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-[#d07954]"
+                  className="flex items-center justify-between rounded-xl border border-current/15 bg-white/40 backdrop-blur-sm p-4 transition hover:border-current/40"
                 >
                   <Link
                     href={`/${other.slug}`}
-                    className="font-semibold text-slate-800 hover:text-[#d07954]"
+                    className="font-semibold hover:underline"
                   >
                     {other.title}
                   </Link>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs opacity-60">
                     {new Date(other.createdAt).toLocaleDateString("id-ID", {
                       day: "numeric",
                       month: "short",

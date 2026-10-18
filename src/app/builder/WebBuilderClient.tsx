@@ -3,59 +3,123 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { REFLECTION_TEMPLATES, ReflectionTemplate } from "@/lib/builder-templates";
+import { RANDOM_REFLECTION_TEMPLATES } from "@/lib/builder-templates";
+import {
+  DESIGN_TEMPLATES,
+  getDesignTemplate,
+  DEFAULT_TEMPLATE_ID,
+  WebDesignTemplate,
+} from "@/lib/design-templates";
 import { publishTenantArticle } from "@/app/actions/tenant";
+import { describeLiteraPublishState } from "@/app/actions/tenant-litera";
 import { LiteraLoginModal } from "@/components/litera/LiteraLoginModal";
+import { Web3Providers } from "@/components/litera/Web3Providers";
+import { WalletConnectWatcher } from "@/components/litera/WalletConnectWatcher";
+import { TemplatePickerDialog } from "@/app/builder/TemplatePickerDialog";
 import { createClient } from "@/lib/supabase/client";
+import { uploadProfileImage } from "@/lib/profile-media";
 import { signOutAction } from "@/app/actions/auth";
+import { canProviderCreateSlot } from "@/lib/sanctuary/booking-rules";
+import SlotCalendar from "@/components/sanctuary/SlotCalendar";
+import type { GuidedPrompt } from "@/lib/supabase/types";
 
-const STORAGE_KEY = "lmhy_builder_draft_v2";
+const STORAGE_KEY = "lmhy_builder_draft_v3";
 
-export function WebBuilderClient({ initialUsername }: { initialUsername?: string }) {
+export function WebBuilderClient({
+  initialUsername,
+  initialUser,
+  initialProfile,
+  initialCreatorRole,
+  initialVerificationStatus,
+}: {
+  initialUsername?: string;
+  initialUser?: { id: string; email?: string } | null;
+  initialProfile?: { username: string; display_name: string } | null;
+  initialCreatorRole?: string | null;
+  initialVerificationStatus?: string | null;
+}) {
   // 0. Auth & Session State
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authUser, setAuthUser] = useState<{ id: string; email?: string } | null>(null);
-  const [authProfile, setAuthProfile] = useState<{ username: string; display_name: string } | null>(null);
+  const [authLoading, setAuthLoading] = useState(!initialUser);
+  const [authUser, setAuthUser] = useState<{ id: string; email?: string } | null>(initialUser || null);
+  const [authProfile, setAuthProfile] = useState<{ username: string; display_name: string } | null>(initialProfile || null);
+  const [providerEligibility, setProviderEligibility] = useState<{
+    creator_role: string | null;
+    verification_status: string | null;
+  }>({
+    creator_role: initialCreatorRole ?? null,
+    verification_status: initialVerificationStatus ?? null,
+  });
+  const [guidedPrompts, setGuidedPrompts] = useState<GuidedPrompt[]>([]);
   const [showPublishSuccessModal, setShowPublishSuccessModal] = useState(false);
-  const [publishedData, setPublishedData] = useState<{ url: string; slug: string; title: string } | null>(null);
+  const [showConfirmPublishModal, setShowConfirmPublishModal] = useState(false);
+  const [publishedData, setPublishedData] = useState<{
+    url: string;
+    slug: string;
+    title: string;
+    litera?: {
+      requested: boolean;
+      operationId?: string;
+      status?: string;
+      message?: string;
+      failureCode?: string;
+      txHash?: string | null;
+    };
+  } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // 1. Subdomain State & Lock Management
-  const [username, setUsername] = useState(initialUsername || "");
-  const [tempUsername, setTempUsername] = useState(initialUsername || "");
-  const [isSubdomainConfirmed, setIsSubdomainConfirmed] = useState(Boolean(initialUsername && initialUsername.trim()));
+  const defaultUser = initialProfile?.username || initialUsername || "";
+  const [username, setUsername] = useState(defaultUser);
+  const [tempUsername, setTempUsername] = useState(defaultUser);
+  const [isSubdomainConfirmed, setIsSubdomainConfirmed] = useState(Boolean(defaultUser.trim()));
   const [subdomainModalError, setSubdomainModalError] = useState<string | null>(null);
   const [isEditingUsernameInStudio, setIsEditingUsernameInStudio] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
 
   // 2. Template & Article Content State
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("burnout-recovery");
-  const [title, setTitle] = useState(REFLECTION_TEMPLATES[0].defaultTitle);
-  const [excerpt, setExcerpt] = useState(REFLECTION_TEMPLATES[0].defaultExcerpt);
-  const [content, setContent] = useState(REFLECTION_TEMPLATES[0].content);
-  const [tags, setTags] = useState(REFLECTION_TEMPLATES[0].defaultTags);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
+  const [showTemplatePicker, setShowTemplatePicker] = useState<boolean>(false);
+  const [stagedTemplateId, setStagedTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
+  const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [content, setContent] = useState("");
+  const [tags, setTags] = useState("");
 
-  // 3. Preview Device
+  // 3. Preview Device & Mobile View Tabs ("editor" vs "preview")
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [mobileActiveTab, setMobileActiveTab] = useState<"editor" | "preview">("editor");
 
   // 4. Litera Web3 State (Unified & Hardened)
   const [registerLitera, setRegisterLitera] = useState(true);
   const [creatorWallet, setCreatorWallet] = useState<string>("");
   const [loginMethod, setLoginMethod] = useState<string>("");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSwitchMode, setIsSwitchMode] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<string>("");
   const [newCollectionName, setNewCollectionName] = useState<string>("");
   const [unlockableUrl, setUnlockableUrl] = useState<string>("");
 
-  // Quiz State (Proof of Reading)
+  // Quiz State (Proof of Reading - Multi-question support)
   const [enableQuiz, setEnableQuiz] = useState<boolean>(false);
-  const [quizQuestion, setQuizQuestion] = useState<string>("");
-  const [quizOptions, setQuizOptions] = useState<string[]>(["", "", ""]);
-  const [correctIndex, setCorrectIndex] = useState<number>(0);
+  const [passingScore, setPassingScore] = useState<number>(60);
+  const [questions, setQuestions] = useState<
+    Array<{
+      question: string;
+      options: string[];
+      correctIndex: number;
+    }>
+  >([
+    {
+      question: "",
+      options: ["", "", ""],
+      correctIndex: 0,
+    },
+  ]);
 
   // Media Asset State (Gambar / Video Switcher)
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">("IMAGE");
-  const [mediaPreview, setMediaPreview] = useState<string>("/assets/sapiens.png");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string>("/assets/lmhy-cover.jpg");
   const [mediaFileName, setMediaFileName] = useState<string>("");
   const mediaInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,9 +144,10 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       .slice(0, 32);
   };
 
-  // Check Supabase session on mount
+  // Check Supabase session on mount & subscribe to auth state changes
   useEffect(() => {
     const supabase = createClient();
+
     async function checkAuth() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -90,16 +155,22 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
           setAuthUser(user);
           const { data: profile } = await supabase
             .from("profiles")
-            .select("username, display_name")
+            .select("username, display_name, creator_role, verification_status")
             .eq("id", user.id)
             .maybeSingle();
 
           if (profile?.username) {
-            setAuthProfile(profile);
+            setAuthProfile({ username: profile.username, display_name: profile.display_name });
+            setProviderEligibility({
+              creator_role: profile.creator_role,
+              verification_status: profile.verification_status,
+            });
             setUsername(profile.username);
             setTempUsername(profile.username);
             setIsSubdomainConfirmed(true);
           }
+        } else if (!initialUser) {
+          setAuthUser(null);
         }
       } catch (err) {
         console.warn("Error checking auth status:", err);
@@ -107,16 +178,98 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         setAuthLoading(false);
       }
     }
+
     checkAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setAuthUser(session.user);
+        setAuthLoading(false);
+      } else if (event === "SIGNED_OUT") {
+        setAuthUser(null);
+        setAuthProfile(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initialUser]);
+
+  // Load active guided prompts for the reflection editor
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function loadGuidedPrompts() {
+      try {
+        const { data, error: promptsError } = await supabase
+          .from("guided_prompts")
+          .select("id, slug, title, prompt_body, category, is_active, created_at")
+          .eq("is_active", true)
+          .order("category", { ascending: true });
+
+        if (!cancelled && !promptsError && data) {
+          setGuidedPrompts(data);
+        }
+      } catch (err) {
+        console.warn("Error loading guided prompts:", err);
+      }
+    }
+
+    loadGuidedPrompts();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // 6. Local Storage Persistence (Restore on Mount)
+  // 6. Local Storage Persistence & Litera SSO Callback Detection (Restore on Mount)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const timer = setTimeout(() => {
+      // A. Periksa callback Litera SSO dari redirect mobile (?lite_addr=...&lite_state=...)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const liteAddr = urlParams.get("lite_addr");
+        const liteState = urlParams.get("lite_state");
+
+        if (liteAddr) {
+          const savedNonce = sessionStorage.getItem("litera_sso_nonce");
+          const evmRegex = /^0x[a-fA-F0-9]{40}$/;
+
+          // Validasi Anti-CSRF Nonce & Format Alamat EVM
+          if (liteState && savedNonce && liteState !== savedNonce) {
+            console.warn("[Litera SSO] State nonce mismatch, login dibatalkan.");
+            setError("Sesi autentikasi Litera tidak valid atau kedaluwarsa.");
+          } else if (!evmRegex.test(liteAddr)) {
+            console.warn("[Litera SSO] Format alamat tidak valid:", liteAddr);
+            setError("Alamat dompet Litera yang diterima tidak valid.");
+          } else {
+            setCreatorWallet(liteAddr);
+            setLoginMethod("");
+            setRegisterLitera(true);
+            sessionStorage.removeItem("litera_sso_nonce");
+          }
+
+          // Sanitasi URL Address Bar: bersihkan parameter query agar tidak bocor atau terulang saat refresh
+          urlParams.delete("lite_addr");
+          urlParams.delete("lite_state");
+          const remainingQuery = urlParams.toString();
+          const cleanUrl = window.location.pathname + (remainingQuery ? `?${remainingQuery}` : "");
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      } catch (e) {
+        console.warn("[Litera SSO] Gagal memproses callback:", e);
+      }
+
       try {
         const rawDraft = localStorage.getItem(STORAGE_KEY);
+        const hasPickedThemeBefore = localStorage.getItem("lmhy_theme_chosen") === "true";
+
         if (rawDraft) {
           const d = JSON.parse(rawDraft);
           if (d.username && !initialUsername) {
@@ -128,7 +281,10 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
           if (d.excerpt !== undefined) setExcerpt(d.excerpt);
           if (d.content !== undefined) setContent(d.content);
           if (d.tags !== undefined) setTags(d.tags);
-          if (d.selectedTemplateId !== undefined) setSelectedTemplateId(d.selectedTemplateId);
+          if (d.selectedTemplateId !== undefined) {
+            setSelectedTemplateId(d.selectedTemplateId);
+            setStagedTemplateId(d.selectedTemplateId);
+          }
           if (d.registerLitera !== undefined) setRegisterLitera(d.registerLitera);
           if (d.creatorWallet) setCreatorWallet(d.creatorWallet);
           if (d.loginMethod) setLoginMethod(d.loginMethod);
@@ -136,10 +292,25 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
           if (d.newCollectionName !== undefined) setNewCollectionName(d.newCollectionName);
           if (d.unlockableUrl !== undefined) setUnlockableUrl(d.unlockableUrl);
           if (d.enableQuiz !== undefined) setEnableQuiz(d.enableQuiz);
-          if (d.quizQuestion !== undefined) setQuizQuestion(d.quizQuestion);
-          if (d.quizOptions !== undefined) setQuizOptions(d.quizOptions);
-          if (d.correctIndex !== undefined) setCorrectIndex(d.correctIndex);
+          if (d.passingScore !== undefined) setPassingScore(d.passingScore);
+          if (d.questions && Array.isArray(d.questions) && d.questions.length > 0) {
+            setQuestions(d.questions);
+          } else if (d.quizQuestion !== undefined) {
+            // Restore legacy single-question draft
+            setQuestions([
+              {
+                question: d.quizQuestion || "",
+                options: d.quizOptions || ["", "", ""],
+                correctIndex: d.correctIndex ?? 0,
+              },
+            ]);
+          }
           if (d.savedAt) setLastSavedTime(d.savedAt);
+        }
+
+        // Hanya tampilkan popup tema jika pengguna sudah login, baru pertama kali ke /builder, dan belum pernah memilih tema
+        if (initialUser && !hasPickedThemeBefore && !rawDraft) {
+          setShowTemplatePicker(true);
         }
       } catch (e) {
         console.warn("Gagal memulihkan draf lokal:", e);
@@ -149,7 +320,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [initialUsername]);
+  }, [initialUsername, initialUser]);
 
   // 7. Auto-save to Local Storage on Change
   useEffect(() => {
@@ -171,9 +342,8 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       newCollectionName,
       unlockableUrl,
       enableQuiz,
-      quizQuestion,
-      quizOptions,
-      correctIndex,
+      passingScore,
+      questions,
       savedAt: timeStr,
     };
 
@@ -196,9 +366,8 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     newCollectionName,
     unlockableUrl,
     enableQuiz,
-    quizQuestion,
-    quizOptions,
-    correctIndex,
+    passingScore,
+    questions,
     isPublished,
   ]);
 
@@ -231,24 +400,71 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
   const handleMediaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setMediaFile(file);
       setMediaFileName(file.name);
       const url = URL.createObjectURL(file);
       setMediaPreview(url);
     }
   };
 
-  const handleSelectTemplate = (template: ReflectionTemplate) => {
-    setSelectedTemplateId(template.id);
-    if (template.id !== "blank-canvas") {
-      setTitle(template.defaultTitle);
-      setExcerpt(template.defaultExcerpt);
-      setContent(template.content);
-      setTags(template.defaultTags);
-    } else {
-      setTitle("");
-      setExcerpt("");
-      setContent("");
-      setTags("Refleksi, Jurnal, Kesehatan Mental");
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    setStagedTemplateId(templateId);
+    try {
+      localStorage.setItem("lmhy_theme_chosen", "true");
+    } catch {
+      // storage blocked
+    }
+  };
+
+  const handleOpenTemplatePicker = () => {
+    setStagedTemplateId(selectedTemplateId);
+    setShowTemplatePicker(true);
+  };
+
+  const handleApplyStagedTemplate = () => {
+    handleSelectTemplate(stagedTemplateId);
+    setShowTemplatePicker(false);
+  };
+
+  const handleCloseTemplatePicker = () => {
+    setStagedTemplateId(selectedTemplateId);
+    setShowTemplatePicker(false);
+    try {
+      localStorage.setItem("lmhy_theme_chosen", "true");
+    } catch {
+      // storage blocked
+    }
+  };
+
+  const lastRandomTemplateIdRef = useRef<string | null>(null);
+
+  const handleApplyRandomPrompt = () => {
+    const pool = RANDOM_REFLECTION_TEMPLATES.filter(
+      (t) => t.id !== lastRandomTemplateIdRef.current
+    );
+    const candidates = pool.length > 0 ? pool : RANDOM_REFLECTION_TEMPLATES;
+    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    if (!picked) return;
+
+    lastRandomTemplateIdRef.current = picked.id;
+    setTitle(picked.defaultTitle);
+    setExcerpt(picked.defaultExcerpt);
+    setContent(picked.content);
+    setTags(picked.defaultTags);
+  };
+
+  const handleApplyBlankCanvas = () => {
+    setTitle("");
+    setExcerpt("");
+    setContent("");
+    setTags("Refleksi, Jurnal, Kesehatan Mental");
+  };
+
+  const handleApplyGuidedPrompt = (prompt: GuidedPrompt) => {
+    setContent(prompt.prompt_body);
+    if (!title.trim()) {
+      setTitle(prompt.title);
     }
   };
 
@@ -264,11 +480,39 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     setCreatorWallet(walletAddress);
     setLoginMethod(method);
     setRegisterLitera(true);
+    setIsSwitchMode(false);
     setError(null);
+  };
+
+  const handleDisconnectWallet = () => {
+    setCreatorWallet("");
+    setLoginMethod("");
+    try {
+      const rawDraft = localStorage.getItem(STORAGE_KEY);
+      if (rawDraft) {
+        const d = JSON.parse(rawDraft);
+        delete d.creatorWallet;
+        delete d.loginMethod;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+      }
+    } catch {}
+  };
+
+  const handleSwitchAccount = () => {
+    handleDisconnectWallet();
+    setIsSwitchMode(true);
+    setIsLoginModalOpen(true);
   };
 
   const cleanUser = username.trim() || "nama-domain";
   const domainPreview = `https://${cleanUser}.${activeBaseDomain}`;
+  const activeTemplate: WebDesignTemplate = getDesignTemplate(selectedTemplateId);
+
+  const canScheduleSessions = canProviderCreateSlot(providerEligibility);
+  const isProfessionalRole = providerEligibility.creator_role === "PRAKTISI";
+  const guidedPromptCopy = isProfessionalRole
+    ? "Pilih template untuk memulai, lalu sesuaikan dengan pendekatan konseling Anda."
+    : "Pilih template ruang aman untuk memulai, lalu sesuaikan dengan cerita Anda.";
 
   // Handle Form Submission with Strict Security Hardening
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -280,16 +524,53 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     }
     if (!title.trim() || !content.trim()) {
       setError("Judul dan isi tulisan wajib diisi.");
+      setMobileActiveTab("editor");
       return;
+    }
+
+    // Validasi Media Sampul: jika Web3 aktif, wajib ada media sampul (file diunggah atau preview valid)
+    if (registerLitera && !mediaFile && (!mediaPreview || mediaPreview.startsWith("blob:"))) {
+      setError("Gambar/video sampul wajib dipilih terlebih dahulu untuk visual sertifikat NFT Web3.");
+      setMobileActiveTab("editor");
+      return;
+    }
+
+    // Validasi Kuis Refleksi jika diaktifkan
+    if (enableQuiz) {
+      if (passingScore < 1 || passingScore > 100) {
+        setError("Target skor kelulusan kuis harus bernilai antara 1% hingga 100%.");
+        setMobileActiveTab("editor");
+        return;
+      }
+      for (let idx = 0; idx < questions.length; idx++) {
+        const q = questions[idx];
+        if (!q.question.trim()) {
+          setError(`Soal kuis nomor ${idx + 1} belum memiliki pertanyaan.`);
+          setMobileActiveTab("editor");
+          return;
+        }
+        const filledOptions = q.options.filter((o) => o.trim().length > 0);
+        if (filledOptions.length < 2) {
+          setError(`Soal kuis nomor ${idx + 1} minimal harus memiliki 2 pilihan jawaban.`);
+          setMobileActiveTab("editor");
+          return;
+        }
+      }
     }
 
     // Security Hardening: If Litera Web3 is ON, Creator Wallet is STRICTLY REQUIRED
     if (registerLitera && !creatorWallet) {
       setError("Peringatan Keamanan: Penerbitan Web3 diaktifkan, namun akun Litera belum terhubung. Hubungkan akun Litera terlebih dahulu agar sertifikat NFT terbit atas nama dompet Anda, atau matikan penerbitan Web3.");
       setIsLoginModalOpen(true);
+      setMobileActiveTab("editor");
       return;
     }
 
+    setError(null);
+    setShowConfirmPublishModal(true);
+  };
+
+  const handleConfirmPublish = async () => {
     setIsSubmitting(true);
     setError(null);
 
@@ -297,16 +578,83 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
       const finalCollection =
         selectedCollection === "__new__"
           ? newCollectionName.trim()
-          : selectedCollection || "Let Me Hear You - Jurnal & Refleksi";
+          : selectedCollection || "Let Me Hear You";
+
+      const validQuestions = questions
+        .map((q) => {
+          const trimmedOptions = q.options.map((o) => o.trim()).filter(Boolean);
+          const safeCorrectIndex =
+            typeof q.correctIndex === "number" &&
+            q.correctIndex >= 0 &&
+            q.correctIndex < trimmedOptions.length
+              ? q.correctIndex
+              : 0;
+          return {
+            question: q.question.trim(),
+            options: trimmedOptions,
+            correctIndex: safeCorrectIndex,
+            correctOption: trimmedOptions[safeCorrectIndex] || "",
+          };
+        })
+        .filter((q) => q.question.length > 0 && q.options.length >= 2);
 
       const quizPayload =
-        enableQuiz && quizQuestion.trim()
+        enableQuiz && validQuestions.length > 0
           ? {
-              question: quizQuestion.trim(),
-              options: quizOptions.map((o) => o.trim()).filter(Boolean),
-              correctIndex,
+              passingScore,
+              questions: validQuestions,
+              // fallback for legacy single question handlers
+              question: validQuestions[0]?.question,
+              options: validQuestions[0]?.options,
+              correctIndex: validQuestions[0]?.correctIndex ?? 0,
+              correctOption: validQuestions[0]?.correctOption || "",
             }
           : undefined;
+
+      let uploadedMediaUrl = mediaPreview;
+      if (mediaFile) {
+        try {
+          const form = new FormData();
+          form.append("file", mediaFile, mediaFile.name);
+          const ipfsRes = await fetch("https://ipfs.literaa.xyz:8443/api/v0/add", {
+            method: "POST",
+            body: form,
+          });
+          if (ipfsRes.ok) {
+            const ipfsData = await ipfsRes.json();
+            if (ipfsData?.Hash) {
+              uploadedMediaUrl = `https://ipfs.literaa.xyz:8443/ipfs/${ipfsData.Hash}`;
+            }
+          }
+        } catch (uploadErr) {
+          console.warn("[Publish] Gagal upload media cover ke IPFS, fallback ke URL profil/default:", uploadErr);
+        }
+
+        // Fallback Supabase Storage jika IPFS node gagal
+        if ((!uploadedMediaUrl || uploadedMediaUrl.startsWith("blob:")) && authUser) {
+          try {
+            const supabase = createClient();
+            const uploadRes = await uploadProfileImage(
+              supabase,
+              authUser.id,
+              "banner",
+              mediaFile
+            );
+            if (uploadRes.ok && uploadRes.url) {
+              uploadedMediaUrl = uploadRes.url;
+            }
+          } catch (uploadErr) {
+            console.warn("[Publish] Gagal upload media cover ke Supabase:", uploadErr);
+          }
+        }
+      }
+
+      // Pastikan blob: lokal atau path relatif tidak pernah terkirim ke backend / Litera
+      if (uploadedMediaUrl && uploadedMediaUrl.startsWith("blob:")) {
+        uploadedMediaUrl = "https://letmehearyou.id/assets/lmhy-cover.jpg";
+      } else if (uploadedMediaUrl && uploadedMediaUrl.startsWith("/")) {
+        uploadedMediaUrl = `https://letmehearyou.id${uploadedMediaUrl}`;
+      }
 
       const res = await publishTenantArticle({
         username: cleanUser,
@@ -314,12 +662,13 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         excerpt,
         content,
         tags,
+        templateId: selectedTemplateId,
         registerLitera,
         creatorAddress: creatorWallet || undefined,
         collectionName: finalCollection,
         unlockableUrl: unlockableUrl.trim() || undefined,
         mediaType,
-        mediaUrl: mediaPreview,
+        mediaUrl: uploadedMediaUrl,
         quiz: quizPayload,
       });
 
@@ -331,6 +680,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
 
       // Lock username upon successful publishing
       setIsPublished(true);
+      setShowConfirmPublishModal(false);
 
       // Clean local draft storage
       if (typeof window !== "undefined") {
@@ -346,6 +696,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         url: targetUrl,
         slug: res.slug || "",
         title: title || "Refleksi Baru",
+        litera: res.litera,
       });
       setShowPublishSuccessModal(true);
       setIsSubmitting(false);
@@ -376,29 +727,193 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
     }
   };
 
+  const renderPreviewMockup = (tmpl: WebDesignTemplate) => (
+    <div className="rounded-[32px] border-4 border-[#3F3766] bg-white shadow-[0_16px_40px_rgba(63,55,102,0.18),0_0_24px_rgba(247,171,197,0.3)] overflow-hidden transition-all flex flex-col lg:min-h-0 lg:flex-1">
+
+      {/* SIMULATED BROWSER TOP BAR */}
+      <div className="shrink-0 bg-[#3F3766] px-4 py-3 flex items-center justify-between gap-3 border-b-2 border-[#3F3766]">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-black/20"></span>
+          <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-black/20"></span>
+          <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-black/20"></span>
+        </div>
+
+        <div className="flex-1 max-w-sm mx-auto flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-mono font-medium text-[#F5E7C6] border border-white/15 truncate shadow-inner">
+          <span>https://{cleanUser}.{activeBaseDomain}</span>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <span className="text-[10px] font-mono font-bold text-[#F7ABC5] bg-white/10 px-2 py-0.5 rounded-full">
+            {tmpl.name}
+          </span>
+        </div>
+      </div>
+
+      {/* SIMULATED TENANT BLOG PAGE CONTENT WITH DYNAMIC TEMPLATE STYLING */}
+      <div
+        className={`p-6 sm:p-8 min-h-[460px] lg:min-h-0 lg:flex-1 overflow-y-auto space-y-6 transition-colors ${tmpl.previewClass.container}`}
+      >
+        
+        {/* Simulated Header */}
+        <div className={`flex items-center justify-between gap-4 ${tmpl.previewClass.header}`}>
+          <div className="flex items-center gap-2.5">
+            <div
+              className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${tmpl.previewClass.authorAvatar}`}
+            >
+              {cleanUser.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className={`text-xs ${tmpl.previewClass.authorName}`}>
+                @{cleanUser}
+              </p>
+              <p className={`text-[10px] ${tmpl.previewClass.authorSub}`}>
+                Ruang Publikasi Pribadi
+              </p>
+            </div>
+          </div>
+
+          {registerLitera && (
+            <span className={tmpl.previewClass.badge}>
+              Web3 Verified
+            </span>
+          )}
+        </div>
+
+        {/* Article Body */}
+        <article className="space-y-4">
+          {/* Media Header (Image or Video) */}
+          {mediaPreview && (
+            <div className={tmpl.previewClass.mediaCard}>
+              {mediaType === "VIDEO" ? (
+                <video
+                  src={mediaPreview}
+                  controls
+                  className="w-full max-h-56 object-cover bg-black"
+                />
+              ) : (
+                <div className="relative w-full h-48 sm:h-56 flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={mediaPreview}
+                    alt={title || "Cover Artikel"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-1.5">
+            {tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+              .map((tag, idx) => (
+                <span
+                  key={idx}
+                  className={tmpl.previewClass.tag}
+                >
+                  #{tag}
+                </span>
+              ))}
+          </div>
+
+          <h1 className={`text-xl sm:text-2xl leading-snug ${tmpl.previewClass.title}`}>
+            {title || "Judul Tulisan Anda"}
+          </h1>
+
+          {excerpt && (
+            <p className={`text-xs sm:text-sm ${tmpl.previewClass.excerpt}`}>
+              &ldquo;{excerpt}&rdquo;
+            </p>
+          )}
+
+          <div className={`text-xs sm:text-sm ${tmpl.previewClass.content}`}>
+            {content || "Tuliskan materi atau catatan refleksi Anda pada panel sebelah kiri..."}
+          </div>
+        </article>
+
+        {/* LITERA OFFICIAL NFT EMBED CARD WITH THEME HARMONY */}
+        {registerLitera ? (
+          <div className={tmpl.previewClass.literaCard}>
+            
+            {/* Artwork Cover */}
+            <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-[#c5baa7] flex items-center justify-center">
+              <Image
+                src={mediaPreview && !mediaPreview.startsWith("blob:") ? mediaPreview : "/assets/lmhy-cover.jpg"}
+                alt="Artwork Cover"
+                width={180}
+                height={180}
+                className="object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.3)] opacity-95"
+              />
+              <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 border border-white/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#f27438] animate-pulse"></span>
+                <span className="text-[9px] font-bold !text-white">
+                  Let Me Hear You
+                </span>
+              </div>
+            </div>
+
+            {/* Collection Pill */}
+            <div className="mt-4 mb-2 inline-flex items-center gap-1.5 rounded-full bg-black/30 border border-white/20 px-3 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+              <span>
+                {selectedCollection && selectedCollection !== "__new__"
+                  ? selectedCollection
+                  : selectedCollection === "__new__"
+                  ? newCollectionName || "Koleksi Baru"
+                  : "Let Me Hear You"}
+              </span>
+            </div>
+
+            {/* Card Title */}
+            <h3 className="text-sm sm:text-base font-bold leading-snug truncate max-w-xs mx-auto text-inherit">
+              {title || "Judul Artikel Anda"}
+            </h3>
+
+            {/* Action CTA Button */}
+            <button
+              type="button"
+              className="w-full max-w-xs mx-auto mt-4 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#cf6e3e] to-[#b8582d] !text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all"
+            >
+              Miliki Edisi Digital
+            </button>
+
+            <div className="mt-3 flex items-center justify-center gap-1.5 text-[9px] opacity-70">
+              <span>Powered by Litera Protocol</span>
+            </div>
+
+          </div>
+        ) : (
+          <div className="mt-6 rounded-xl border border-dashed border-current/20 p-3 text-center text-[11px] opacity-60">
+            Penerbitan Web3 Dinonaktifkan (Artikel diterbitkan sebagai blog standar)
+          </div>
+        )}
+
+        <div className="pt-4 border-t border-current/10 flex items-center justify-between text-[10px] opacity-60">
+          <span>Diterbitkan via Let Me Hear You</span>
+          <span className="font-mono">Hari ini</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col min-h-screen relative">
       {/* 0A. AUTHENTICATION REQUIRED MODAL (FOR CREATORS) */}
       {!authLoading && !authUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] p-6 sm:p-8 shadow-[0_20px_60px_rgba(63,55,102,0.4)] text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#d07954]/15 border-2 border-[#d07954]/30 text-3xl">
-              ✍️
-            </div>
-            <span className="inline-block rounded-full bg-[#d07954]/15 px-3 py-1 text-xs font-bold text-[#d07954] mb-2">
-              Studio Web Builder
-            </span>
             <h2 className="text-xl font-black text-[#3F3766] tracking-tight">
               Masuk untuk Mulai Menulis
             </h2>
             <p className="mt-2 text-xs text-[#3F3766]/70 leading-relaxed">
-              Daftar atau masuk ke akun Anda untuk menerbitkan refleksi di subdomain pribadi Anda (<span className="font-mono font-bold text-[#d07954]">nama.letmehearyou.id</span>) dan mengamankan sertifikat digital Litera Web3.
+              Daftar atau masuk ke akun Anda untuk menerbitkan refleksi di subdomain pribadi Anda (<span className="font-mono font-bold text-[#3F3766] underline decoration-[#F7ABC5] decoration-2 underline-offset-2">nama.letmehearyou.id</span>) dan mengamankan sertifikat digital Litera Web3.
             </p>
 
             <div className="mt-6 space-y-3">
               <Link
                 href="/login?next=/builder"
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#d07954] py-3.5 text-sm font-bold text-white shadow-[0_4px_0_0_#b86644] hover:bg-[#b86644] transition active:translate-y-1"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#F7ABC5] py-3.5 text-sm font-black text-[#3F3766] shadow-[0_6px_0_0_#3F3766] hover:bg-[#F5E7C6] hover:shadow-[0_4px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[5px] transition focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none"
               >
                 Masuk / Buat Akun Kreator
               </Link>
@@ -425,13 +940,6 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
               ✕
             </button>
 
-            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 border-2 border-emerald-500 text-3xl">
-              🎉
-            </div>
-
-            <span className="inline-block rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-300 mb-2">
-              Berhasil Diterbitkan
-            </span>
             <h2 className="text-2xl font-black text-[#3F3766] tracking-tight">
               Refleksi Anda Kini Live!
             </h2>
@@ -445,18 +953,82 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/50 block">
                   Link Publikasi
                 </span>
-                <p className="font-mono text-xs font-bold text-[#d07954] truncate">
+                <p className="font-mono text-xs font-bold text-[#3F3766] truncate">
                   {publishedData.url}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => handleCopyLink(publishedData.url)}
-                className="shrink-0 rounded-xl bg-[#3F3766] px-3 py-2 text-xs font-bold text-white hover:bg-[#3F3766]/80 transition"
+                className="shrink-0 rounded-xl bg-[#3F3766] px-3 py-2 text-xs font-bold text-white hover:bg-[#3F3766]/80 transition focus-visible:ring-2 focus-visible:ring-[#3F3766]/50 focus-visible:outline-none"
               >
                 {copiedLink ? "✓ Disalin" : "Salin Link"}
               </button>
             </div>
+
+            {/* Litera NFT Publishing Status Card */}
+            {publishedData.litera?.requested && (() => {
+              const literaState = describeLiteraPublishState(publishedData.litera);
+              const isMinted = publishedData.litera.status === "MINTED";
+              const isBlocked = publishedData.litera.status === "BLOCKED";
+              const isFailed = publishedData.litera.status === "FAILED";
+              const isProcessing = !isMinted && !isBlocked && !isFailed;
+
+              return (
+                <div
+                  className={`mt-3.5 rounded-2xl border-2 p-3.5 text-left transition-colors motion-safe:transition-transform ${
+                    isMinted
+                      ? "border-emerald-600/30 bg-emerald-50/70"
+                      : isBlocked
+                      ? "border-amber-600/30 bg-amber-50/70"
+                      : isFailed
+                      ? "border-rose-600/30 bg-rose-50/70"
+                      : "border-[#3F3766]/20 bg-[#FAF8F5]"
+                  }`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/60">
+                      Status Litera NFT
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                        isMinted
+                          ? "bg-emerald-600 text-white"
+                          : isBlocked
+                          ? "bg-amber-600 text-white"
+                          : isFailed
+                          ? "bg-rose-600 text-white"
+                          : "bg-[#3F3766] text-white"
+                      }`}
+                    >
+                      {isProcessing && (
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-white motion-safe:animate-pulse" />
+                      )}
+                      {literaState.title}
+                    </span>
+                  </div>
+
+                  <p className="mt-1.5 text-xs text-[#3F3766]/80 leading-relaxed">
+                    {literaState.body}
+                  </p>
+
+                  {literaState.href && (
+                    <div className="mt-2.5 pt-2 border-t border-[#3F3766]/10 flex items-center justify-between">
+                      <a
+                        href={literaState.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 hover:underline focus-visible:ring-2 focus-visible:ring-emerald-500 rounded focus-visible:outline-none"
+                      >
+                        <span>Lihat Transaksi di PolygonScan ↗</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Social Share Buttons */}
             <div className="mt-5">
@@ -492,9 +1064,9 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                 href={publishedData.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#d07954] hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#3F3766] hover:text-[#3F3766]/70 hover:underline"
               >
-                <span>Lihat Artikel Live ↗</span>
+                <span>Lihat Tulisan ↗</span>
               </a>
               <span className="text-xs text-[#3F3766]/30">•</span>
               <a
@@ -503,7 +1075,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-bold text-[#3F3766]/80 hover:text-[#3F3766] hover:underline"
               >
-                <span>Lihat Profil Subdomain ↗</span>
+                <span>Kunjungi Profil ↗</span>
               </a>
             </div>
           </div>
@@ -575,8 +1147,8 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
 
       {/* 1. TOP STUDIO NAVIGATION BAR */}
       <header className="sticky top-0 z-30 border-b border-[#3F3766]/15 bg-[#F5E7C6]/90 backdrop-blur-md px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border-2 border-[#3F3766]/20 shadow-sm transition hover:border-[#3F3766]"
@@ -590,7 +1162,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                   Studio Canvas
                 </span>
                 {authProfile?.display_name && (
-                  <span className="hidden sm:inline-block text-[11px] font-bold text-[#d07954]">
+                  <span className="hidden sm:inline-block text-[11px] font-bold text-[#3F3766]/60">
                     ({authProfile.display_name})
                   </span>
                 )}
@@ -659,7 +1231,33 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
+            {/* MOBILE ONLY SWITCHER (EDITOR VS PREVIEW) */}
+            <div className="flex lg:hidden items-center rounded-xl bg-white/70 p-1 border-2 border-[#3F3766]/15 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setMobileActiveTab("editor")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  mobileActiveTab === "editor"
+                    ? "bg-[#3F3766] text-white shadow-sm"
+                    : "text-[#3F3766]/70 hover:text-[#3F3766]"
+                }`}
+              >
+                Editor
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileActiveTab("preview")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  mobileActiveTab === "preview"
+                    ? "bg-[#3F3766] text-white shadow-sm"
+                    : "text-[#3F3766]/70 hover:text-[#3F3766]"
+                }`}
+              >
+                Pratinjau
+              </button>
+            </div>
+
             <div className="hidden md:flex items-center rounded-xl bg-white/70 p-1 border-2 border-[#3F3766]/15 shadow-inner">
               <button
                 type="button"
@@ -688,9 +1286,9 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
             <button
               onClick={() => handleSubmit()}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#F7ABC5] px-6 py-2.5 text-xs font-black tracking-wide text-[#3F3766] uppercase shadow-[0_4px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all border-2 border-[#3F3766] disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-xl bg-[#F7ABC5] px-4 sm:px-6 py-2.5 text-xs font-black tracking-wide text-[#3F3766] uppercase shadow-[0_4px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all border-2 border-[#3F3766] disabled:opacity-50"
             >
-              {isSubmitting ? "Menerbitkan..." : "Terbitkan Blog"}
+              {isSubmitting ? "Menerbitkan..." : "Terbitkan"}
             </button>
 
             {authUser && (
@@ -698,7 +1296,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                 <button
                   type="submit"
                   title="Keluar dari akun"
-                  className="rounded-xl border-2 border-[#3F3766]/20 bg-white/70 px-3 py-2 text-[11px] font-bold text-[#3F3766]/70 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition"
+                  className="rounded-xl border-2 border-[#3F3766]/20 bg-white/70 px-3 py-2 text-[11px] font-bold text-[#3F3766]/70 shadow-sm transition hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:shadow active:scale-[0.97] active:shadow-none active:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
                 >
                   Keluar
                 </button>
@@ -713,7 +1311,11 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* PANEL KIRI: UNIFIED STREAMLINED CONTROL DECK (COL-SPAN-5) */}
-          <div className="lg:col-span-5 space-y-6">
+          <div
+            className={`lg:col-span-5 space-y-6 ${
+              mobileActiveTab === "preview" ? "hidden lg:block" : "block"
+            }`}
+          >
 
             {/* ERROR BANNER */}
             {error && (
@@ -722,40 +1324,94 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
               </div>
             )}
 
-            {/* SECTION 1: PRESET TEMPLATE SELECTION */}
-            <div className="rounded-3xl bg-white p-5 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
-                  Pilihan Tema Refleksi
-                </label>
-                <span className="text-[10px] font-bold text-[#F7ABC5] bg-[#3F3766] px-2 py-0.5 rounded-full">
-                  Preset Siap Pakai
-                </span>
+            {/* SECTION 1: COMPACT TEMPLATE SUMMARY + PICKER TRIGGER */}
+            <div className="rounded-3xl bg-white p-4 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span
+                    className="h-4 w-4 shrink-0 rounded-full border border-black/20"
+                    style={{ backgroundColor: activeTemplate.accentColor }}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
+                      Desain Tampilan Web
+                    </span>
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate text-xs font-black text-[#3F3766]">
+                        {activeTemplate.name}
+                      </span>
+                      <span className="shrink-0 rounded-full border border-[#3F3766]/20 bg-[#F7ABC5] px-1.5 py-px text-[9px] font-bold text-[#3F3766]">
+                        {DESIGN_TEMPLATES.length} Gaya
+                      </span>
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenTemplatePicker}
+                  className="shrink-0 rounded-xl border-2 border-[#3F3766] bg-[#F7ABC5] px-3 py-2 text-[11px] font-black text-[#3F3766] shadow-[0_4px_0_0_#3F3766] hover:bg-[#F5E7C6] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-[0_1px_0_0_#3F3766] active:translate-y-[3px] transition focus:ring-2 focus:ring-[#F7ABC5]/50 focus:outline-none"
+                >
+                  Ganti tema ↻
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                {REFLECTION_TEMPLATES.map((tmpl) => {
-                  const isSelected = selectedTemplateId === tmpl.id;
-                  return (
+              {/* QUICK PROMPT INSPIRATION HELPER */}
+              <div className="pt-3 border-t border-[#3F3766]/10">
+                <details className="group">
+                  <summary className="flex items-center justify-between cursor-pointer rounded-xl text-[11px] font-bold text-[#3F3766]/75 hover:text-[#3F3766] select-none list-none py-1">
+                    <span>💡 Butuh inspirasi contoh teks refleksi?</span>
+                    <span className="text-xs group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-2 space-y-1.5">
                     <button
-                      key={tmpl.id}
                       type="button"
-                      onClick={() => handleSelectTemplate(tmpl)}
-                      className={`flex flex-col text-left p-3 rounded-2xl border-2 transition-all relative overflow-hidden ${
-                        isSelected
-                          ? "border-[#3F3766] bg-[#F7ABC5]/25 shadow-[0_3px_0_0_#3F3766]"
-                          : "border-[#3F3766]/15 bg-white hover:border-[#3F3766]/40 hover:bg-[#F5E7C6]/30"
-                      }`}
+                      onClick={handleApplyRandomPrompt}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#3F3766]/15 bg-[#F5E7C6]/30 px-3 py-2 text-left text-[10px] text-[#3F3766] transition hover:bg-[#F5E7C6]/60 active:scale-[0.99]"
                     >
-                      <span className="text-xs font-black text-[#3F3766] truncate w-full">
-                        {tmpl.name}
+                      <span className="min-w-0 flex-1 font-semibold leading-snug flex items-center gap-2">
+                        <span>🎲</span>
+                        <span>Artikel Acak (Inspirasi Otomatis)</span>
                       </span>
-                      <span className="text-[10px] text-[#3F3766]/60 line-clamp-1 mt-0.5">
-                        {tmpl.tagline}
-                      </span>
+                      <span className="shrink-0 font-bold text-[#3F3766]/60">Muat Acak ↻</span>
                     </button>
-                  );
-                })}
+
+                    <button
+                      type="button"
+                      onClick={handleApplyBlankCanvas}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#3F3766]/15 bg-white px-3 py-2 text-left text-[10px] text-[#3F3766] transition hover:bg-slate-50 active:scale-[0.99]"
+                    >
+                      <span className="min-w-0 flex-1 font-semibold leading-snug flex items-center gap-2">
+                        <span>✍️</span>
+                        <span>Kanvas Kosong (Mulai dari Nol)</span>
+                      </span>
+                      <span className="shrink-0 font-bold text-[#3F3766]/60">Muat →</span>
+                    </button>
+
+                    {guidedPrompts.length > 0 && (
+                      <div className="pt-2 mt-1 border-t border-[#3F3766]/10 space-y-1.5">
+                        <p className="px-1 text-[10px] font-bold text-[#3F3766]/70 leading-snug">
+                          {guidedPromptCopy}
+                        </p>
+                        {guidedPrompts.map((prompt) => (
+                          <button
+                            key={prompt.id}
+                            type="button"
+                            onClick={() => handleApplyGuidedPrompt(prompt)}
+                            className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#3F3766]/15 bg-[#F5E7C6]/30 px-3 py-2 text-left text-[10px] text-[#3F3766] transition hover:bg-[#F5E7C6]/60 active:scale-[0.99]"
+                          >
+                            <span className="min-w-0 flex-1 font-semibold leading-snug">
+                              {prompt.title}
+                            </span>
+                            <span className="shrink-0 rounded-full border border-[#3F3766]/20 bg-white px-1.5 py-px text-[9px] font-bold text-[#3F3766]/70">
+                              {prompt.category}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </details>
               </div>
             </div>
 
@@ -876,11 +1532,11 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
             </div>
 
             {/* SECTION 3: UNIFIED LITERA WEB3 INTEGRATION CARD (NO SEPARATE TAB) */}
-            <div className="rounded-3xl bg-white p-6 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-5">
+            <div className="rounded-3xl bg-white p-4 sm:p-6 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-5 overflow-hidden">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <span className="text-xs font-black uppercase tracking-wider text-[#3F3766] block">
-                    Penerbitan Sertifikat Web3 (Litera Protocol)
+                    Penerbitan Sertifikat Web3
                   </span>
                   <p className="text-[11px] text-[#3F3766]/70 leading-relaxed mt-1">
                     Aktifkan untuk menerbitkan artikel ini ke jaringan blockchain Polygon sebagai sertifikat digital permanen.
@@ -909,49 +1565,61 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                   
                   {/* SECURITY HARDENING BANNER: PROMINENT WARNING IF WALLET NOT CONNECTED */}
                   {!creatorWallet ? (
-                    <div className="rounded-2xl border-2 border-amber-500 bg-amber-50 p-4 space-y-2.5">
+                    <div className="rounded-2xl border-2 border-[#F7ABC5] bg-[#F5E7C6]/30 p-4 space-y-2.5 shadow-sm">
                       <div className="flex items-center gap-2">
-                        <span className="h-5 w-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-black">
-                          !
+                        <span className="h-5 w-5 rounded-full bg-[#3F3766] text-[#F5E7C6] flex items-center justify-center text-[10px] font-black">
+                          ✓
                         </span>
-                        <h4 className="text-xs font-black text-amber-900 uppercase tracking-wide">
-                          Peringatan Autentikasi Penulis
+                        <h4 className="text-xs font-bold text-[#3F3766] uppercase tracking-wide">
+                          Autentikasi Sertifikat Litera
                         </h4>
                       </div>
-                      <p className="text-[11px] text-amber-800 leading-relaxed">
-                        Penerbitan Web3 diaktifkan, namun akun Litera Anda belum terhubung. Anda wajib menghubungkan akun Litera Cloud agar hak royalti dan sertifikat NFT terdaftar atas nama Anda.
+                      <p className="text-[11px] text-[#3F3766]/80 leading-relaxed font-medium">
+                        Hubungkan akun dompet Litera agar karya Anda otomatis terdaftar sebagai sertifikat digital resmi dan hak royalti tercatat atas nama Anda.
                       </p>
                       <button
                         type="button"
                         onClick={() => setIsLoginModalOpen(true)}
-                        className="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black tracking-wide shadow transition"
+                        className="w-full py-2.5 px-4 rounded-xl bg-[#F7ABC5] hover:bg-[#f59bb9] text-[#3F3766] text-xs font-bold tracking-wide border-2 border-[#3F3766] shadow-[0_3px_0_0_#3F3766] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#3F3766] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer"
                       >
-                        Hubungkan Akun Litera Cloud Sekarang
+                        Hubungkan Akun Litera
                       </button>
                     </div>
                   ) : (
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-xs font-bold text-[#3F3766]">
-                          Akun Dompet Penulis Terverifikasi
+                          Dompet Penulis
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => setIsLoginModalOpen(true)}
-                          className="text-xs font-black text-[#3F3766] underline hover:text-[#3F3766]/70"
-                        >
-                          Ganti Akun
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleSwitchAccount}
+                            className="text-[11px] font-bold text-[#3F3766] hover:underline cursor-pointer"
+                          >
+                            Ganti Akun
+                          </button>
+                          <span className="text-[#3F3766]/30 text-xs">•</span>
+                          <button
+                            type="button"
+                            onClick={handleDisconnectWallet}
+                            className="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+                          >
+                            Putuskan
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="p-3 bg-[#F7ABC5]/20 rounded-2xl border-2 border-[#3F3766]/20 flex items-center gap-3">
-                        <span className="h-7 w-7 rounded-xl bg-[#3F3766] text-white flex items-center justify-center text-xs font-black">
-                          OK
-                        </span>
+                      <div className="p-3 bg-[#F7ABC5]/20 rounded-2xl border-2 border-[#3F3766]/20 flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-[#3F3766] truncate">{loginMethod || "Litera Cloud Wallet"}</p>
-                          <p className="text-[10px] font-mono text-[#3F3766]/80 truncate">{creatorWallet}</p>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F3766]/60 block mb-0.5">
+                            Alamat Dompet Terhubung
+                          </span>
+                          <p className="text-xs font-mono font-bold text-[#3F3766] truncate">{creatorWallet}</p>
                         </div>
+                        <span className="shrink-0 px-2 py-0.5 rounded-md bg-emerald-100 border border-emerald-300 text-[10px] font-bold text-emerald-800">
+                          ✓ Aktif
+                        </span>
                       </div>
                     </div>
                   )}
@@ -966,7 +1634,7 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                       onChange={(e) => setSelectedCollection(e.target.value)}
                       className="w-full text-xs font-bold px-3 py-2.5 rounded-xl border-2 border-[#3F3766]/15 bg-white text-[#3F3766] focus:outline-none focus:border-[#3F3766]"
                     >
-                      <option value="">Let Me Hear You - Jurnal & Refleksi (Default)</option>
+                      <option value="">Let Me Hear You (Default)</option>
                       <option value="Ruang Pemulihan & Self-Care">Ruang Pemulihan & Self-Care</option>
                       <option value="Jurnal Mindfulness Harian">Jurnal Mindfulness Harian</option>
                       <option value="__new__">+ Buat Koleksi Baru...</option>
@@ -1025,47 +1693,171 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
                     </div>
 
                     {enableQuiz && (
-                      <div className="p-3.5 rounded-2xl bg-[#F5E7C6]/50 border-2 border-[#3F3766]/20 space-y-2.5">
-                        <div>
-                          <label className="block text-[11px] font-bold text-[#3F3766] mb-1">
-                            Pertanyaan Kuis
+                      <div className="space-y-4">
+                        {/* Passing Score Setting */}
+                        <div className="p-3 rounded-2xl bg-white border border-[#3F3766]/15 flex items-center justify-between gap-3 shadow-xs">
+                          <label className="text-xs font-bold text-[#3F3766]">
+                            Target Skor Kelulusan
                           </label>
-                          <input
-                            type="text"
-                            value={quizQuestion}
-                            onChange={(e) => setQuizQuestion(e.target.value)}
-                            placeholder="Apa poin utama dari tulisan ini?"
-                            className="w-full text-xs px-3 py-2 rounded-xl border-2 border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
-                          />
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={passingScore}
+                              onChange={(e) => setPassingScore(Number(e.target.value) || 0)}
+                              className="w-16 px-2.5 py-1 text-xs font-bold text-center rounded-lg border border-[#3F3766]/20 focus:outline-none focus:border-[#3F3766]"
+                            />
+                            <span className="text-xs font-bold text-[#3F3766]">%</span>
+                          </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] font-bold text-[#3F3766]">
-                            Pilihan Jawaban (Pilih radio untuk kunci benar)
-                          </label>
-                          {quizOptions.map((opt, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="correctQuizOption"
-                                checked={correctIndex === idx}
-                                onChange={() => setCorrectIndex(idx)}
-                                className="text-[#3F3766] focus:ring-[#F7ABC5]"
-                              />
+                        {/* List of Questions */}
+                        {questions.map((q, qIndex) => (
+                          <div
+                            key={qIndex}
+                            className="p-3.5 sm:p-4 rounded-2xl bg-[#F5E7C6]/40 border-2 border-[#3F3766]/20 space-y-3 relative shadow-xs overflow-hidden"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black uppercase tracking-wider text-[#3F3766]">
+                                Soal {qIndex + 1} dari {questions.length}
+                              </span>
+                              {questions.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setQuestions(questions.filter((_, i) => i !== qIndex));
+                                  }}
+                                  className="text-[10px] font-bold text-red-600 hover:underline hover:text-red-800"
+                                >
+                                  Hapus Soal
+                                </button>
+                              )}
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3F3766] mb-1">
+                                Pertanyaan
+                              </label>
                               <input
                                 type="text"
-                                value={opt}
+                                value={q.question}
                                 onChange={(e) => {
-                                  const updated = [...quizOptions];
-                                  updated[idx] = e.target.value;
-                                  setQuizOptions(updated);
+                                  const updated = [...questions];
+                                  updated[qIndex] = { ...updated[qIndex], question: e.target.value };
+                                  setQuestions(updated);
                                 }}
-                                placeholder={`Pilihan ${String.fromCharCode(65 + idx)}`}
-                                className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
+                                placeholder="Tuliskan pertanyaan refleksi di sini..."
+                                className="w-full text-xs px-3 py-2 rounded-xl border border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766]"
                               />
                             </div>
-                          ))}
-                        </div>
+
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="block text-[11px] font-bold text-[#3F3766]">
+                                  Pilihan Jawaban (Klik radio untuk kunci benar)
+                                </label>
+                                {q.options.length < 6 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...questions];
+                                      updated[qIndex] = {
+                                        ...updated[qIndex],
+                                        options: [...updated[qIndex].options, ""],
+                                      };
+                                      setQuestions(updated);
+                                    }}
+                                    className="text-[10px] font-bold text-[#3F3766] underline hover:opacity-80"
+                                  >
+                                    + Opsi
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="space-y-1.5">
+                                {q.options.map((opt, optIdx) => (
+                                  <div key={optIdx} className="flex items-center gap-2 w-full min-w-0">
+                                    <input
+                                      type="radio"
+                                      name={`correctOption_${qIndex}`}
+                                      checked={q.correctIndex === optIdx}
+                                      onChange={() => {
+                                        const updated = [...questions];
+                                        updated[qIndex] = { ...updated[qIndex], correctIndex: optIdx };
+                                        setQuestions(updated);
+                                      }}
+                                      className="text-[#3F3766] focus:ring-[#F7ABC5] h-4 w-4 shrink-0"
+                                      title="Tandai sebagai kunci jawaban benar"
+                                    />
+                                    <div className="relative flex-1 min-w-0 flex items-center">
+                                      <input
+                                        type="text"
+                                        value={opt}
+                                        onChange={(e) => {
+                                          const updated = [...questions];
+                                          const newOpts = [...updated[qIndex].options];
+                                          newOpts[optIdx] = e.target.value;
+                                          updated[qIndex] = { ...updated[qIndex], options: newOpts };
+                                          setQuestions(updated);
+                                        }}
+                                        placeholder={`Pilihan ${String.fromCharCode(65 + optIdx)}`}
+                                        className={`w-full text-xs py-1.5 pl-3 rounded-lg border border-[#3F3766]/20 bg-white focus:outline-none focus:border-[#3F3766] ${
+                                          q.options.length > 2 ? "pr-8" : "pr-3"
+                                        }`}
+                                      />
+                                      {q.options.length > 2 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const updated = [...questions];
+                                            const newOpts = updated[qIndex].options.filter((_, i) => i !== optIdx);
+                                            const newCorrect =
+                                              q.correctIndex === optIdx
+                                                ? 0
+                                                : q.correctIndex > optIdx
+                                                ? q.correctIndex - 1
+                                                : q.correctIndex;
+                                            updated[qIndex] = {
+                                              ...updated[qIndex],
+                                              options: newOpts,
+                                              correctIndex: newCorrect,
+                                            };
+                                            setQuestions(updated);
+                                          }}
+                                          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 rounded flex items-center justify-center text-[10px] text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                          title="Hapus opsi ini"
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Add Question Button */}
+                        {questions.length < 10 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuestions([
+                                ...questions,
+                                {
+                                  question: "",
+                                  options: ["", "", ""],
+                                  correctIndex: 0,
+                                },
+                              ]);
+                            }}
+                            className="w-full py-2 px-3 rounded-xl border-2 border-dashed border-[#3F3766]/30 bg-white/60 hover:bg-white text-xs font-bold text-[#3F3766] transition flex items-center justify-center gap-1.5 shadow-2xs"
+                          >
+                            <span>+ Tambah Pertanyaan Kuis</span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1083,192 +1875,38 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
               )}
             </div>
 
+            {/* SECTION 4: JADWAL SESI (PENDAMPING / PRAKTISI) */}
+            {canScheduleSessions && (
+              <div className="rounded-3xl bg-white p-4 border-2 border-[#3F3766]/15 shadow-[0_6px_0_0_#3F3766]/10 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
+                    Jadwal Sesi
+                  </span>
+                  <span className="shrink-0 rounded-full border border-[#3F3766]/20 bg-[#F7ABC5] px-1.5 py-px text-[9px] font-bold text-[#3F3766]">
+                    {isProfessionalRole ? "Praktisi" : "Pendamping"}
+                  </span>
+                </div>
+                <SlotCalendar canSchedule={canScheduleSessions} />
+              </div>
+            )}
+
           </div>
 
-          {/* PANEL KANAN: LIVE MOCKUP CANVAS WITH EXACT IMAGE 2 WIREFRAME (COL-SPAN-7) */}
-          <div className="lg:col-span-7 sticky top-20">
-            <div className="flex flex-col items-center">
+          {/* PANEL KANAN: LIVE MOCKUP CANVAS (COL-SPAN-7) */}
+          <div
+            className={`lg:col-span-7 lg:sticky lg:top-20 ${
+              mobileActiveTab === "editor" ? "hidden lg:block" : "block"
+            }`}
+          >
+            <div className="flex flex-col items-center lg:h-[calc(100vh-7rem)]">
               <div
-                className={`w-full transition-all duration-300 ${
+                className={`w-full transition-all duration-300 lg:flex lg:h-full lg:flex-col ${
                   previewDevice === "mobile" ? "max-w-sm" : "max-w-full"
                 }`}
               >
-                <div className="rounded-[32px] border-4 border-[#3F3766] bg-white shadow-[0_16px_40px_rgba(63,55,102,0.18),0_0_24px_rgba(247,171,197,0.3)] overflow-hidden transition-all">
-                  
-                  {/* SIMULATED BROWSER TOP BAR */}
-                  <div className="bg-[#3F3766] px-4 py-3 flex items-center justify-between gap-3 border-b-2 border-[#3F3766]">
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-black/20"></span>
-                      <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-black/20"></span>
-                      <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-black/20"></span>
-                    </div>
+                {renderPreviewMockup(activeTemplate)}
 
-                    <div className="flex-1 max-w-sm mx-auto flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-mono font-medium text-[#F5E7C6] border border-white/15 truncate shadow-inner">
-                      <span>https://{cleanUser}.{activeBaseDomain}</span>
-                    </div>
-
-                    <div className="w-8 shrink-0 text-right">
-                      <span className="text-[10px] font-mono font-bold text-[#F7ABC5]">LIVE</span>
-                    </div>
-                  </div>
-
-                  {/* SIMULATED TENANT BLOG PAGE CONTENT */}
-                  <div className="p-6 sm:p-8 min-h-[460px] max-h-[640px] overflow-y-auto space-y-6 bg-gradient-to-b from-[#F5E7C6]/20 via-white to-white">
-                    
-                    {/* Simulated Header */}
-                    <div className="border-b border-[#3F3766]/10 pb-4 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-[#F7ABC5] text-[#3F3766] flex items-center justify-center text-xs font-black shadow-sm">
-                          {cleanUser.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-[#3F3766]">@{cleanUser}</p>
-                          <p className="text-[10px] text-[#3F3766]/60">Ruang Publikasi Pribadi</p>
-                        </div>
-                      </div>
-
-                      {registerLitera && (
-                        <span className="rounded-full bg-[#3F3766] px-2.5 py-0.5 text-[9px] font-bold text-[#F7ABC5] shadow-sm">
-                          Web3 Verified
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Article Body */}
-                    <article className="space-y-4">
-                      {/* Media Header (Image or Video) */}
-                      {mediaPreview && (
-                        <div className="overflow-hidden rounded-2xl border-2 border-[#3F3766]/15 shadow-sm bg-[#3F3766]/5">
-                          {mediaType === "VIDEO" ? (
-                            <video
-                              src={mediaPreview}
-                              controls
-                              className="w-full max-h-56 object-cover bg-black"
-                            />
-                          ) : (
-                            <div className="relative w-full h-48 sm:h-56 flex items-center justify-center">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={mediaPreview}
-                                alt={title || "Cover Artikel"}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {tags
-                          .split(",")
-                          .map((t) => t.trim())
-                          .filter(Boolean)
-                          .map((tag, idx) => (
-                            <span
-                              key={idx}
-                              className="rounded-lg bg-[#F7ABC5]/25 px-2 py-0.5 text-[10px] font-bold text-[#3F3766] border border-[#F7ABC5]/40"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                      </div>
-
-                      <h1 className="text-xl sm:text-2xl font-black text-[#3F3766] leading-snug tracking-tight">
-                        {title || "Judul Tulisan Anda"}
-                      </h1>
-
-                      {excerpt && (
-                        <p className="text-xs sm:text-sm font-semibold italic text-[#3F3766]/70 border-l-2 border-[#F7ABC5] pl-3 py-0.5">
-                          &ldquo;{excerpt}&rdquo;
-                        </p>
-                      )}
-
-                      <div className="text-xs sm:text-sm text-[#3F3766]/85 font-medium leading-relaxed whitespace-pre-wrap font-sans pt-2">
-                        {content || "Tuliskan materi atau catatan refleksi Anda pada panel sebelah kiri..."}
-                      </div>
-                    </article>
-
-                    {/* EXACT WIREFRAME REPLICATION OF IMAGE 2: LITERA OFFICIAL NFT EMBED CARD */}
-                    {registerLitera ? (
-                      <div className="mt-8 rounded-3xl bg-[#171d2a] p-6 sm:p-8 text-center border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center relative overflow-hidden">
-                        
-                        {/* Subtle Background Radial Glow */}
-                        <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#d97746]/20 rounded-full blur-3xl pointer-events-none" />
-                        <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-[#3F3766]/40 rounded-full blur-3xl pointer-events-none" />
-
-                        {/* Centered Artwork Box with Warm Hue & 'Let Me Hear You' Glass Badge */}
-                        <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-[#c5baa7] flex items-center justify-center group">
-                          {/* Inner Illustration / Avatar */}
-                          <div className="relative w-full h-full flex items-center justify-center p-2">
-                            <Image
-                              src="/assets/sapiens.png"
-                              alt="Artwork Cover"
-                              width={190}
-                              height={190}
-                              className="object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.3)] opacity-95 transition-transform duration-300 group-hover:scale-105"
-                            />
-                          </div>
-
-                          {/* Floating Top-Left Glass Badge: ● Let Me Hear You */}
-                          <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 border border-white/20 shadow-sm">
-                            <span className="h-2 w-2 rounded-full bg-[#f27438] animate-pulse"></span>
-                            <span className="text-[10px] font-bold !text-white tracking-wide">
-                              Let Me Hear You
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Author / Community Pill: ● THE EVERYDAY HUMAN / Collection */}
-                        <div className="mt-5 mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-[#351918] border border-[#d97746]/40 px-3.5 py-1 text-[10px] font-black !text-[#f08554] uppercase tracking-wider shadow-sm">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#f08554]"></span>
-                          <span>
-                            {selectedCollection && selectedCollection !== "__new__"
-                              ? selectedCollection
-                              : newCollectionName || "THE EVERYDAY HUMAN"}
-                          </span>
-                        </div>
-
-                        {/* Article Title */}
-                        <h3 className="text-base sm:text-lg font-black !text-white leading-snug tracking-tight max-w-sm mt-1">
-                          {title || "Mengenali Tanda Burnout Sebelum Terlambat"}
-                        </h3>
-
-                        {/* Subtitle */}
-                        <p className="text-xs !text-slate-300 mt-2 max-w-xs leading-relaxed">
-                          Diterbitkan resmi sebagai aset digital permanen artikel ini.
-                        </p>
-
-                        {/* Action CTA Button: Miliki Edisi Digital */}
-                        <button
-                          type="button"
-                          className="w-full max-w-xs mt-6 py-3 px-6 rounded-2xl bg-gradient-to-r from-[#cf6e3e] to-[#b8582d] !text-white text-xs font-black tracking-wide shadow-[0_6px_20px_rgba(207,110,62,0.45)] hover:brightness-110 active:scale-[0.98] transition-all border border-[#f08554]/30"
-                        >
-                          Miliki Edisi Digital
-                        </button>
-
-                        {/* Footer: Ⓛ v1.4.66 • Powered by Litera */}
-                        <div className="mt-5 flex items-center justify-center gap-1.5 text-[10px] !text-slate-400 font-medium">
-                          <span className="h-3.5 w-3.5 rounded-full bg-[#cf6e3e] !text-white flex items-center justify-center text-[7px] font-black italic">
-                            L
-                          </span>
-                          <span>v1.4.66 • Powered by Litera</span>
-                        </div>
-
-                      </div>
-                    ) : (
-                      <div className="mt-8 rounded-2xl border-2 border-dashed border-[#3F3766]/20 bg-[#F5E7C6]/20 p-4 text-center text-xs text-[#3F3766]/60">
-                        Penerbitan Web3 Dinonaktifkan (Artikel diterbitkan sebagai blog standar)
-                      </div>
-                    )}
-
-                    <div className="pt-6 border-t border-[#3F3766]/10 flex items-center justify-between text-[10px] text-[#3F3766]/50">
-                      <span>Diterbitkan via Let Me Hear You</span>
-                      <span className="font-mono">Hari ini</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mx-auto h-2 w-3/4 rounded-full bg-[#3F3766]/10 blur-sm mt-3"></div>
+                <div className="mx-auto h-2 w-3/4 shrink-0 rounded-full bg-[#3F3766]/10 blur-sm mt-3"></div>
               </div>
             </div>
           </div>
@@ -1276,12 +1914,156 @@ export function WebBuilderClient({ initialUsername }: { initialUsername?: string
         </div>
       </div>
 
+      {/* MODAL: TEMPLATE PICKER (ARCADE CHARACTER SELECT) */}
+      {showTemplatePicker && (
+        <TemplatePickerDialog
+          templates={DESIGN_TEMPLATES}
+          activeId={selectedTemplateId}
+          stagedId={stagedTemplateId}
+          onStage={setStagedTemplateId}
+          onApply={handleApplyStagedTemplate}
+          onClose={handleCloseTemplatePicker}
+          renderPreview={renderPreviewMockup}
+        />
+      )}
+
+      {/* MODAL: PREVIEW & CONFIRMATION BEFORE PUBLISH */}
+      {showConfirmPublishModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/85 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          onClick={() => setShowConfirmPublishModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Pratinjau dan konfirmasi penerbitan"
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-lg max-h-[92vh] flex-col rounded-3xl border-4 border-[#3F3766] bg-[#FAF8F5] p-5 shadow-[0_24px_70px_rgba(63,55,102,0.5)]"
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black text-[#3F3766] tracking-tight">
+                  Pratinjau &amp; Konfirmasi Terbit
+                </h2>
+                <p className="text-[11px] text-[#3F3766]/70 leading-relaxed">
+                  Periksa tampilan artikel di bawah ini sebelum benar-benar diterbitkan.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConfirmPublishModal(false)}
+                className="rounded-lg p-2 text-xs font-bold text-[#3F3766]/50 hover:text-[#3F3766] hover:bg-white transition"
+                aria-label="Tutup pratinjau"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Preview & Notes */}
+            <div className="mt-4 space-y-4 overflow-y-auto pr-1">
+              {/* LIVE PREVIEW OF THE FINAL ARTICLE */}
+              <div className="overflow-hidden rounded-2xl border-2 border-[#3F3766]/20 bg-white">
+                {renderPreviewMockup(activeTemplate)}
+              </div>
+
+              {/* Publication Summary */}
+              <div className="space-y-1.5 rounded-2xl border-2 border-[#3F3766]/15 bg-white p-3.5">
+                <div className="flex items-start justify-between gap-3 text-[11px]">
+                  <span className="shrink-0 font-bold text-[#3F3766]/60">Alamat Artikel</span>
+                  <span className="font-mono font-bold text-[#3F3766] text-right break-all">
+                    {domainPreview}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-[11px]">
+                  <span className="shrink-0 font-bold text-[#3F3766]/60">Desain Template</span>
+                  <span className="font-bold text-[#3F3766] text-right">{activeTemplate.name}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-[11px]">
+                  <span className="shrink-0 font-bold text-[#3F3766]/60">Sertifikat Web3 Litera</span>
+                  <span className={`font-bold ${registerLitera ? "text-emerald-700" : "text-[#3F3766]/60"}`}>
+                    {registerLitera && creatorWallet
+                      ? `Aktif • ${creatorWallet.slice(0, 6)}…${creatorWallet.slice(-4)}`
+                      : "Nonaktif"}
+                  </span>
+                </div>
+              </div>
+
+              {/* IMPORTANT: DATA THAT CANNOT BE CHANGED */}
+              <div className="rounded-2xl border-2 border-[#F7ABC5] bg-[#F5E7C6]/40 p-3.5 space-y-2">
+                <p className="text-[11px] font-black uppercase tracking-wider text-[#3F3766]">
+                  Ketentuan Penting — Tidak Dapat Diubah Setelah Terbit
+                </p>
+                <ul className="space-y-1.5 text-[11px] text-[#3F3766]/85 leading-relaxed list-disc pl-4">
+                  <li>
+                    <strong>Alamat subdomain dikunci.</strong> {domainPreview} tidak dapat diubah lagi
+                    setelah artikel terbit.
+                  </li>
+                  <li>
+                    <strong>URL artikel permanen.</strong> Alamat dibuat otomatis dari judul dan tidak
+                    dapat diganti.
+                  </li>
+                  {registerLitera && creatorWallet && (
+                    <li>
+                      <strong>Sertifikat Litera bersifat permanen.</strong> Tercatat di blockchain
+                      Polygon atas dompet {creatorWallet.slice(0, 6)}…{creatorWallet.slice(-4)} dan
+                      tidak dapat diedit atau dihapus.
+                    </li>
+                  )}
+                  <li>
+                    <strong>Studio terkunci.</strong> Setelah terbit, draf lokal dihapus dan panel
+                    studio terkunci — pastikan semua data sudah benar.
+                  </li>
+                </ul>
+              </div>
+
+              {error && (
+                <div className="rounded-2xl border-2 border-red-500 bg-red-50 p-3 text-[11px] font-bold text-red-800 leading-relaxed">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setShowConfirmPublishModal(false)}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl border-2 border-[#3F3766]/25 bg-white px-4 py-3 text-xs font-bold text-[#3F3766]/80 hover:bg-[#F5E7C6]/40 transition disabled:opacity-50"
+              >
+                ← Kembali Mengedit
+              </button>
+              <button
+                type="button"
+                onClick={() => handleConfirmPublish()}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl bg-[#F7ABC5] px-4 py-3 text-xs font-black uppercase tracking-wide text-[#3F3766] border-2 border-[#3F3766] shadow-[0_4px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all disabled:opacity-50"
+              >
+                {isSubmitting ? "Menerbitkan..." : "Terbitkan Sekarang"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL AUTH LITERA POPUP */}
-      <LiteraLoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSuccess={handleLoginSuccess}
-      />
+      <Web3Providers>
+        <LiteraLoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => {
+            setIsLoginModalOpen(false);
+            setIsSwitchMode(false);
+          }}
+          onSuccess={handleLoginSuccess}
+          onDisconnect={handleDisconnectWallet}
+          isSwitchMode={isSwitchMode}
+        />
+        <WalletConnectWatcher
+          onSuccess={handleLoginSuccess}
+          onDisconnect={handleDisconnectWallet}
+        />
+      </Web3Providers>
     </div>
   );
 }

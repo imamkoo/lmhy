@@ -8,6 +8,7 @@ import {
   getAdminLiteraTokenomicsAction,
 } from "@/app/actions/admin-nft";
 import { LiteraPublisherQuota, LiteraPublisherTokenomics } from "@/lib/litera";
+import { LiteraIntegrationPreflightResult } from "@/lib/litera-runtime";
 
 export function AdminLiteraClient() {
   // 1. PIN Security Gate (Default: 123456)
@@ -19,6 +20,7 @@ export function AdminLiteraClient() {
   // 2. Litera Quota & Credits State (Free Kuota & Paid Credits)
   const [quotaData, setQuotaData] = useState<LiteraPublisherQuota | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
+  const [preflightData, setPreflightData] = useState<LiteraIntegrationPreflightResult | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isLoadingQuota, setIsLoadingQuota] = useState(true);
 
@@ -32,6 +34,7 @@ export function AdminLiteraClient() {
       .then((res) => {
         setQuotaData(res.quota);
         setHasApiKey(res.hasApiKey);
+        setPreflightData(res.preflight || null);
         setQuotaError(res.error || null);
       })
       .finally(() => {
@@ -189,6 +192,7 @@ export function AdminLiteraClient() {
                     .then((res) => {
                       setQuotaData(res.quota);
                       setHasApiKey(res.hasApiKey);
+                      setPreflightData(res.preflight || null);
                       setQuotaError(res.error || null);
                     })
                     .finally(() => setIsLoadingQuota(false));
@@ -218,6 +222,14 @@ export function AdminLiteraClient() {
               <p className="font-bold">LITERA_API_KEY belum terkonfigurasi di server environment.</p>
               <p className="text-[11px] text-amber-800">
                 Silakan tambahkan <strong>LITERA_API_KEY</strong> di file <code>.env</code> lokal atau di menu <strong>Settings → Environment Variables</strong> Vercel untuk menghubungkan kuota penerbit secara realtime.
+              </p>
+            </div>
+          ) : preflightData?.status === "PUBLISHER_MISMATCH" ? (
+            <div className="mt-4 rounded-2xl bg-rose-50 border-2 border-rose-300 p-4 text-xs font-semibold text-rose-900 space-y-1">
+              <p className="font-bold">Mismatch Identitas Publisher Terdeteksi:</p>
+              <p className="text-[11px] text-rose-800 leading-relaxed">{preflightData.message}</p>
+              <p className="text-[11px] text-rose-800/80 pt-1 font-mono">
+                API Key Owner: {preflightData.apiKeyWallet || "-"} | Domain Owner: {preflightData.domainOwnerWallet || "-"}
               </p>
             </div>
           ) : quotaError && !quotaData ? (

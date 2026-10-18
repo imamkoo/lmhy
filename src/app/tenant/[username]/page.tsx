@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUsername, getProfileStats } from "@/lib/profile-storage";
 import { getArticlesByUsername } from "@/lib/article-storage";
+import SessionTabs, { type SessionSlot } from "@/components/sanctuary/SessionTabs";
 import { ProfileBanner } from "./components/ProfileBanner";
 import { ProfileTabs } from "./components/ProfileTabs";
 import { EditProfileModal } from "./components/EditProfileModal";
@@ -33,28 +34,12 @@ export default async function TenantProfilePage({
     notFound();
   }
 
-  // 1. Fetch profile from Supabase with safe fallback
-  let profile: Profile | null = await getProfileByUsername(username);
+  // 1. Fetch profile from Supabase. Unknown usernames must 404 —
+  // never render a placeholder profile for unregistered subdomains.
+  const profile: Profile | null = await getProfileByUsername(username);
 
   if (!profile) {
-    const formattedDisplay = username
-      .split("-")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-
-    profile = {
-      id: `anon_${username}`,
-      username,
-      display_name: formattedDisplay || username,
-      bio: "Kumpulan refleksi, tulisan kesehatan mental, dan edisi sertifikat digital resmi di Let Me Hear You.",
-      avatar_url: null,
-      banner_url: null,
-      website: null,
-      facebook_profile_url: null,
-      facebook_access_token: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    notFound();
   }
 
   // 2. Fetch all creator articles
@@ -66,38 +51,90 @@ export default async function TenantProfilePage({
     stats.articlesCount = articles.length;
   }
 
-  // 4. Authenticate current visitor/author session
-  const supabase = await createClient();
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
-
-  const isOwnProfile = Boolean(
-    currentUser &&
-      (currentUser.id === profile.id ||
-        (profile.id.startsWith("anon_") && currentUser.user_metadata?.username === username))
-  );
-
-  // 5. Check if current user is following this creator
+  // 4-5. Authenticate visitor/author session + follow status. A transient
+  // auth/DB failure must never 500 the profile — degrade to guest view instead.
+  let currentUser: { id: string } | null = null;
+  let isOwnProfile = false;
   let isFollowing = false;
-  if (currentUser && !isOwnProfile && profile.id && !profile.id.startsWith("anon_")) {
-    try {
-      const { data: followRow } = await supabase
-        .from("follows")
-        .select("follower_id")
-        .eq("follower_id", currentUser.id)
-        .eq("following_id", profile.id)
-        .maybeSingle();
 
-      isFollowing = Boolean(followRow);
-    } catch {
-      // Ignored for unauthenticated or fallback states
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    currentUser = user;
+
+    isOwnProfile = Boolean(currentUser && currentUser.id === profile.id);
+
+    if (currentUser && !isOwnProfile) {
+      try {
+        const { data: followRow } = await supabase
+          .from("follows")
+          .select("follower_id")
+          .eq("follower_id", currentUser.id)
+          .eq("following_id", profile.id)
+          .maybeSingle();
+
+        isFollowing = Boolean(followRow);
+      } catch {
+        // Ignored for unauthenticated or fallback states
+      }
+    }
+  } catch (err) {
+    console.error("[TenantProfilePage] Visitor session lookup failed, rendering as guest:", err);
+  }
+
+  const providerRole =
+    profile.creator_role === "PENDAMPING" || profile.creator_role === "PRAKTISI"
+      ? profile.creator_role
+      : null;
+  const isApprovedProvider =
+    profile.verification_status === "APPROVED" && providerRole !== null;
+
+  let providerSlots: SessionSlot[] = [];
+
+  if (isApprovedProvider) {
+    try {
+      const supabase = await createClient();
+      const { data: slots } = await supabase
+        .from("listening_slots")
+        .select("id, start_time, duration_min, price_idr")
+        .eq("provider_id", profile.id)
+        .eq("status", "AVAILABLE")
+        .gte("start_time", new Date().toISOString())
+        .order("start_time", { ascending: true })
+        .limit(20);
+
+      providerSlots = (slots ?? []).map((slot) => ({
+        id: slot.id,
+        start_time: slot.start_time,
+        duration_min: slot.duration_min,
+        price_idr: slot.price_idr,
+      }));
+    } catch (err) {
+      console.error("[TenantProfilePage] Slot lookup failed, rendering without sessions:", err);
     }
   }
 
   return (
     <main className="min-h-screen bg-[#fbf8f5] px-4 py-8 text-slate-900 sm:px-6 md:px-12 md:py-12">
       <div className="mx-auto max-w-4xl">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <a href="https://letmehearyou.id" className="inline-flex shrink-0 items-center" aria-label="Ke beranda Let Me Hear You">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/LMHY.png" alt="Let Me Hear You" className="h-6 w-auto max-w-[50vw] object-contain sm:h-9" />
+          </a>
+          <a
+            href="https://letmehearyou.id"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white/80 px-2.5 py-1.5 text-xs font-semibold text-[#3F3766] shadow-xs backdrop-blur-xs transition hover:bg-[#F7ABC5]/20 hover:text-[#3F3766] sm:border-transparent sm:bg-transparent sm:px-3 sm:py-2 sm:shadow-none"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Beranda</span>
+          </a>
+        </div>
+
         {/* Profile Banner with Cover, Avatar, Bio, Subdomain, & Actions */}
         <ProfileBanner
           profile={profile}
@@ -106,12 +143,37 @@ export default async function TenantProfilePage({
           initialIsFollowing={isFollowing}
         />
 
-        {/* Medium-style Tabs: Refleksi & Tulisan, Litera NFT Certificates, Tentang Penulis */}
-        <ProfileTabs
-          articles={articles}
-          profile={profile}
-          username={username}
-        />
+        {isApprovedProvider && providerRole ? (
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+            <div className="min-w-0 order-2 lg:order-1">
+              <div className="[&>div]:mt-0">
+                <ProfileTabs
+                  articles={articles}
+                  profile={profile}
+                  username={username}
+                  isOwnProfile={isOwnProfile}
+                />
+              </div>
+            </div>
+
+            <div className="order-1 lg:order-2 lg:sticky lg:top-6">
+              <SessionTabs
+                username={username}
+                role={providerRole}
+                slots={providerSlots}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8">
+            <ProfileTabs
+              articles={articles}
+              profile={profile}
+              username={username}
+              isOwnProfile={isOwnProfile}
+            />
+          </div>
+        )}
 
         {/* Modal for Creator to update profile details */}
         {isOwnProfile && <EditProfileModal profile={profile} />}

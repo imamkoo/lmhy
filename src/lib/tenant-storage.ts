@@ -14,6 +14,7 @@ export interface TenantArticle {
   mediaType?: "IMAGE" | "VIDEO";
   mediaUrl?: string;
   isLiteraRegistered?: boolean;
+  templateId?: string;
 }
 
 // Initial sample articles for tenant demonstration (Empty for clean DB testing)
@@ -60,3 +61,16 @@ export function saveTenantArticle(article: TenantArticle): TenantArticle {
 
   return article;
 }
+
+export function deleteTenantArticle(username: string, slug: string): boolean {
+  const normalizedUser = username.toLowerCase();
+  const index = runtimeArticles.findIndex(
+    (a) => a.username.toLowerCase() === normalizedUser && a.slug === slug
+  );
+  if (index >= 0) {
+    runtimeArticles.splice(index, 1);
+    return true;
+  }
+  return false;
+}
+
