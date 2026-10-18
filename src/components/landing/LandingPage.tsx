@@ -409,9 +409,9 @@ export function LandingPage({
                   author: "@editorial",
                 },
               ]
-          ).map((card) => (
+          ).map((card, idx) => (
             <motion.div
-              key={card.title}
+              key={`${card.title}-${idx}`}
               className="card-grid-space w-full flex justify-center"
               variants={staggerChild}
               style={{ perspective: 1200 }}
