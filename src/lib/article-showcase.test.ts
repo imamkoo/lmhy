@@ -104,3 +104,19 @@ test("returns every article exactly once when fewer than five exist", () => {
   assert.equal(result.length, 1);
   assert.equal(result[0].showcase_badge, "top");
 });
+
+test("pins specified article as top 1 when pinnedSlug is provided", () => {
+  const artA = article({ id: "art-a", slug: "slug-a", published_at: "2026-10-10T00:00:00.000Z", litera_status: "MINTED" });
+  const artB = article({ id: "art-b", slug: "slug-b", published_at: "2026-10-18T00:00:00.000Z" });
+  const artC = article({ id: "art-c", slug: "slug-c", published_at: "2026-10-14T00:00:00.000Z" });
+
+  // Without pinnedSlug: artA would be #1 because MINTED
+  const defaultRank = rankShowcaseArticles([artA, artB, artC], {});
+  assert.equal(defaultRank[0].id, "art-a");
+
+  // With pinnedSlug for artB: artB becomes #1 with "top" badge
+  const pinnedRank = rankShowcaseArticles([artA, artB, artC], {}, 3, 2, "slug-b");
+  assert.equal(pinnedRank[0].id, "art-b");
+  assert.equal(pinnedRank[0].showcase_badge, "top");
+  assert.equal(pinnedRank[1].id, "art-a");
+});
