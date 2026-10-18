@@ -7,6 +7,7 @@ import { LandingEffects } from "./LandingEffects";
 import { createClient } from "@/lib/supabase/client";
 import { signOutAction } from "@/app/actions/auth";
 import { motion } from "motion/react";
+import { ArticleConnectedCarousel } from "./ArticleConnectedCarousel";
 import { fadeUp, fadeDown, blurIn, slideRight, staggerParent, staggerChild, triggerOnly, viewportOnce } from "./motion-variants";
 
 const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
@@ -14,9 +15,20 @@ const LOGO = "/assets/logo%20let%20me%20hear%20you.jpeg";
 export function LandingPage({
   initialUser,
   initialProfile,
+  recentArticles,
 }: {
   initialUser?: { id: string; email?: string } | null;
   initialProfile?: { username?: string; display_name?: string } | null;
+  recentArticles?: Array<{
+    id?: string;
+    title: string;
+    slug: string;
+    username: string;
+    excerpt?: string | null;
+    media_url?: string | null;
+    tags?: string[] | null;
+    showcase_badge?: "top" | "newest";
+  }>;
 } = {}) {
   const [currentUser, setCurrentUser] = useState<{ username?: string; displayName?: string } | null>(
     initialUser
@@ -354,59 +366,95 @@ export function LandingPage({
             <p className="sub-title">Our Article</p>
           </motion.div>
         </div>
-        <motion.section
-          className="cards-wrapper"
-          initial="hidden"
-          whileInView="visible"
-          variants={staggerParent}
-          viewport={viewportOnce}
-        >
-          {[
-            {
-              title: "Mental illness",
-              slug: "memahami-kesehatan-mental",
-              tag: "Mental Illness",
-              bg: "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Mental illness atau yang disebut juga gangguan kesehatan mental adalah istilah yang mengacu pada berbagai kondisi yang memengaruhi pemikiran ...",
-            },
-            {
-              title: "Mental Health",
-              slug: "mengenali-tanda-burnout",
-              tag: "Mental Health",
-              bg: "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Mental Health yang baik adalah kondisi ketika batin kita berada dalam keadaan tentram dan tenang...",
-            },
-            {
-              title: "Mental Disorder",
-              slug: "memahami-kesehatan-mental",
-              tag: "Mental Disorder",
-              bg: "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              excerpt:
-                "Salah satu masalah kesehatan yang penting diperhatikan oleh masyarakat adalah mental disorder...",
-            },
-          ].map((card) => (
-            <motion.div key={card.title} className="card-grid-space" variants={staggerChild}>
-              <a
-                className="card"
-                href={`/blog/${card.slug}`}
-                style={{ "--bg-img": `url(${card.bg})` } as React.CSSProperties}
-              >
-                <div>
-                  <h1>{card.title}</h1>
-                  <p>{card.excerpt}</p>
-                  <div className="tags">
-                    <div className="tag">{card.tag}</div>
-                  </div>
-                </div>
-              </a>
-            </motion.div>
-          ))}
-        </motion.section>
-        <div className="container mt-8 text-center">
-          <Link href="/blog" className="learn-more" style={{ display: "inline-block" }}>
-            Lihat Semua Artikel →
+
+        {/* 21st.dev Connected Tab Carousel Showcase */}
+        <div className="w-full flex justify-center items-center mt-6 sm:mt-8 mb-8 sm:mb-12">
+          <ArticleConnectedCarousel
+            items={
+              recentArticles && recentArticles.length > 0
+                ? recentArticles.map((art, idx) => ({
+                    id: art.id || `${art.slug}-${idx}`,
+                    stat: art.title,
+                    quote:
+                      art.excerpt ||
+                      "Menyediakan ruang refleksi terbuka untuk mendengarkan, merawat jiwa, dan menemukan ketenangan kembali.",
+                    author: `@${art.username}`,
+                    role: (art.tags && art.tags[0]) || "Penulis Komunitas",
+                    tag: (art.tags && art.tags[0]) || "Refleksi",
+                    username: art.username,
+                    slug: art.slug,
+                    href: `/tenant/${art.username}/${art.slug}`,
+                    badge:
+                      art.showcase_badge === "top"
+                        ? "TOP"
+                        : art.showcase_badge === "newest"
+                          ? "TERBARU"
+                          : undefined,
+                    badgeTone: art.showcase_badge,
+                    defaultImage:
+                      art.media_url ||
+                      "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    selectedImage:
+                      art.media_url ||
+                      "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                  }))
+                : [
+                    {
+                      id: "art-1",
+                      stat: "Mengenali Sinyal Tubuh: Catatan Pemulihan dari Kelelahan",
+                      quote:
+                        "Terkadang lelah bukan sekadar butuh tidur semalam, melainkan tanda bahwa jiwa kita menuntut jeda dari ritme yang terlalu cepat.",
+                      author: "@axaalexxa",
+                      role: "Pendamping Sebaya",
+                      tag: "Burnout",
+                      username: "axaalexxa",
+                      slug: "mengenali-sinyal-tubuh-catatan-pemulihan-dari-kelelahan",
+                      href: "/articles",
+                      defaultImage:
+                        "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                      selectedImage:
+                        "https://images.pexels.com/photos/3601097/pexels-photo-3601097.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    },
+                    {
+                      id: "art-2",
+                      stat: "Hal-Hal Kecil yang Terlupakan: Catatan Bersyukur di Tengah Kesibukan",
+                      quote:
+                        "Kebahagiaan sering kali tidak bersembunyi dalam pencapaian megah, melainkan dalam kemampuan kita menyadari keindahan momen-momen biasa.",
+                      author: "@axaalexxa",
+                      role: "Penulis Komunitas",
+                      tag: "Gratitude",
+                      username: "axaalexxa",
+                      slug: "hal-hal-kecil-yang-terlupakan-catatan-bersyukur-di-tengah-kesibukan",
+                      href: "/articles",
+                      defaultImage:
+                        "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                      selectedImage:
+                        "https://images.pexels.com/photos/4100420/pexels-photo-4100420.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    },
+                    {
+                      id: "art-3",
+                      stat: "Berdamai dengan Kekurangan Diri: Perjalanan Menuju Penerimaan Penuh",
+                      quote:
+                        "Melepaskan beban untuk selalu tampak kuat dan sempurna di mata orang lain adalah langkah pertama mencintai diri sendiri.",
+                      author: "@axaalexxa",
+                      role: "Praktisi Jiwa",
+                      tag: "Self-Love",
+                      username: "axaalexxa",
+                      slug: "berdamai-dengan-kekurangan-diri-perjalanan-menuju-penerimaan-penuh",
+                      href: "/articles",
+                      defaultImage:
+                        "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                      selectedImage:
+                        "https://images.pexels.com/photos/4098339/pexels-photo-4098339.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    },
+                  ]
+            }
+          />
+        </div>
+
+        <div className="container mt-10 sm:mt-14 pb-12 sm:pb-16 text-center">
+          <Link href="/articles" className="learn-more" style={{ display: "inline-block" }}>
+            Lihat Semua Tulisan Penulis →
           </Link>
         </div>
       </motion.section>

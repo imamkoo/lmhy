@@ -8,7 +8,27 @@ const nextConfig: NextConfig = {
     "@x402/evm",
   ],
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "images.pexels.com" },
+      { protocol: "https", hostname: "ipfs.literaa.xyz" },
+      { protocol: "https", hostname: "letmehearyou.id" },
+      { protocol: "https", hostname: "gateway.pinata.cloud" },
+    ],
+  },
+  async redirects() {
+    return [
+      {
+        source: "/blog",
+        destination: "/articles",
+        permanent: true,
+      },
+      {
+        source: "/blog/:slug*",
+        destination: "/articles",
+        permanent: true,
+      },
+    ];
   },
   async headers() {
     return [
