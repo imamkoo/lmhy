@@ -180,7 +180,17 @@ export async function getLandingShowcase(): Promise<ShowcaseArticle[]> {
     .filter((a) => !existingSlugs.has(`${a.username.toLowerCase()}/${a.slug.toLowerCase()}`))
     .map((a) => convertTenantArticleToArticle(a));
 
-  return rankShowcaseArticles([...dbArticles, ...fallbackArticles], commentCounts);
+  const featuredSlug =
+    process.env.NEXT_PUBLIC_FEATURED_SHOWCASE_SLUG ||
+    'di-balik-layar-kita-lupa-ada-manusia-krisis-empati-di-ruang-digital';
+
+  return rankShowcaseArticles(
+    [...dbArticles, ...fallbackArticles],
+    commentCounts,
+    3,
+    2,
+    featuredSlug
+  );
 }
 
 /**
