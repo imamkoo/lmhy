@@ -16,21 +16,10 @@ export default function DoorwayCard({
   isVerified,
   hasSlots,
 }: DoorwayCardProps) {
+  // Hanya tampil untuk akun yang terverifikasi sebagai Pendamping atau Praktisi.
+  // Akun penulis biasa / akun baru tidak menampilkan kartu ini.
   if (!isVerified || (role !== "PENDAMPING" && role !== "PRAKTISI")) {
-    return (
-      <section className="mt-12 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6 dark:border-[#30363D] dark:bg-[#161B22] dark:text-[#E6EDF3]">
-        <h3 className="text-lg font-bold">Merasa terhubung dengan cerita ini?</h3>
-        <p className="mt-2 text-sm leading-relaxed opacity-80">
-          Kamu tidak harus melewatinya sendirian.
-        </p>
-        <Link
-          href={`/tenant/${username}`}
-          className="mt-4 inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          Kunjungi Ruang @{username}
-        </Link>
-      </section>
-    );
+    return null;
   }
 
   const isProfessional = role === "PRAKTISI";
