@@ -141,20 +141,13 @@ export function ArticlesPortalClient({
         >
           {/* Logo Brand + Search */}
           <div className="logo-container flex gap-6 items-center flex-1">
-            <Link href="/" className="flex shrink-0 items-center gap-3 group">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[hsl(257,68%,73%)] to-[hsl(42,73%,74%)] p-0.5 shadow-md shadow-purple-500/10 group-hover:scale-105 transition-transform">
-                <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[14px] flex items-center justify-center font-bold text-lg text-[#3c3163] dark:text-purple-300">
-                  LH
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white leading-tight">
-                  Let Me Hear You
-                </span>
-                <span className="text-[10px] font-semibold tracking-widest uppercase text-purple-700 dark:text-purple-400">
-                  Warta & Publikasi
-                </span>
-              </div>
+            <Link href="/" className="flex shrink-0 items-center group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/LMHY.png"
+                alt="Let Me Hear You"
+                className="h-8 sm:h-9 w-auto object-contain group-hover:opacity-90 transition-opacity"
+              />
             </Link>
 
             <div className="hidden lg:block h-10 border-r border-[#E8EBF4] dark:border-white/10" />
@@ -611,13 +604,13 @@ export function ArticlesPortalClient({
             <section className="my-14 rounded-[28px] p-8 sm:p-12 relative overflow-hidden bg-gradient-to-r from-[#3c3163] via-[#2a2247] to-[#1a152e] text-white shadow-2xl">
               <div className="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-[hsl(257,68%,73%)]/25 blur-3xl pointer-events-none" />
               <div className="relative z-10 max-w-2xl space-y-4">
-                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-white/10 border border-white/20">
+                <span className="inline-block px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-white/15 text-purple-200 border border-white/20">
                   RUANG BERBAGI SUARA
                 </span>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow-sm">
                   Punya cerita atau sudut pandang yang ingin dibagikan?
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <p className="text-xs sm:text-sm text-purple-100/90 leading-relaxed font-normal">
                   Semua orang berhak didengar. Tulis ceritamu di LMHY Studio dengan template refleksi terbimbing, publikasikan ke subdomain unik milikmu, dan abadikan secara on-chain bersama Litera.
                 </p>
                 <div className="pt-2 flex flex-wrap gap-3">
