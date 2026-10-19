@@ -41,3 +41,9 @@ test("suggestUsernames mengembalikan 3 alternatif yang valid dan belum dipakai",
     assert.equal(taken.has(c), false);
   }
 });
+
+test("suggestUsernames tidak membuat turunan dari username reserved", () => {
+  const out = suggestUsernames("admin", () => false);
+  assert.equal(out.includes("admin-1"), false);
+  assert.deepEqual(out, []);
+});

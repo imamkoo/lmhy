@@ -51,9 +51,17 @@ export async function checkMitraUsernameAction(username: string): Promise<{ avai
   if (!checkUsernameCheckLimit(ip).allowed) return { available: false, error: "Terlalu banyak permintaan. Silakan coba lagi nanti.", suggestions: [] };
   const validation = validateMitraUsername(username);
   if (!validation.valid) return { available: false, error: validation.error, suggestions: [] };
-  const admin = await createAdminClient(); const { data } = await admin.from("profiles").select("username");
-  const taken = new Set((data ?? []).map((row: { username: string }) => row.username));
-  return { available: !taken.has(username), suggestions: suggestUsernames(username, (candidate) => taken.has(candidate)) };
+  const admin = await createAdminClient();
+  const { data } = await admin.from("profiles").select("username").eq("username", username).maybeSingle();
+  if (!data) return { available: true, suggestions: [] };
+  const taken = new Set([username]);
+  const suggestions = suggestUsernames(username, (candidate) => taken.has(candidate));
+  for (const suggestion of suggestions.slice(0, 2)) taken.add(suggestion);
+  return {
+    available: false,
+    error: "Username sudah dipakai.",
+    suggestions: suggestUsernames(username, (candidate) => taken.has(candidate)),
+  };
 }
 
 export async function finalizeDocumentUploadAction(path: string): Promise<{ ok: boolean; error?: string }> {

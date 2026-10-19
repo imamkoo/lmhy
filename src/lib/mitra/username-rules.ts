@@ -65,7 +65,7 @@ export function validateMitraUsername(raw: string): UsernameValidation {
 
 export function suggestUsernames(raw: string, isTaken: (candidate: string) => boolean): string[] {
   const base = (raw || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 20);
-  if (!base) return [];
+  if (!base || isReservedMitraUsername(base)) return [];
   const out: string[] = [];
   const candidates = [base, `${base}-1`, `${base}-2`, `${base}-3`, `${base}-psikolog`, `${base}-santoso`];
   for (const c of candidates) {
