@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getBuilderUrl } from "@/lib/builder";
 import type { Profile } from "@/lib/supabase/types";
 import type { ProfileStats } from "@/lib/profile-storage";
+import { parseBannerParams } from "@/lib/banner-params";
 import { toggleFollowAction } from "@/app/actions/profile";
 import { signOutAction } from "@/app/actions/auth";
 
@@ -93,7 +94,8 @@ export function ProfileBanner({
         .toUpperCase()
     : username.slice(0, 2).toUpperCase();
 
-  const isBannerContain = profile.banner_url?.includes("fit=contain");
+  const bannerParams = parseBannerParams(profile.banner_url);
+  const isBannerContain = bannerParams.fit === "contain";
   const cleanBannerSrc = profile.banner_url ? profile.banner_url.split("#")[0] : null;
   const hasBanner = Boolean(profile.banner_url && failedBannerUrl !== profile.banner_url);
   const hasAvatar = Boolean(profile.avatar_url && failedAvatarUrl !== profile.avatar_url);
@@ -121,6 +123,11 @@ export function ProfileBanner({
                 isBannerContain
                   ? "relative z-10 h-full w-full object-contain p-2 sm:p-4"
                   : "h-full w-full object-cover"
+              }
+              style={
+                !isBannerContain
+                  ? { objectPosition: `50% ${bannerParams.y}%` }
+                  : undefined
               }
               onError={() => {
                 if (profile.banner_url) setFailedBannerUrl(profile.banner_url);

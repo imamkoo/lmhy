@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Profile } from "@/lib/supabase/types";
 import { updateProfileAction } from "@/app/actions/profile";
 import { createClient } from "@/lib/supabase/client";
+import { formatBannerUrl, parseBannerParams } from "@/lib/banner-params";
 import {
   ACCEPTED_IMAGE_TYPES,
   extractOwnProfileMediaPath,
@@ -28,13 +29,13 @@ interface EditProfileFormProps {
 
 function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
   const router = useRouter();
+  const initialBannerParsed = parseBannerParams(profile.banner_url);
   const [displayName, setDisplayName] = useState(profile.display_name || "");
   const [bio, setBio] = useState(profile.bio || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || "");
   const [bannerUrl, setBannerUrl] = useState(profile.banner_url || "");
-  const [bannerFit, setBannerFit] = useState<"cover" | "contain">(() => {
-    return profile.banner_url?.includes("fit=contain") ? "contain" : "cover";
-  });
+  const [bannerFit, setBannerFit] = useState<"cover" | "contain">(initialBannerParsed.fit);
+  const [bannerY, setBannerY] = useState<number>(initialBannerParsed.y);
   const [website, setWebsite] = useState(profile.website || "");
   const [facebookUrl, setFacebookUrl] = useState(profile.facebook_profile_url || "");
   const [avatarError, setAvatarError] = useState(false);
@@ -130,13 +131,8 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
     } else {
       setBannerUrl("");
       setBannerError(false);
+      setBannerY(50);
     }
-  };
-
-  const formatBannerUrl = (url: string, fit: "cover" | "contain"): string => {
-    const clean = url.trim().replace(/[?#]fit=contain/g, "");
-    if (!clean) return "";
-    return fit === "contain" ? `${clean}#fit=contain` : clean;
   };
 
   const cleanupReplacedMedia = (oldUrl: string | null, currentUrl: string) => {
@@ -145,7 +141,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
     if (!isOwnProfileMediaUrl(oldUrl, profile.id)) return;
     const oldPath = extractOwnProfileMediaPath(oldUrl, profile.id);
     const currentPath = current ? extractOwnProfileMediaPath(current, profile.id) : null;
-    // Don't delete file if only the URL marker (#fit=contain) changed
+    // Don't delete file if only the URL marker (#fit=contain or #y=...) changed
     if (oldPath && currentPath && oldPath === currentPath) return;
     if (oldPath) {
       removeProfileMedia(createClient(), oldPath);
@@ -164,7 +160,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
     setSuccess(false);
 
     try {
-      const finalBannerUrl = formatBannerUrl(bannerUrl, bannerFit);
+      const finalBannerUrl = formatBannerUrl(bannerUrl, bannerFit, bannerY);
 
       const res = await updateProfileAction({
         displayName: displayName.trim(),
@@ -269,7 +265,12 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                       className={
                         bannerFit === "contain"
                           ? "relative z-10 h-full w-full object-contain p-1.5"
-                          : "h-full w-full object-cover"
+                          : "h-full w-full object-cover transition-[object-position] duration-150"
+                      }
+                      style={
+                        bannerFit === "cover"
+                          ? { objectPosition: `50% ${bannerY}%` }
+                          : undefined
                       }
                       onError={() => setBannerError(true)}
                     />
@@ -459,6 +460,80 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 </div>
               )}
             </div>
+
+            {/* Vertical Focal Point Controls (Only active when cover mode is selected and banner exists) */}
+            {bannerUrl && bannerFit === "cover" && (
+              <div className="mt-2.5 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-700">
+                    Fokus Posisi Vertikal
+                  </span>
+                  <div className="flex items-center gap-1 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setBannerY(15)}
+                      className={`rounded-md px-2 py-0.5 transition ${
+                        bannerY <= 25
+                          ? "bg-[#3F3766] text-white font-semibold shadow-xs"
+                          : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200"
+                      }`}
+                      title="Fokus atas — sangat cocok untuk potret/karakter manusia agar kepala tidak terpotong"
+                    >
+                      Atas (Kepala)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBannerY(50)}
+                      className={`rounded-md px-2 py-0.5 transition ${
+                        bannerY > 25 && bannerY < 75
+                          ? "bg-[#3F3766] text-white font-semibold shadow-xs"
+                          : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200"
+                      }`}
+                      title="Fokus tengah — posisi default standar"
+                    >
+                      Tengah
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBannerY(85)}
+                      className={`rounded-md px-2 py-0.5 transition ${
+                        bannerY >= 75
+                          ? "bg-[#3F3766] text-white font-semibold shadow-xs"
+                          : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200"
+                      }`}
+                      title="Fokus bawah"
+                    >
+                      Bawah
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="text-[10px] font-medium text-slate-400 w-8">
+                    Atas
+                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={bannerY}
+                    onChange={(e) => setBannerY(Number(e.target.value))}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-[#3F3766]"
+                    aria-label="Atur posisi vertikal banner"
+                  />
+                  <span className="text-[10px] font-medium text-slate-400 w-8 text-right">
+                    Bawah
+                  </span>
+                  <span className="w-9 text-right font-mono text-[11px] font-semibold text-slate-700">
+                    {bannerY}%
+                  </span>
+                </div>
+                <p className="mt-1 text-[10px] text-slate-400">
+                  Geser slider atau klik tombol preset di atas untuk melihat pergeseran posisi pada Pratinjau langsung.
+                </p>
+              </div>
+            )}
+
             <div className="mt-1.5 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <button

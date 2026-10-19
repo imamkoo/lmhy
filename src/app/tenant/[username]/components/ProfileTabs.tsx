@@ -170,12 +170,12 @@ export function ProfileTabs({
 
                   {/* Thumbnail Cover (if exists) */}
                   {art.media_url && !art.media_url.startsWith("blob:") && (
-                    <div className="relative h-28 w-full sm:h-28 sm:w-36 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                    <div className="relative h-28 w-full sm:h-28 sm:w-36 shrink-0 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={art.media_url}
                         alt={art.title}
-                          className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover object-top transition duration-300 group-hover:scale-105"
                         onError={(e) => {
                           const parent = (e.currentTarget as HTMLElement).parentElement;
                           if (parent) parent.style.display = "none";
