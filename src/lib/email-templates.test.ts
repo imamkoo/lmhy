@@ -1,0 +1,47 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  applicationApprovedTemplate,
+  applicationExpiredTemplate,
+  applicationReceivedTemplate,
+  applicationRejectedTemplate,
+  verificationReminderTemplate,
+} from "./email-templates";
+
+test("template approval memuat nama, role, dan username", () => {
+  const t = applicationApprovedTemplate({
+    applicantName: "Budi",
+    roleLabel: "Praktisi Terverifikasi",
+    username: "budi",
+  });
+  assert.ok(t.subject.includes("Budi"));
+  assert.ok(t.html.includes("Praktisi Terverifikasi"));
+  assert.ok(t.html.includes("budi"));
+  assert.ok(t.text.length > 0);
+});
+
+test("template penolakan memuat catatan perbaikan", () => {
+  const t = applicationRejectedTemplate({
+    applicantName: "Budi",
+    note: "STR belum aktif di database Kemenkes",
+    username: "budi",
+  });
+  assert.ok(t.html.includes("STR belum aktif"));
+  assert.ok(t.text.includes("STR belum aktif"));
+});
+
+test("semua template memakai token Warm Sanctuary", () => {
+  const templates = [
+    applicationReceivedTemplate({ applicantName: "A", username: "a" }),
+    applicationApprovedTemplate({ applicantName: "A", roleLabel: "P", username: "a" }),
+    applicationRejectedTemplate({ applicantName: "A", note: "x", username: "a" }),
+    applicationExpiredTemplate({ applicantName: "A", username: "a" }),
+    verificationReminderTemplate({ applicantName: "A", username: "a" }),
+  ];
+
+  for (const t of templates) {
+    assert.ok(t.html.includes("#FBF8F5"));
+    assert.ok(t.html.includes("#3C3163"));
+    assert.ok(t.html.includes("Poppins"));
+  }
+});
