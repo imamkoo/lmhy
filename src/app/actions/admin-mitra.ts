@@ -15,6 +15,7 @@ import {
   isEmailVerificationExpired,
   tombstoneUsername,
 } from "@/lib/mitra/expiry";
+import { isShadowMode } from "@/lib/mitra/flags";
 import { sendEmail } from "@/lib/email";
 import {
   applicationApprovedTemplate,
@@ -168,6 +169,14 @@ export async function approveApplicationAction(
     return { ok: false, code: "FORBIDDEN", message: "Akses admin diperlukan." };
   }
 
+  if (isShadowMode()) {
+    return {
+      ok: false,
+      code: "SHADOW_MODE",
+      message: "Shadow mode aktif: keputusan dinonaktifkan.",
+    };
+  }
+
   const supabase = await createAdminClient();
   const { data: application, error: appError } = await supabase
     .from("provider_applications")
@@ -291,6 +300,14 @@ export async function rejectApplicationAction(
   const admin = await requireAdmin();
   if (!admin) {
     return { ok: false, code: "FORBIDDEN", message: "Akses admin diperlukan." };
+  }
+
+  if (isShadowMode()) {
+    return {
+      ok: false,
+      code: "SHADOW_MODE",
+      message: "Shadow mode aktif: keputusan dinonaktifkan.",
+    };
   }
 
   const supabase = await createAdminClient();

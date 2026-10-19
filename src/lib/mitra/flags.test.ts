@@ -5,6 +5,8 @@ const ENV_KEYS = [
   "NEXT_PUBLIC_MITRA_INTAKE_ENABLED",
   "NEXT_PUBLIC_MITRA_INTAKE_PENDAMPING_ENABLED",
   "NEXT_PUBLIC_MITRA_INTAKE_PSIKOLOG_ENABLED",
+  "MITRA_INTAKE_WHITELIST_EMAILS",
+  "MITRA_INTAKE_SHADOW_MODE",
 ] as const;
 
 const originalEnv = Object.fromEntries(
@@ -43,4 +45,23 @@ test("jalur mengikuti flag global dan dapat dinonaktifkan per jalur", async () =
 
   process.env.NEXT_PUBLIC_MITRA_INTAKE_ENABLED = "false";
   assert.equal(isTrackEnabled("SEBAYA"), false);
+});
+
+test("whitelist email membatasi pendaftar bila terisi", async () => {
+  delete process.env.MITRA_INTAKE_WHITELIST_EMAILS;
+  const { isEmailWhitelisted } = await import("./flags");
+  assert.equal(isEmailWhitelisted("budi@gmail.com"), true);
+
+  process.env.MITRA_INTAKE_WHITELIST_EMAILS = "siti@gmail.com, qa@lmhy.com";
+  assert.equal(isEmailWhitelisted("qa@lmhy.com"), true);
+  assert.equal(isEmailWhitelisted("budi@gmail.com"), false);
+});
+
+test("shadow mode aktif saat env bernilai true", async () => {
+  delete process.env.MITRA_INTAKE_SHADOW_MODE;
+  const { isShadowMode } = await import("./flags");
+  assert.equal(isShadowMode(), false);
+
+  process.env.MITRA_INTAKE_SHADOW_MODE = "true";
+  assert.equal(isShadowMode(), true);
 });

@@ -22,6 +22,7 @@ import { createUploadToken, verifyUploadToken } from "@/lib/mitra/upload-token";
 import { writeAuditLog } from "@/lib/mitra/audit";
 import { sendEmail } from "@/lib/email";
 import { applicationReceivedTemplate } from "@/lib/email-templates";
+import { isEmailWhitelisted } from "@/lib/mitra/flags";
 import type { Json, TablesInsert } from "@/lib/supabase/types";
 
 export async function submitMitraApplication(
@@ -64,6 +65,16 @@ export async function submitMitraApplication(
   }
 
   const normalized = validation.normalized!;
+
+  if (!isEmailWhitelisted(normalized.applicantEmail)) {
+    return {
+      ok: false,
+      code: "FORBIDDEN",
+      message:
+        "Pendaftaran saat ini terbatas untuk email yang terdaftar dalam program uji coba mitra.",
+    };
+  }
+
   if (
     sessionUser?.email &&
     normalized.applicantEmail !== sessionUser.email.toLowerCase()
