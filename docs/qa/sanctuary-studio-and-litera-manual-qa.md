@@ -2,6 +2,25 @@
 
 Dokumen ini adalah panduan pengujian manual untuk LMHY Sanctuary Studio dan integrasi Litera.
 
+## 📊 Status Board (diperbarui 2026-10-19)
+
+| Section | Status | Keterangan |
+|---|---|---|
+| A1 — Role, verifikasi, copy sesi | ✅ PASS | Dikonfirmasi tester |
+| A2 — Paket & take rate | ✅ PASS | Dikonfirmasi tester |
+| A3 — Hirarki footer artikel | ✅ PASS | Dikonfirmasi tester |
+| A4 — Follow tanpa login | ✅ PASS | Dikonfirmasi tester |
+| A5 — Crisis Guard / Booking / Midtrans | ⛔ BLOCKED | Env Midtrans di Vercel production belum diisi (lihat Section 7) |
+| A6.1 — Artikel tanpa Litera | ✅ PASS | Dikonfirmasi tester |
+| A6.2 — Unlockable URL | ✅ PASS | Dikonfirmasi tester |
+| A6.3 — Proof of Reading | ✅ PASS | Tester 2026-10-18 |
+| A6.3.1 — Regresi quiz gate | ✅ PASS | Fix deployed + retest 7 langkah lulus (tester 2026-10-19) |
+| A6.4 — Domain-Scoped Sponsor & CTA | 🧪 IN PROGRESS | Sedang diuji tester (mulai 2026-10-19) |
+| B0 — Multi-Tenant Builder & Master Key | ⏳ PENDING | Belum PASS — menunggu pengujian |
+| B1 — Writer V2 | ⏳ PENDING | Belum PASS — menunggu pengujian |
+| B2 — CMS Auto-Mint | ⏳ PENDING | Belum PASS — menunggu pengujian |
+| B3 — LMHY ↔ Litera | ⏳ PENDING | Belum PASS — menunggu pengujian |
+
 ## 1. Cakupan dan status fitur
 
 ### Dicakup
@@ -375,6 +394,8 @@ Klik `Masuk` atau `Daftar`. URL login seharusnya memiliki parameter `next`, cont
 
 ## A5. Crisis Guard, booking, dan Midtrans
 
+> **Status: ⛔ BLOCKED** (2026-10-19) — env Midtrans di Vercel production (`MIDTRANS_SERVER_KEY` & `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`) belum diisi. `A5.2` (Booking normal) & `A5.4` (Webhook) menunggu isi env + redeploy (lihat Section 7). `A5.1` (Crisis Guard) & `A5.3` (Return URL) dapat diuji tanpa Midtrans.
+
 ### A5.1 — Crisis Guard menghentikan booking
 
 1. Siapkan slot `AVAILABLE`.
@@ -490,7 +511,7 @@ Klik tautan. Expected: materi terbuka sesuai konfigurasi. Ini soft-gating; URL t
 
 #### A6.3.1 — Regresi Ditemukan 2026-10-18: Quiz Gate Bisa Dilewati
 
-**Status: FIXED & DEPLOYED** (backend `cdf2d05`, widget `v1.4.80` / `526e703`).
+**Status: PASS — retest 7 langkah selesai** (fix deployed: backend `cdf2d05`, widget `v1.4.80` / `526e703`; retest dilaporkan lulus oleh tester pada 2026-10-19).
 
 **Bukti produksi:**
 - `AdminMint` mencatat mint token #10 oleh `0x187df099A3c8a3389B946F374D57aBe4F4fa894c` pada `2026-10-17 17:52:35 UTC`, yaitu **1 jam 38 menit setelah** quiz token #10 dibuat (`16:14:34 UTC`).
@@ -521,6 +542,8 @@ Klik tautan. Expected: materi terbuka sesuai konfigurasi. Ini soft-gating; URL t
 
 ### A6.4 — Domain-Scoped Sponsor & CTA Link
 
+> **Status: 🧪 IN PROGRESS** — sedang diuji tester (mulai 2026-10-19).
+
 1. Buka Litera Dashboard di `https://literaa.xyz/publisher/integration`.
 2. Pada tabel **Domain Terdaftar (CORS)**, pilih domain target (misal: `letmehearyou.id` atau domain tertentu) dan klik **`+ Pasang Sponsor`**.
 3. Masukkan:
@@ -542,6 +565,8 @@ Klik tautan. Expected: materi terbuka sesuai konfigurasi. Ini soft-gating; URL t
 ---
 
 # [URGENT PRIORITAS TINGGI] B0. Multi-Tenant Web Builder & Platform Master Key (PANDI/kubaca.id)
+
+> **Status: ⏳ PENDING** (2026-10-19) — belum PASS; menunggu pengujian tester.
 
 > **Catatan:** Sesuai instruksi, pengujian ini memiliki prioritas tertinggi (**URGENT**) untuk diverifikasi terlebih dahulu sebelum melangkah ke Proof of Reading kuis (A6.3). Mengacu pada spesifikasi lengkap di `litera-backend-main/docs/qa/cms-platform-publishers-qa-test-cases.md`.
 
@@ -595,6 +620,8 @@ Klik tautan. Expected: materi terbuka sesuai konfigurasi. Ini soft-gating; URL t
 
 ## B1. Writer V2
 
+> **Status: ⏳ PENDING** (2026-10-19) — belum PASS; menunggu pengujian tester.
+
 Pastikan konfigurasi writer/mint menggunakan Writer V2:
 
 ```text
@@ -606,6 +633,8 @@ Gunakan alamat lengkap dari konfigurasi resmi/Explorer saat membandingkan. Janga
 **PASS:** Writer aktif menunjuk ke V2, network benar, dan tidak ada Auto-Mint write ke kontrak legacy.
 
 ## B2. CMS Auto-Mint
+
+> **Status: ⏳ PENDING** (2026-10-19) — belum PASS; menunggu pengujian tester.
 
 1. Login admin Litera.
 2. Buka `/ownertools`.
@@ -622,6 +651,8 @@ Gunakan alamat lengkap dari konfigurasi resmi/Explorer saat membandingkan. Janga
 **PASS:** state tidak tertukar, item blocked tidak diam-diam retry, dan tidak ada transaksi write tanpa tindakan/otorisasi admin.
 
 ## B3. LMHY ↔ Litera
+
+> **Status: ⏳ PENDING** (2026-10-19) — belum PASS; menunggu pengujian tester.
 
 1. Buka artikel LMHY yang memakai Litera.
 2. Catat title, author, slug, operation ID, hash, token ID, atau metadata yang tersedia.

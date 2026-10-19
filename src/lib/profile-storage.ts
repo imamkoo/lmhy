@@ -79,6 +79,59 @@ export async function getProfileById(userId: string): Promise<Profile | null> {
 }
 
 /**
+ * Build the sanitized update payload for updating a creator profile.
+ * Correctly distinguishes between explicit null / empty removal vs omitted undefined fields.
+ */
+export function buildProfileUpdatePayload(
+  data: UpdateProfileInput
+): Database['public']['Tables']['profiles']['Update'] {
+  const updatePayload: Database['public']['Tables']['profiles']['Update'] = {
+    updated_at: new Date().toISOString(),
+  };
+
+  const displayName = data.displayName !== undefined ? data.displayName : data.display_name;
+  if (displayName !== undefined && displayName.trim()) {
+    updatePayload.display_name = displayName.trim();
+  }
+
+  const bio = data.bio;
+  if (bio !== undefined) {
+    updatePayload.bio = bio && bio.trim() ? bio.trim() : null;
+  }
+
+  const avatarUrl = data.avatarUrl !== undefined ? data.avatarUrl : data.avatar_url;
+  if (avatarUrl !== undefined) {
+    updatePayload.avatar_url = avatarUrl && avatarUrl.trim() ? avatarUrl.trim() : null;
+  }
+
+  const bannerUrl = data.bannerUrl !== undefined ? data.bannerUrl : data.banner_url;
+  if (bannerUrl !== undefined) {
+    updatePayload.banner_url = bannerUrl && bannerUrl.trim() ? bannerUrl.trim() : null;
+  }
+
+  const website = data.website;
+  if (website !== undefined) {
+    updatePayload.website = website && website.trim() ? website.trim() : null;
+  }
+
+  const facebookProfileUrl =
+    data.facebookProfileUrl !== undefined ? data.facebookProfileUrl : data.facebook_profile_url;
+  if (facebookProfileUrl !== undefined) {
+    updatePayload.facebook_profile_url =
+      facebookProfileUrl && facebookProfileUrl.trim() ? facebookProfileUrl.trim() : null;
+  }
+
+  const facebookAccessToken =
+    data.facebookAccessToken !== undefined ? data.facebookAccessToken : data.facebook_access_token;
+  if (facebookAccessToken !== undefined) {
+    updatePayload.facebook_access_token =
+      facebookAccessToken && facebookAccessToken.trim() ? facebookAccessToken.trim() : null;
+  }
+
+  return updatePayload;
+}
+
+/**
  * Update creator profile details.
  */
 export async function updateProfile(
@@ -90,31 +143,7 @@ export async function updateProfile(
   }
 
   const supabase = await createClient();
-
-  const updatePayload: Database['public']['Tables']['profiles']['Update'] = {
-    updated_at: new Date().toISOString(),
-  };
-
-  const displayName = data.displayName ?? data.display_name;
-  if (displayName !== undefined) updatePayload.display_name = displayName.trim();
-
-  const bio = data.bio;
-  if (bio !== undefined) updatePayload.bio = bio;
-
-  const avatarUrl = data.avatarUrl ?? data.avatar_url;
-  if (avatarUrl !== undefined) updatePayload.avatar_url = avatarUrl;
-
-  const bannerUrl = data.bannerUrl ?? data.banner_url;
-  if (bannerUrl !== undefined) updatePayload.banner_url = bannerUrl;
-
-  const website = data.website;
-  if (website !== undefined) updatePayload.website = website;
-
-  const facebookProfileUrl = data.facebookProfileUrl ?? data.facebook_profile_url;
-  if (facebookProfileUrl !== undefined) updatePayload.facebook_profile_url = facebookProfileUrl;
-
-  const facebookAccessToken = data.facebookAccessToken ?? data.facebook_access_token;
-  if (facebookAccessToken !== undefined) updatePayload.facebook_access_token = facebookAccessToken;
+  const updatePayload = buildProfileUpdatePayload(data);
 
   const { data: updated, error } = await supabase
     .from('profiles')
