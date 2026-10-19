@@ -916,11 +916,33 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
 `src/app/actions/admin-nft.ts`:
 - Hapus fungsi `verifyAdminPin`.
-- Tambahkan guard di **setiap** action yang sudah ada (`getAdminLiteraQuotaAction`, `getAdminLiteraTokenomicsAction`, `saveTokenomicsConfigAction`, dan action lain di file itu):
-```ts
-const admin = await requireAdmin();
-if (!admin) return { success: false, message: "Akses admin diperlukan." };
+- Tambahkan guard di **setiap** action yang tersisa, dengan nilai balik aman per bentuknya:
+  - `getTokenomicsConfigAction()` → `if (!admin) return getDefaultTokenomicsConfig();` (bukan objek error — tipenya data)
+  - `getAdminLiteraQuotaAction()` → `if (!admin) return { quota: null, hasApiKey: false, error: "Akses admin diperlukan." };`
+  - `getAdminLiteraTokenomicsAction()` → `if (!admin) return null;`
+  - `saveTokenomicsConfigAction()` → `if (!admin) return { success: false, message: "Akses admin diperlukan." };`
+- `requireAdmin` diimpor dari `@/lib/admin-auth`.
+
+- [ ] **Step 2b: Tutup route duplikat `/creator`**
+
+`src/app/creator/page.tsx` saat ini me-render halaman admin Litera (anchor duplikat). Layout admin baru hanya berlaku untuk route di bawah `src/app/admin/`, sehingga tanpa perubahan ini `/creator` menjadi pintu masuk kedua ke UI admin setelah PIN gate dihapus.
+
+- Ganti `src/app/creator/page.tsx` menjadi redirect permanen ke `/admin/litera`:
+```tsx
+import { redirect } from "next/navigation";
+
+export default function CreatorRedirectPage() {
+  redirect("/admin/litera");
+}
 ```
+- Tambahkan `"/creator"` ke daftar path admin di `src/middleware.ts`:
+```ts
+const isAdminPath =
+  url.pathname === "/admin" ||
+  url.pathname.startsWith("/admin/") ||
+  url.pathname === "/creator";
+```
+- `"/creator"` **tetap** ada di `ROOT_ROUTES` (path root tidak boleh di-rewrite di subdomain).
 
 - [ ] **Step 3: Ubah route `/admin/litera` agar memakai shell**
 
