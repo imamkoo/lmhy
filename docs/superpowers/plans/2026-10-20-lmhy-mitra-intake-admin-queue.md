@@ -1243,7 +1243,8 @@ Urutan pemeriksaan: rate limit → validasi schema → email existing → email 
 2. Ambil `existingEmails` & `existingUsernames` via `createAdminClient()`: `auth.admin.listUsers()`? — **dilarang** ( mahal). Gunakan: `createAdminClient().from('profiles').select('username')` untuk username; untuk email existence, `createAdminClient().auth.admin.createUser({ email, email_confirm: false, password })` dan deteksi error `"User already registered"` dari Supabase.
    Urutan aman: **validasi dulu** → `createUser` (mendeteksi email existing dari error Supabase) → `createProfile` → `createApplication` → `recordSubmission`.
 3. `createUser` via `createAdminClient().auth.admin.createUser({ email, password, email_confirm: false, user_metadata: { display_name } })`. Bila error berisi "already registered"/"already been registered" → kembalikan `EMAIL_EXISTS` **tanpa** membuat profil.
-4. `createProfile`: `createAdminClient().from('profiles').insert({ id: userId, username, display_name: applicantName, creator_role: 'PENULIS', service_track: null, verification_status: 'PENDING' })`. Bila unique violation username → `USERNAME_TAKEN` + `suggestUsernames`.
+   - **WAJIB — urutan & kompensasi:** sebelum `createUser`, cek ketersediaan username (query `profiles`) dan hitung pengajuan aktif untuk email itu (query `provider_applications` dengan `status='PENDING'` untuk `applicant_email` = email tersebut) → jumlah inilah `activeForEmail` yang diberikan ke `evaluateSubmission` (jangan hardcode `0`). Bila insert profil gagal (termasuk bentrok username karena race), **hapus akun auth yang baru dibuat** (`admin.auth.admin.deleteUser(created.user.id)`) agar tidak tertinggal akun yatim; kembalikan `USERNAME_TAKEN` bila error-nya unique violation.
+4. `createProfile`: `createAdminClient().from('profiles').insert({ id: userId, username, display_name: applicantName, creator_role: 'PENULIS', service_track: null, verification_status: 'PENDING' })`. Bila unique violation username → `USERNAME_TAKEN` + `suggestUsernames` (dan jalankan kompensasi delete akun).
 5. `createApplication`: insert dengan `track`, `details` dari `normalized`, `ethics_pledge_at: now`, `pledge_version: '2026-10-20'`, `status: 'PENDING'`, `applied_at: now`.
 6. `recordSubmission(`ip:${ip}`)` dan `recordSubmission(`email:${email}`)`.
 7. Return `{ ok: true, code: "OK", applicationId, username }`.
@@ -1312,7 +1313,9 @@ Expected: FAIL
 - `validateDocumentUpload`: cek MIME ∈ daftar, `sizeBytes > 0 && <= MAX_DOCUMENT_BYTES`.
 - `sanitizeFilename`: basename → ganti non `[a-z0-9-]` dengan `-` → collapse `-` → trim `-` → fallback `"dokumen"`.
 - `buildDocumentPath`: `applications/{applicationId}/{docType}-{uuid}` (ekstensi ditambahkan nanti dari MIME: `.pdf`/`.jpg`/`.png`).
-- `stripImageMetadata`: bila MIME gambar → `sharp(buffer).rotate().withMetadata({})` → `.toBuffer()` (buang EXIF); bila PDF → buffer asli.
+- `stripImageMetadata`: bila MIME gambar → `sharp(buffer).rotate().toBuffer()` — **JANGAN** panggil `.withMetadata()` (itu justru menempelkan metadata; default sharp membuang metadata). Bila PDF → buffer asli.
+- Action `finalizeDocumentUploadAction(path)`: karena unggahan lewat signed URL (client → Supabase langsung), server tidak pernah menyentuh byte-nya. Action ini mengunduh objek dari bucket privat, menjalankan `stripImageMetadata` bila gambar, lalu menimpanya kembali — sehingga EXIF benar-benar hilang sebelum dokumen tersimpan permanen.
+- `doc_type` WAJIB divalidasi terhadap `STR`/`SIPP`/`CV`/`TRAINING_CERT`/`PFA_CERT`/`OTHER` **sebelum** path dibentuk (path-nya diinterpolasi ke key storage — tanpa validasi, `docType="../../x"` keluar dari prefix `applications/<id>/`).
 - `createUploadTicket`: validasi → cek jumlah dokumen existing < 4 → `createAdminClient().storage.from('provider-credentials').createSignedUploadUrl(path)` → kembalikan `{ ok: true, path, token }`.
 
 - [ ] **Step 4: Tambahkan action `createDocumentUploadAction`**
