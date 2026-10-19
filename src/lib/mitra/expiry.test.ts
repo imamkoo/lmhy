@@ -35,3 +35,9 @@ test("SLA 3 hari terlewati terdeteksi", () => {
   assert.equal(isSlaOverdue(applied, new Date("2026-10-03T00:00:00.000Z"), 3), false);
   assert.equal(isSlaOverdue(applied, new Date("2026-10-05T00:00:00.000Z"), 3), true);
 });
+
+test("ambang 7 hari dan 30 hari tepat di batasnya", () => {
+  const applied = new Date("2026-10-01T00:00:00.000Z");
+  assert.equal(isEmailVerificationExpired(applied, new Date("2026-10-08T00:00:00.000Z")), true);
+  assert.equal(isApplicationExpired(applied, new Date("2026-10-31T00:00:00.000Z")), true);
+});

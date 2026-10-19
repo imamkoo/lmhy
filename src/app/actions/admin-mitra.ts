@@ -9,6 +9,11 @@ import {
   roleForTrack,
   serviceTrackForTrack,
 } from "@/lib/mitra/application-state";
+import {
+  isApplicationExpired,
+  isEmailVerificationExpired,
+  tombstoneUsername,
+} from "@/lib/mitra/expiry";
 import type { TablesUpdate } from "@/lib/supabase/types";
 
 export interface AdminActionResult {
@@ -333,4 +338,123 @@ export async function rejectApplicationAction(
   });
 
   return { ok: true };
+}
+
+export async function runExpirySweepAction(): Promise<{
+  ok: boolean;
+  expiredEmail: number;
+  expiredApplication: number;
+  releasedUsernames: number;
+  error?: string;
+}> {
+  try {
+    const supabase = await createAdminClient();
+    const { data: pendingApps, error } = await supabase
+      .from("provider_applications")
+      .select("id, user_id, applied_at, email_verified_at, username")
+      .eq("status", "PENDING");
+
+    if (error || !pendingApps) {
+      return {
+        ok: false,
+        expiredEmail: 0,
+        expiredApplication: 0,
+        releasedUsernames: 0,
+        error: error?.message || "Failed to fetch pending applications",
+      };
+    }
+
+    let systemActorId = process.env.ADMIN_SYSTEM_ACTOR_ID;
+    if (!systemActorId) {
+      const { data: latestAudit } = await supabase
+        .from("admin_audit_log")
+        .select("actor_id")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      systemActorId =
+        latestAudit?.actor_id || "00000000-0000-0000-0000-000000000000";
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    let expiredEmailCount = 0;
+    let expiredAppCount = 0;
+    let releasedUsernamesCount = 0;
+
+    for (const app of pendingApps) {
+      const appliedDate = new Date(app.applied_at);
+      let expireReason: string | null = null;
+      let isEmailExpiry = false;
+
+      if (!app.email_verified_at && isEmailVerificationExpired(appliedDate, now)) {
+        expireReason = "Email tidak terverifikasi dalam 7 hari.";
+        isEmailExpiry = true;
+      } else if (isApplicationExpired(appliedDate, now)) {
+        expireReason = "Pengajuan melewati batas 30 hari.";
+      }
+
+      if (expireReason) {
+        const { error: updateError } = await supabase
+          .from("provider_applications")
+          .update({
+            status: "EXPIRED",
+            decided_at: nowIso,
+            decided_by: null,
+            decision_note: expireReason,
+          })
+          .eq("id", app.id)
+          .eq("status", "PENDING");
+
+        if (!updateError) {
+          if (isEmailExpiry) {
+            expiredEmailCount++;
+          } else {
+            expiredAppCount++;
+          }
+
+          const { error: rpcError } = await supabase.rpc(
+            "release_mitra_username" as never,
+            { target_user_id: app.user_id } as never
+          );
+
+          if (rpcError) {
+            await supabase
+              .from("profiles")
+              .update({ username: tombstoneUsername(app.user_id) })
+              .eq("id", app.user_id);
+          }
+          releasedUsernamesCount++;
+
+          await writeAuditLog(systemActorId, {
+            action: "APPLICATION_EXPIRED",
+            targetType: "provider_application",
+            targetId: app.id,
+            note: expireReason,
+            metadata: {
+              reason: isEmailExpiry
+                ? "EMAIL_UNVERIFIED_7D"
+                : "APPLICATION_TIMEOUT_30D",
+              previous_username: app.username,
+            },
+          });
+        }
+      }
+    }
+
+    return {
+      ok: true,
+      expiredEmail: expiredEmailCount,
+      expiredApplication: expiredAppCount,
+      releasedUsernames: releasedUsernamesCount,
+    };
+  } catch (err: unknown) {
+    return {
+      ok: false,
+      expiredEmail: 0,
+      expiredApplication: 0,
+      releasedUsernames: 0,
+      error: err instanceof Error ? err.message : "Internal sweep error",
+    };
+  }
 }

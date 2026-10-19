@@ -5,11 +5,11 @@ export const DOCUMENT_RETENTION_DAYS = 90;
 const ONE_DAY_MS = 86_400_000;
 
 export function isEmailVerificationExpired(appliedAt: Date, now: Date): boolean {
-  return now.getTime() - appliedAt.getTime() > EMAIL_VERIFICATION_TTL_DAYS * ONE_DAY_MS;
+  return now.getTime() - appliedAt.getTime() >= EMAIL_VERIFICATION_TTL_DAYS * ONE_DAY_MS;
 }
 
 export function isApplicationExpired(appliedAt: Date, now: Date): boolean {
-  return now.getTime() - appliedAt.getTime() > APPLICATION_TTL_DAYS * ONE_DAY_MS;
+  return now.getTime() - appliedAt.getTime() >= APPLICATION_TTL_DAYS * ONE_DAY_MS;
 }
 
 export function documentPurgeAfter(decidedAt: Date): Date {
