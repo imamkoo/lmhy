@@ -25,6 +25,12 @@ export interface ProfileStats {
   articlesCount: number;
 }
 
+export {
+  type BannerParams,
+  parseBannerParams,
+  formatBannerUrl,
+} from "./banner-params";
+
 /**
  * Fetch a creator profile by their unique subdomain username.
  */
