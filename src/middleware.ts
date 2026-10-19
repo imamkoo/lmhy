@@ -189,15 +189,6 @@ export async function middleware(req: NextRequest) {
           return loginRedirect;
         }
 
-        const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/");
-        if (isAdminPath) {
-          if (!isAdminUser(user)) {
-            const denied = NextResponse.redirect(new URL("/", req.url));
-            sessionResponse.cookies.getAll().forEach((cookie) => denied.cookies.set(cookie.name, cookie.value, cookie));
-            return denied;
-          }
-        }
-
         // Hanya gate rute studio/kreator (/builder) yang mewajibkan profil kreator & username.
         // Halaman umum seperti landing page (/), blog (/blog), dll TIDAK boleh membajak pengunjung ke /onboarding.
         const isBuilderPath = url.pathname.startsWith("/builder");
@@ -217,6 +208,22 @@ export async function middleware(req: NextRequest) {
             });
             return redirectResponse;
           }
+        }
+      }
+
+      const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/");
+      if (isAdminPath) {
+        if (!user) {
+          const adminLogin = NextResponse.redirect(
+            new URL(`/login?next=${encodeURIComponent(url.pathname)}`, req.url)
+          );
+          sessionResponse.cookies.getAll().forEach((cookie) => adminLogin.cookies.set(cookie.name, cookie.value, cookie));
+          return adminLogin;
+        }
+        if (!isAdminUser(user)) {
+          const denied = NextResponse.redirect(new URL("/", req.url));
+          sessionResponse.cookies.getAll().forEach((cookie) => denied.cookies.set(cookie.name, cookie.value, cookie));
+          return denied;
         }
       }
     } catch (authError) {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isAdminUser } from "./admin-auth";
+import { isAdminUser } from "./admin-auth-edge";
 
 test("isAdminUser hanya true untuk app_metadata.is_admin === true", () => {
   assert.equal(isAdminUser({ app_metadata: { is_admin: true } }), true);
