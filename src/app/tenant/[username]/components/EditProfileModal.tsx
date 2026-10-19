@@ -281,9 +281,9 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
 
               {/* Mini Profile Info Bar */}
               <div className="px-3 pb-2.5 pt-0">
-                <div className="flex items-end gap-2.5 -mt-6">
-                  {/* Mini Avatar */}
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white bg-[#F7ABC5] shadow-sm flex items-center justify-center text-[#3F3766] font-bold text-sm select-none z-20">
+                <div className="flex items-start gap-2.5">
+                  {/* Mini Avatar — overlapping banner bottom */}
+                  <div className="relative -mt-6 h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white bg-[#F7ABC5] shadow-sm flex items-center justify-center text-[#3F3766] font-bold text-sm select-none z-20">
                     {avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -303,12 +303,13 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                     )}
                   </div>
 
-                  <div className="min-w-0 flex-1 pb-0.5">
+                  {/* Mini Profile Text — sits neatly below banner */}
+                  <div className="min-w-0 flex-1 pt-1">
                     <div className="flex items-center gap-1.5 truncate">
                       <span className="font-bold text-slate-900 text-xs truncate">
                         {displayName || "Nama Tampilan"}
                       </span>
-                      <span className="inline-flex items-center rounded-full bg-[#F7ABC5]/20 px-1.5 py-0.2 text-[9px] font-semibold text-[#3F3766]">
+                      <span className="inline-flex items-center rounded-full bg-[#F7ABC5]/20 px-1.5 py-0.5 text-[9px] font-semibold text-[#3F3766]">
                         @{profile.username}
                       </span>
                     </div>
