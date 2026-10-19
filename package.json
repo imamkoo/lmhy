@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:unit": "find src -name '*.test.ts' -print0 | xargs -0 tsx --test"
+    "test:unit": "find src -name '*.test.ts' -print0 | xargs -0 tsx --test",
+    "purge:documents": "tsx scripts/purge-expired-documents.mjs"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.11",

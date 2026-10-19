@@ -10,7 +10,8 @@ export type AuditAction =
   | "CHECKLIST_UPDATED"
   | "LITERA_CONFIG_UPDATED"
   | "EMAIL_RESENT"
-  | "SWEEP_FAILED";
+  | "SWEEP_FAILED"
+  | "DOCUMENT_PURGED";
 
 export interface AuditEntry {
   action: AuditAction;
@@ -30,6 +31,7 @@ export const AUDIT_ACTIONS: readonly AuditAction[] = [
   "LITERA_CONFIG_UPDATED",
   "EMAIL_RESENT",
   "SWEEP_FAILED",
+  "DOCUMENT_PURGED",
 ];
 
 export function isAuditAction(value: string): value is AuditAction {

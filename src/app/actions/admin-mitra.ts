@@ -10,6 +10,7 @@ import {
   serviceTrackForTrack,
 } from "@/lib/mitra/application-state";
 import {
+  documentPurgeAfter,
   isApplicationExpired,
   isEmailVerificationExpired,
   tombstoneUsername,
@@ -256,6 +257,13 @@ export async function approveApplicationAction(
     .eq("status", "PENDING")
     .neq("id", applicationId);
 
+  // Set document purge retention date to decided_at + 90 days
+  const purgeAfterIso = documentPurgeAfter(new Date(nowIso)).toISOString();
+  await supabase
+    .from("provider_documents")
+    .update({ purge_after: purgeAfterIso })
+    .eq("application_id", applicationId);
+
   await writeAuditLog(admin.id, {
     action: "APPLICATION_APPROVED",
     targetType: "provider_application",
@@ -346,6 +354,13 @@ export async function rejectApplicationAction(
       verification_note: note,
     })
     .eq("id", application.user_id);
+
+  // Set document purge retention date to decided_at + 90 days
+  const purgeAfterIso = documentPurgeAfter(new Date(nowIso)).toISOString();
+  await supabase
+    .from("provider_documents")
+    .update({ purge_after: purgeAfterIso })
+    .eq("application_id", applicationId);
 
   await writeAuditLog(admin.id, {
     action: "APPLICATION_REJECTED",

@@ -451,9 +451,9 @@ export interface Database {
         Relationships: []
       }
       admin_audit_log: {
-        Row: { id: string; actor_id: string; action: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED'; target_type: string; target_id: string | null; note: string | null; metadata: Json | null; created_at: string }
-        Insert: { id?: string; actor_id: string; action: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED'; target_type: string; target_id?: string | null; note?: string | null; metadata?: Json | null; created_at?: string }
-        Update: { id?: string; actor_id?: string; action?: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED'; target_type?: string; target_id?: string | null; note?: string | null; metadata?: Json | null; created_at?: string }
+        Row: { id: string; actor_id: string; action: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED' | 'DOCUMENT_PURGED'; target_type: string; target_id: string | null; note: string | null; metadata: Json | null; created_at: string }
+        Insert: { id?: string; actor_id: string; action: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED' | 'DOCUMENT_PURGED'; target_type: string; target_id?: string | null; note?: string | null; metadata?: Json | null; created_at?: string }
+        Update: { id?: string; actor_id?: string; action?: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED' | 'DOCUMENT_PURGED'; target_type?: string; target_id?: string | null; note?: string | null; metadata?: Json | null; created_at?: string }
         Relationships: []
       }
     }
