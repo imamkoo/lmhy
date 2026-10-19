@@ -30,6 +30,8 @@ export function ProfileBanner({
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
+  const [failedBannerUrl, setFailedBannerUrl] = useState<string | null>(null);
 
   const displayName = profile.display_name || profile.username;
   const username = profile.username;
@@ -93,12 +95,14 @@ export function ProfileBanner({
 
   const isBannerContain = profile.banner_url?.includes("fit=contain");
   const cleanBannerSrc = profile.banner_url ? profile.banner_url.split("#")[0] : null;
+  const hasBanner = Boolean(profile.banner_url && failedBannerUrl !== profile.banner_url);
+  const hasAvatar = Boolean(profile.avatar_url && failedAvatarUrl !== profile.avatar_url);
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition">
       {/* Cover Banner with soft gradient fallback */}
       <div className="relative h-44 w-full overflow-hidden bg-[linear-gradient(120deg,#fae8df_0%,#f4d7c8_55%,#eed2c4_100%)] sm:h-56 md:h-64">
-        {profile.banner_url ? (
+        {hasBanner ? (
           <>
             {isBannerContain && (
               <>
@@ -118,6 +122,9 @@ export function ProfileBanner({
                   ? "relative z-10 h-full w-full object-contain p-2 sm:p-4"
                   : "h-full w-full object-cover"
               }
+              onError={() => {
+                if (profile.banner_url) setFailedBannerUrl(profile.banner_url);
+              }}
             />
           </>
         ) : (
@@ -135,15 +142,15 @@ export function ProfileBanner({
         <div className="relative flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-14 sm:-mt-20">
           {/* Avatar */}
           <div className="relative h-20 w-20 sm:h-28 sm:w-28 md:h-32 md:w-32 shrink-0 overflow-hidden rounded-full border-4 border-white bg-[#F7ABC5] shadow-md flex items-center justify-center text-[#3F3766] font-bold text-xl sm:text-2xl md:text-3xl select-none">
-            {profile.avatar_url ? (
+            {hasAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={profile.avatar_url}
+                src={profile.avatar_url!}
                 alt={displayName}
                 className="h-full w-full object-cover"
-                onError={(e) => {
-                  (e.currentTarget as HTMLElement).style.display = "none";
-                }}
+                onError={() => {
+                if (profile.avatar_url) setFailedAvatarUrl(profile.avatar_url);
+              }}
               />
             ) : (
               <span>{initials}</span>
