@@ -9,49 +9,33 @@ import {
   type PsikologDraft,
   type ValidationIssue,
 } from "@/lib/mitra/application-schema";
+import DocumentUploader from "./DocumentUploader";
 import MitraField from "./MitraField";
 import MitraStepper from "./MitraStepper";
-import DocumentUploader from "./DocumentUploader";
-const provinces = [
-  "Aceh",
-  "Sumatera Utara",
-  "Sumatera Barat",
-  "Riau",
-  "Jambi",
-  "Sumatera Selatan",
-  "Bengkulu",
-  "Lampung",
-  "Kepulauan Bangka Belitung",
-  "Kepulauan Riau",
-  "DKI Jakarta",
-  "Jawa Barat",
-  "Jawa Tengah",
-  "DI Yogyakarta",
-  "Jawa Timur",
-  "Banten",
-  "Bali",
-  "Nusa Tenggara Barat",
-  "Nusa Tenggara Timur",
-  "Kalimantan Barat",
-  "Kalimantan Tengah",
-  "Kalimantan Selatan",
-  "Kalimantan Timur",
-  "Kalimantan Utara",
-  "Sulawesi Utara",
-  "Sulawesi Tengah",
-  "Sulawesi Selatan",
-  "Sulawesi Tenggara",
-  "Gorontalo",
-  "Sulawesi Barat",
-  "Maluku",
-  "Maluku Utara",
-  "Papua Barat",
-  "Papua Barat Daya",
-  "Papua",
-  "Papua Selatan",
-  "Papua Tengah",
-  "Papua Pegunungan",
-];
+const STEP_FIELDS: Record<1 | 2 | 3, string[]> = {
+  1: [
+    "applicantName",
+    "applicantEmail",
+    "whatsapp",
+    "domicileProvince",
+    "domicileCity",
+    "username",
+    "password",
+    "academicTitle",
+  ],
+  2: [
+    "s2Campus",
+    "s2GraduationYear",
+    "specialization",
+    "strNumber",
+    "sipStatus",
+    "currentPractice",
+    "yearsExperience",
+    "modalities",
+    "motivation",
+  ],
+  3: ["ethicsAccepted", "dataAccuracyAccepted"],
+};
 const initial: PsikologDraft = {
   track: "KLINIS",
   applicantName: "",
@@ -75,343 +59,336 @@ const initial: PsikologDraft = {
   ethicsAccepted: false,
   dataAccuracyAccepted: false,
 };
+const specializations = [
+  "Klinis Dewasa",
+  "Klinis Anak & Remaja",
+  "Klinis Keluarga",
+  "Industri & Organisasi",
+  "Pendidikan",
+  "Umum",
+];
 export default function PsikologApplicationForm() {
   const [draft, setDraft] = useState(initial);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [username, setUsername] = useState<{
+    available?: boolean;
+    error?: string;
+    suggestions: string[];
+  }>({ suggestions: [] });
+  const [honeypot, setHoneypot] = useState("");
+  const [serverError, setServerError] = useState("");
   const [submitted, setSubmitted] = useState<{
     id: string;
     token?: string;
   } | null>(null);
-  const [uploadStatuses, setUploadStatuses] = useState<Record<string, string>>(
-    {},
-  );
+  const [statuses, setStatuses] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
   const started = useRef<number | null>(null);
-  if (started.current === null) {
-    started.current = new Date().getTime();
-  }
+  if (started.current === null) started.current = new Date().getTime();
   const elapsed = () => new Date().getTime() - (started.current ?? 0);
+  const err = (key: string) => issues.find((i) => i.field === key)?.message;
+  const set = (key: keyof PsikologDraft, value: unknown) =>
+    setDraft((old) => ({ ...old, [key]: value }));
   useEffect(() => {
     if (draft.username.length < 3) return;
-    const t = setTimeout(
-      () =>
-        void checkMitraUsernameAction(draft.username).then((r) =>
-          setSuggestions(r.suggestions),
-        ),
+    const timer = setTimeout(
+      () => void checkMitraUsernameAction(draft.username).then(setUsername),
       400,
     );
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [draft.username]);
-  const err = (f: string) => issues.find((i) => i.field === f)?.message;
-  const set = (field: keyof PsikologDraft, value: unknown) =>
-    setDraft((d) => ({ ...d, [field]: value }));
+  const validate = () =>
+    validateMitraDraft({ ...draft, honeypot, formElapsedMs: elapsed() });
   const next = () => {
-    const result = validateMitraDraft({
-      ...draft,
-      formElapsedMs: elapsed(),
-    });
+    const result = validate();
     setIssues(result.issues);
-    if (
-      step < 3 &&
-      !result.issues.some((i) =>
-        [
-          "applicantName",
-          "applicantEmail",
-          "whatsapp",
-          "domicileProvince",
-          "domicileCity",
-          "username",
-          "password",
-          "academicTitle",
-          "s2Campus",
-          "s2GraduationYear",
-          "specialization",
-          "strNumber",
-          "sipStatus",
-          "currentPractice",
-          "yearsExperience",
-          "modalities",
-          "motivation",
-        ].includes(i.field),
-      )
-    )
+    if (!result.issues.some((issue) => STEP_FIELDS[step].includes(issue.field)))
       setStep((step + 1) as 1 | 2 | 3);
   };
   const submit = () => {
-    const result = validateMitraDraft({
-      ...draft,
-      formElapsedMs: elapsed(),
-    });
+    const result = validate();
     setIssues(result.issues);
     if (!result.ok) return;
     startTransition(async () => {
-      const r = await submitMitraApplication({
+      const answer = await submitMitraApplication({
         ...draft,
+        honeypot,
         formElapsedMs: elapsed(),
       });
-      if (r.ok && r.applicationId)
-        setSubmitted({ id: r.applicationId, token: r.uploadToken });
+      if (answer.ok && answer.applicationId) {
+        sessionStorage.setItem("mitra-upload-token", answer.uploadToken || "");
+        setSubmitted({ id: answer.applicationId, token: answer.uploadToken });
+        return;
+      }
+      setIssues(answer.issues ?? []);
+      setServerError(
+        answer.code === "EMAIL_EXISTS"
+          ? "Email ini sudah punya akun."
+          : answer.code === "RATE_LIMITED"
+            ? answer.message || "Silakan tunggu sebelum mencoba lagi."
+            : answer.message || "Pengajuan belum dapat dikirim.",
+      );
     });
   };
   if (submitted)
     return (
-      <main className="min-h-screen bg-[#FBF8F5] p-6">
-        <h1 className="text-3xl font-bold text-[#3C3163]">
-          Cek email untuk verifikasi
-        </h1>
-        <p className="my-4">Pengajuan Anda sudah diterima.</p>
-        <DocumentUploader
-          docType="STR"
-          applicationId={submitted.id}
-          uploadToken={submitted.token}
-          onError={alert}
-          onStatusChange={(status) =>
-            setUploadStatuses((s) => ({ ...s, STR: status }))
-          }
-        />
-        <p aria-live="polite">STR: {uploadStatuses.STR ?? "belum diunggah"}</p>
-        <DocumentUploader
-          docType="CV"
-          applicationId={submitted.id}
-          uploadToken={submitted.token}
-          onError={alert}
-          onStatusChange={(status) =>
-            setUploadStatuses((s) => ({ ...s, CV: status }))
-          }
-        />
-        <p aria-live="polite">CV: {uploadStatuses.CV ?? "belum diunggah"}</p>
+      <main>
+        <h1>Cek email untuk verifikasi</h1>
+        <p>Pengajuan Anda sudah diterima.</p>
+        <p>
+          <a href="/akun/pengajuan">Lihat pengajuan</a> ·{" "}
+          <a href="/mitra/status">Status mitra</a>
+        </p>
+        {(["STR", "CV"] as const).map((docType) => (
+          <section key={docType}>
+            <label htmlFor={`upload-${docType}`}>Unggah {docType}</label>
+            <DocumentUploader
+              docType={docType}
+              applicationId={submitted.id}
+              uploadToken={submitted.token}
+              onError={setServerError}
+              onStatusChange={(status) =>
+                setStatuses((old) => ({ ...old, [docType]: status }))
+              }
+            />
+            <p aria-live="polite">{statuses[docType] ?? "belum diunggah"}</p>
+          </section>
+        ))}
+        {serverError && <p role="alert">{serverError}</p>}
+        <p>
+          Verifikasi email lalu masuk untuk mengunggah dokumen:{" "}
+          <a href="/mitra/status">status</a> atau{" "}
+          <a href="/akun/pengajuan">pengajuan</a>.
+        </p>
       </main>
     );
+  const input = (name: keyof PsikologDraft, label: string, type = "text") => (
+    <MitraField label={label} name={name} error={err(name)}>
+      <input
+        id={name}
+        type={type}
+        value={String(draft[name])}
+        aria-invalid={Boolean(err(name))}
+        aria-describedby={err(name) ? `${name}-error` : undefined}
+        onChange={(e) => set(name, e.target.value)}
+      />
+    </MitraField>
+  );
   return (
-    <main className="min-h-screen bg-[#FBF8F5] p-4 text-[#3C3163]">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <h1 className="text-3xl font-bold">Daftar sebagai psikolog</h1>
-        <MitraStepper
-          current={step}
-          labels={["Identitas", "Kredensial", "Komitmen"]}
-        />
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (step === 3) {
-              submit();
-            } else {
-              next();
-            }
-          }}
-          className="space-y-4 rounded-[28px] bg-white p-6"
-        >
-          {step === 1 && (
+    <main>
+      <h1>Daftar sebagai psikolog</h1>
+      <MitraStepper
+        current={step}
+        labels={["Identitas", "Kredensial", "Komitmen"]}
+      />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (step === 3) submit();
+          else next();
+        }}
+      >
+        {serverError && (
+          <p role="alert">
+            {serverError}{" "}
+            {serverError.startsWith("Email") && <a href="/login">Masuk</a>}
+          </p>
+        )}
+        {step === 1 && (
+          <>
             <>
-              <MitraField
-                label="Nama lengkap + gelar"
-                name="applicantName"
-                error={err("applicantName")}
-              >
-                <input
-                  id="applicantName"
-                  aria-invalid={Boolean(err("applicantName"))}
-                  aria-describedby={
-                    err("applicantName") ? "applicantName-error" : undefined
-                  }
-                  value={draft.applicantName}
-                  onChange={(e) => set("applicantName", e.target.value)}
-                  className="w-full rounded-xl border p-3"
-                />
-              </MitraField>
-              {(
-                [
-                  ["applicantEmail", "Email"],
-                  ["whatsapp", "WhatsApp"],
-                  ["domicileCity", "Kota"],
-                  ["username", "Username"],
-                  ["password", "Kata sandi"],
-                ] as const
-              ).map(([f, l]) => (
-                <MitraField key={f} label={l} name={f} error={err(f)}>
-                  <input
-                    id={f}
-                    aria-invalid={Boolean(err(f))}
-                    aria-describedby={err(f) ? `${f}-error` : undefined}
-                    type={f === "password" ? "password" : "text"}
-                    value={String(draft[f])}
-                    onChange={(e) => set(f, e.target.value)}
-                    className="w-full rounded-xl border p-3"
-                  />
-                  {f === "username" && suggestions.length > 0 && (
-                    <p>Saran: {suggestions.join(", ")}</p>
-                  )}
-                </MitraField>
-              ))}
-              <MitraField
-                label="Provinsi"
-                name="domicileProvince"
-                error={err("domicileProvince")}
-              >
-                <select
-                  id="domicileProvince"
-                  aria-invalid={Boolean(err("domicileProvince"))}
-                  aria-describedby={
-                    err("domicileProvince")
-                      ? "domicileProvince-error"
-                      : undefined
-                  }
-                  value={draft.domicileProvince}
-                  onChange={(e) => set("domicileProvince", e.target.value)}
-                  className="w-full rounded-xl border p-3"
+              {input("applicantName", "Nama lengkap")}
+              {input("academicTitle", "Gelar")}
+              {input("applicantEmail", "Email")}
+              {input("whatsapp", "WhatsApp")}
+              {input("domicileProvince", "Provinsi")}
+              {input("domicileCity", "Kota")}
+              {input("username", "Username")}
+              {username.error && <p role="alert">{username.error}</p>}
+              {username.suggestions.map((value) => (
+                <button
+                  type="button"
+                  key={value}
+                  onClick={() => set("username", value)}
                 >
-                  <option value="">Pilih provinsi</option>
-                  {provinces.map((p) => (
-                    <option key={p}>{p}</option>
-                  ))}
-                </select>
-              </MitraField>
-            </>
-          )}
-          {step === 2 && (
-            <>
-              {(
-                [
-                  ["academicTitle", "Gelar"],
-                  ["s2Campus", "Kampus S2"],
-                  ["strNumber", "Nomor STR"],
-                  ["currentPractice", "Tempat praktik saat ini"],
-                ] as const
-              ).map(([f, l]) => (
-                <MitraField key={f} label={l} name={f} error={err(f)}>
-                  <input
-                    id={f}
-                    aria-invalid={Boolean(err(f))}
-                    aria-describedby={err(f) ? `${f}-error` : undefined}
-                    value={String(draft[f])}
-                    onChange={(e) => set(f, e.target.value)}
-                    className="w-full rounded-xl border p-3"
-                  />
-                </MitraField>
+                  {value}
+                </button>
               ))}
-              <MitraField
-                label="Ringkasan pengalaman & motivasi"
-                name="motivation"
-                error={err("motivation")}
+              {input("password", "Kata sandi", "password")}
+            </>
+          </>
+        )}
+        {step === 2 && (
+          <>
+            <>
+              {input("s2Campus", "Kampus S2")}
+              {input("strNumber", "Nomor STR")}
+              {input("currentPractice", "Tempat praktik")}
+            </>
+            <MitraField
+              label="Tahun lulus S2"
+              name="s2GraduationYear"
+              error={err("s2GraduationYear")}
+            >
+              <input
+                id="s2GraduationYear"
+                type="number"
+                min="1980"
+                max={new Date().getFullYear()}
+                value={draft.s2GraduationYear || ""}
+                onChange={(e) =>
+                  set("s2GraduationYear", Number(e.target.value))
+                }
+              />
+              <p>1980–{new Date().getFullYear()}</p>
+            </MitraField>
+            <MitraField
+              label="Spesialisasi"
+              name="specialization"
+              error={err("specialization")}
+            >
+              <select
+                id="specialization"
+                value={draft.specialization}
+                onChange={(e) => set("specialization", e.target.value)}
               >
-                <textarea
-                  id="motivation"
-                  aria-invalid={Boolean(err("motivation"))}
-                  aria-describedby={
-                    err("motivation") ? "motivation-error" : undefined
-                  }
-                  value={draft.motivation}
-                  onChange={(e) => set("motivation", e.target.value)}
-                  className="w-full rounded-xl border p-3"
-                  rows={6}
-                />
-              </MitraField>
-              <MitraField
-                label="Tahun lulus S2"
-                name="s2GraduationYear"
-                error={err("s2GraduationYear")}
-              >
-                <input
-                  id="s2GraduationYear"
-                  aria-invalid={Boolean(err("s2GraduationYear"))}
-                  aria-describedby={
-                    err("s2GraduationYear")
-                      ? "s2GraduationYear-error"
-                      : undefined
-                  }
-                  type="number"
-                  onChange={(e) =>
-                    set("s2GraduationYear", Number(e.target.value))
-                  }
-                  className="w-full rounded-xl border p-3"
-                />
-              </MitraField>
-              {["VIDEO", "VOICE", "CHAT"].map((m) => (
-                <label key={m} htmlFor={`modality-${m}`} className="mr-4">
+                <option value="">Pilih</option>
+                {specializations.map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
+              </select>
+            </MitraField>
+            <fieldset>
+              <legend>Status SIP</legend>
+              {(["AKTIF", "TIDAK_AKTIF"] as const).map((value) => (
+                <label key={value}>
                   <input
-                    id={`modality-${m}`}
+                    type="radio"
+                    name="sipStatus"
+                    checked={draft.sipStatus === value}
+                    onChange={() => set("sipStatus", value)}
+                  />
+                  {value}
+                </label>
+              ))}
+              {draft.sipStatus === "TIDAK_AKTIF" && (
+                <p>
+                  Pengajuan tetap dapat diajukan; tim kami akan meninjaunya
+                  lebih ketat
+                </p>
+              )}
+            </fieldset>
+            <MitraField
+              label="Pengalaman"
+              name="yearsExperience"
+              error={err("yearsExperience")}
+            >
+              <select
+                id="yearsExperience"
+                value={draft.yearsExperience}
+                onChange={(e) => set("yearsExperience", e.target.value)}
+              >
+                <option value="">Pilih</option>
+                {["<1", "1-2", "2-4", "4-7", ">7"].map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+              </select>
+            </MitraField>
+            <MitraField label="Jam terbang" name="flightHours">
+              <select
+                id="flightHours"
+                value={draft.flightHours}
+                onChange={(e) => set("flightHours", e.target.value)}
+              >
+                <option value="">Opsional</option>
+                {["<100", "100-300", "301-700", "701-1500", ">1500"].map(
+                  (v) => (
+                    <option key={v}>{v}</option>
+                  ),
+                )}
+              </select>
+            </MitraField>
+            <fieldset>
+              <legend>Modalitas layanan</legend>
+              {[
+                ["VIDEO", "Video"],
+                ["VOICE", "Voice"],
+                ["CHAT", "Chat"],
+              ].map(([value, label]) => (
+                <label key={value}>
+                  <input
                     type="checkbox"
-                    checked={draft.modalities.includes(m)}
-                    aria-invalid={Boolean(err("modalities"))}
-                    aria-describedby={
-                      err("modalities") ? "modalities-error" : undefined
-                    }
+                    checked={draft.modalities.includes(value)}
                     onChange={(e) =>
                       set(
                         "modalities",
                         e.target.checked
-                          ? [...draft.modalities, m]
-                          : draft.modalities.filter((x) => x !== m),
+                          ? [...draft.modalities, value]
+                          : draft.modalities.filter((item) => item !== value),
                       )
                     }
-                  />{" "}
-                  {m}
+                  />
+                  {label}
                 </label>
               ))}
-              {err("modalities") && (
-                <p id="modalities-error" role="alert" className="text-red-600">
-                  {err("modalities")}
-                </p>
-              )}
-            </>
-          )}
-          {step === 3 && (
-            <>
-              <label htmlFor="dataAccuracyAccepted">
-                <input
-                  id="dataAccuracyAccepted"
-                  type="checkbox"
-                  checked={draft.dataAccuracyAccepted}
-                  aria-invalid={Boolean(err("dataAccuracyAccepted"))}
-                  aria-describedby={
-                    err("dataAccuracyAccepted") ? "pledges-error" : undefined
-                  }
-                  onChange={(e) =>
-                    set("dataAccuracyAccepted", e.target.checked)
-                  }
-                />{" "}
-                Saya menyatakan data benar
-              </label>
-              <label htmlFor="ethicsAccepted">
-                <input
-                  id="ethicsAccepted"
-                  type="checkbox"
-                  checked={draft.ethicsAccepted}
-                  aria-invalid={Boolean(err("ethicsAccepted"))}
-                  aria-describedby={
-                    err("ethicsAccepted") ? "pledges-error" : undefined
-                  }
-                  onChange={(e) => set("ethicsAccepted", e.target.checked)}
-                />{" "}
-                Saya menyetujui{" "}
-                <a href="/mitra/pakta-etika" className="underline">
-                  kode etik
-                </a>
-              </label>
-              {(err("ethicsAccepted") || err("dataAccuracyAccepted")) && (
-                <p id="pledges-error" role="alert" className="text-red-600">
-                  {err("ethicsAccepted") || err("dataAccuracyAccepted")}
-                </p>
-              )}
-              <input
-                name="website"
-                className="hidden"
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
+            </fieldset>
+            {err("modalities") && <p role="alert">{err("modalities")}</p>}
+            <MitraField
+              label="Ringkasan pengalaman & motivasi"
+              name="motivation"
+              error={err("motivation")}
+            >
+              <textarea
+                id="motivation"
+                value={draft.motivation}
+                onChange={(e) => set("motivation", e.target.value)}
               />
-            </>
+            </MitraField>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <label>
+              <input
+                type="checkbox"
+                checked={draft.dataAccuracyAccepted}
+                onChange={(e) => set("dataAccuracyAccepted", e.target.checked)}
+              />
+              Saya menyatakan data benar
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={draft.ethicsAccepted}
+                onChange={(e) => set("ethicsAccepted", e.target.checked)}
+              />
+              Saya menyetujui kode etik
+            </label>
+            <input
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+          </>
+        )}
+        <div>
+          {step > 1 && (
+            <button
+              type="button"
+              onClick={() => setStep((step - 1) as 1 | 2 | 3)}
+            >
+              Kembali
+            </button>
           )}
-          <button
-            disabled={pending}
-            className="rounded-full bg-[#3C3163] px-5 py-3 text-white"
-          >
+          <button disabled={pending}>
             {step === 3 ? "Kirim pengajuan" : "Lanjut"}
           </button>
-        </form>
-      </div>
+        </div>
+      </form>
     </main>
   );
 }

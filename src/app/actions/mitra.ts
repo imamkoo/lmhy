@@ -130,10 +130,13 @@ export async function submitMitraApplication(
   }
   recordSubmission(key);
   recordSubmission(`email:${normalized.applicantEmail}`);
-  const secret =
-    process.env.MITRA_UPLOAD_SECRET ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    "";
+  const secret = process.env.MITRA_UPLOAD_SECRET;
+  if (!secret)
+    return {
+      ok: false,
+      code: "SERVER_ERROR",
+      message: "Token unggah belum dikonfigurasi.",
+    };
   return {
     ok: true,
     code: "OK",
@@ -191,13 +194,13 @@ export async function finalizeDocumentUploadAction(input: {
   uploadToken?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const path = input.path;
-  const secret =
-    process.env.MITRA_UPLOAD_SECRET ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    "";
+  const secret = process.env.MITRA_UPLOAD_SECRET;
+  if (!secret) return { ok: false, error: "Token unggah belum dikonfigurasi." };
   const token = input.uploadToken
     ? verifyUploadToken(input.uploadToken, secret)
     : undefined;
+  if (input.uploadToken && !token?.ok)
+    return { ok: false, error: token?.error };
   const client = await createClient();
   const {
     data: { user },
@@ -252,13 +255,13 @@ export async function createDocumentUploadAction(input: {
   filename: string;
   uploadToken?: string;
 }) {
-  const secret =
-    process.env.MITRA_UPLOAD_SECRET ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    "";
+  const secret = process.env.MITRA_UPLOAD_SECRET;
+  if (!secret) return { ok: false, error: "Token unggah belum dikonfigurasi." };
   const token = input.uploadToken
     ? verifyUploadToken(input.uploadToken, secret)
     : undefined;
+  if (input.uploadToken && !token?.ok)
+    return { ok: false, error: token?.error };
   const client = await createClient();
   const {
     data: { user },
