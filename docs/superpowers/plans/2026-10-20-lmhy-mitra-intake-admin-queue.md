@@ -1251,6 +1251,19 @@ Urutan pemeriksaan: rate limit → validasi schema → email existing → email 
 6. `recordSubmission(`ip:${ip}`)` dan `recordSubmission(`email:${email}`)`.
 7. Return `{ ok: true, code: "OK", applicationId, username, uploadToken }`.
 
+### 7.0 Jalur MEMBER di aksi submit (WAJIB — spec §7 "bila member → update profil + buat application")
+
+Hanya jalur guest yang diimplementasikan Task 13. Jalur **member** (D9: intake Pendamping Sebaya datang dari member yang sudah punya akun) **tidak boleh** menerima `EMAIL_EXISTS`/`USERNAME_TAKEN`:
+
+1. Resolusi sesi di awal aksi: `const { data: { user: sessionUser } } = await createClient().auth.getUser();`
+2. Bila ada `sessionUser`:
+   - `applicant_email` **wajib sama** dengan email sesi (member tidak boleh mengajukan atas nama orang lain) → bila beda, return error "Email harus sama dengan akun yang sedang masuk."
+   - **Lewati `createUser`** — pakai `sessionUser.id` sebagai `user_id`.
+   - Username milik member sendiri **tidak** dianggap "terpakai": saat menghitung `existingUsernames`, keluarkan username profil member tersebut.
+   - Profil **di-update**, bukan di-insert: perbarui `display_name`/data yang berubah, tetapi **jangan** sentuh `creator_role`, `service_track`, atau `verification_status` (member yang sudah `PENDAMPING` tidak boleh dikembalikan jadi `PENULIS`).
+   - Guard "1 pengajuan aktif per akun": bila user tersebut sudah punya pengajuan berstatus `PENDING`, return error "Anda sudah memiliki pengajuan yang sedang ditinjau." (kecuali jalur ajukan-ulang, yang menggantikan row lama).
+3. Bila tidak ada `sessionUser` → jalur guest seperti sekarang.
+
 ### 7.1 Upload token (karena akun baru belum punya session)
 
 Akun dibuat dengan `email_confirm: false` → pelamar belum punya session, sehingga aksi unggah tidak bisa mengandalkan `auth.getUser()`. Solusi: aksi submit mengembalikan **upload token**.
@@ -1541,6 +1554,7 @@ git commit -m "feat(mitra): add ethical pledge pages for both tracks"
 
 **Files:**
 - Create: `src/app/akun/page.tsx`
+- Create: `src/app/akun/pengajuan/page.tsx` (alias → redirect ke `/akun?tab=pengajuan`, karena form psikolog & spec §P5 menautkan `/akun/pengajuan`)
 - Create: `src/components/mitra/AccountOverview.tsx`
 - Create: `src/components/mitra/ApplicationTimeline.tsx`
 
