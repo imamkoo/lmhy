@@ -1,6 +1,6 @@
 /**
  * Centralized Admin Tokenomics Storage for Litera Protocol
- * Managed exclusively by Admin (/admin/litera) with PIN 123456
+ * Managed exclusively by Admin (/admin/litera)
  * Automatically merged into user article publishing
  */
 
@@ -16,7 +16,7 @@ export interface AdminTokenomicsConfig {
 }
 
 // Global runtime config with official defaults
-let globalTokenomicsConfig: AdminTokenomicsConfig = {
+const defaultTokenomicsConfig: AdminTokenomicsConfig = {
   userReward: 0,
   creatorReward: 0,
   creatorApproveReward: 0,
@@ -26,6 +26,12 @@ let globalTokenomicsConfig: AdminTokenomicsConfig = {
   isDepositConfirmed: false,
   updatedAt: new Date().toISOString(),
 };
+
+let globalTokenomicsConfig: AdminTokenomicsConfig = { ...defaultTokenomicsConfig };
+
+export function getDefaultTokenomicsConfig(): AdminTokenomicsConfig {
+  return { ...defaultTokenomicsConfig };
+}
 
 export function getAdminTokenomicsConfig(): AdminTokenomicsConfig {
   return { ...globalTokenomicsConfig };

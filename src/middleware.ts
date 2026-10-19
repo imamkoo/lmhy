@@ -211,7 +211,7 @@ export async function middleware(req: NextRequest) {
         }
       }
 
-      const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/");
+      const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/") || url.pathname === "/creator";
       if (isAdminPath) {
         if (!user) {
           const adminLogin = NextResponse.redirect(
