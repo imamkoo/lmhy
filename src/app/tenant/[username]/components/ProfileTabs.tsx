@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { getBuilderUrl } from "@/lib/builder";
 import type { Article, Profile } from "@/lib/supabase/types";
+import { ArticleThumbnailImage } from "./ArticleThumbnailImage";
 
 interface ProfileTabsProps {
   articles: Article[];
@@ -170,18 +171,18 @@ export function ProfileTabs({
 
                   {/* Thumbnail Cover (if exists) */}
                   {art.media_url && !art.media_url.startsWith("blob:") && (
-                    <div className="relative h-28 w-full sm:h-28 sm:w-36 shrink-0 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                    <Link
+                      href={`/${art.slug}`}
+                      className="relative h-28 w-full sm:h-28 sm:w-36 shrink-0 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-100 block group/thumb"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    >
+                      <ArticleThumbnailImage
                         src={art.media_url}
                         alt={art.title}
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                        onError={(e) => {
-                          const parent = (e.currentTarget as HTMLElement).parentElement;
-                          if (parent) parent.style.display = "none";
-                        }}
+                        className="h-full w-full object-cover transition duration-300 group-hover/thumb:scale-105 group-hover:scale-105"
                       />
-                    </div>
+                    </Link>
                   )}
                 </article>
               );
