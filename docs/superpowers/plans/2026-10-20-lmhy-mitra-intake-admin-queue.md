@@ -634,8 +634,9 @@ git commit -m "feat(mitra): add expiry, retention and tombstone rules"
    - FK: `user_id → auth.users(id) ON DELETE CASCADE`, `decided_by → auth.users(id) ON DELETE SET NULL`, `supersedes`/`superseded_by` self-FK `ON DELETE SET NULL`
 2. `CREATE TABLE IF NOT EXISTS public.provider_documents (...)` dengan `CHECK (doc_type IN ('STR','SIPP','CV','TRAINING_CERT','PFA_CERT','OTHER'))`, `size_bytes > 0`, FK ke `provider_applications` (`ON DELETE CASCADE`) dan `auth.users` (`ON DELETE CASCADE`).
 3. `CREATE TABLE IF NOT EXISTS public.admin_audit_log (...)` dengan `CHECK (action IN ('APPLICATION_APPROVED','APPLICATION_REJECTED','APPLICATION_EXPIRED','APPLICATION_RESUBMITTED','DOCUMENT_VIEWED','CHECKLIST_UPDATED','LITERA_CONFIG_UPDATED','EMAIL_RESENT','SWEEP_FAILED'))`.
+   **WAJIB:** `target_id` bertipe **TEXT**, bukan UUID — aksi `LITERA_CONFIG_UPDATED` memakai `target_id` non-UUID (mis. `'tokenomics'`), dan kolom UUID akan menolaknya saat insert.
 4. Index: `provider_applications (status, track, applied_at DESC)`, `(user_id)`; `provider_documents (application_id)`, `(purge_after)`; `admin_audit_log (actor_id, created_at DESC)`, `(target_type, target_id)`, `(created_at DESC)`.
-5. RLS: `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` untuk ketiga tabel **tanpa** membuat policy apa pun untuk `anon`/`authenticated`.
+5. RLS: `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` untuk ketiga tabel **tanpa** membuat policy apa pun untuk `anon`/`authenticated`, dan **tanpa** memberi `GRANT` tabel ke `anon`/`authenticated` — posture "deny-all by design" harus tegas, bukan sekadar RLS yang menyaring grant yang diberikan.
 6. Bucket: `INSERT INTO storage.buckets (id, name, public) VALUES ('provider-credentials','provider-credentials', false) ON CONFLICT (id) DO NOTHING;` dan `ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY` (idempoten) tanpa policy baru — akses hanya via signed URL.
 7. Fungsi pelepas username:
 ```sql
