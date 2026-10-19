@@ -37,6 +37,8 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
   });
   const [website, setWebsite] = useState(profile.website || "");
   const [facebookUrl, setFacebookUrl] = useState(profile.facebook_profile_url || "");
+  const [avatarError, setAvatarError] = useState(false);
+  const [bannerError, setBannerError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -90,8 +92,10 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
       }
       if (kind === "avatar") {
         setAvatarUrl(res.url);
+        setAvatarError(false);
       } else {
         setBannerUrl(res.url);
+        setBannerError(false);
       }
       setPendingUploads((prev) => {
         const next = { ...prev };
@@ -122,8 +126,10 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
     }
     if (kind === "avatar") {
       setAvatarUrl("");
+      setAvatarError(false);
     } else {
       setBannerUrl("");
+      setBannerError(false);
     }
   };
 
@@ -247,7 +253,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
             <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs">
               {/* Mini Banner */}
               <div className="relative h-20 w-full overflow-hidden bg-[linear-gradient(120deg,#fae8df_0%,#f4d7c8_55%,#eed2c4_100%)]">
-                {bannerUrl ? (
+                {bannerUrl && !bannerError ? (
                   <>
                     {bannerFit === "contain" && (
                       <>
@@ -265,9 +271,7 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                           ? "relative z-10 h-full w-full object-contain p-1.5"
                           : "h-full w-full object-cover"
                       }
-                      onError={(e) => {
-                        (e.currentTarget as HTMLElement).style.display = "none";
-                      }}
+                      onError={() => setBannerError(true)}
                     />
                   </>
                 ) : (
@@ -284,15 +288,13 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
                 <div className="flex items-start gap-2.5">
                   {/* Mini Avatar — overlapping banner bottom */}
                   <div className="relative -mt-6 h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white bg-[#F7ABC5] shadow-sm flex items-center justify-center text-[#3F3766] font-bold text-sm select-none z-20">
-                    {avatarUrl ? (
+                    {avatarUrl && !avatarError ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={avatarUrl}
                         alt="Preview Avatar"
                         className="h-full w-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLElement).style.display = "none";
-                        }}
+                        onError={() => setAvatarError(true)}
                       />
                     ) : (
                       <span>
@@ -365,15 +367,13 @@ function EditProfileForm({ profile, onClose }: EditProfileFormProps) {
             </label>
             <div className="mt-1.5 flex items-center gap-3">
               <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-sm">
-                {avatarUrl ? (
+                {avatarUrl && !avatarError ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={avatarUrl}
                     alt="Preview Avatar"
                     className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = "none";
-                    }}
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
                   <span>{displayName ? displayName.charAt(0).toUpperCase() : "@"}</span>
