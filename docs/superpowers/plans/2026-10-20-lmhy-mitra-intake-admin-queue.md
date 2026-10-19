@@ -114,26 +114,27 @@ Lima kelas input/kondisi yang paling mungkin menggigit pengguna nyata, dan peril
 
 - [ ] **Step 1: Pastikan glob test saat ini rapuh**
 
-Jalankan: `npx tsx --test "src/lib/sanctuary/booking-rules.test.ts" && ls src/lib/*/*.test.ts src/lib/*/*/*.test.ts 2>/dev/null`
+Jalankan: `npm run test:unit 2>&1 | tail -3` → expect 62 test PASS.
+Lalu buktikan kerapuhan: buat file uji sementara di `src/a/b/c/__globcheck.test.ts`, jalankan `npm run test:unit 2>&1 | grep -E "^# tests"`, dan catat jumlah test. **Diberi tahu:** `npm run` memakai `sh`, yang tidak memperlakukan `**` sebagai recursive — pola `src/**/*.test.ts` hanya mencapai 2 level dan `src/**/**/*.test.ts` hanya 3 level, sehingga file di 4+ level **tidak pernah dijalankan**. Ini yang membuat task ini ada.
 
-Harapan: perintah pertama PASS. Perhatikan bahwa `npm run test:unit` saat ini memakai glob tanpa kutip → di sh non-globstar `src/**/*.test.ts` hanya =~2 level. Konfirmasi dengan: `npm run test:unit 2>&1 | tail -3` → expect test count saat ini (62).
-
-- [ ] **Step 2: Ubah script jadi glob quoted**
+- [ ] **Step 2: Ubah script jadi penemuan file yang depth-independent**
 
 `package.json`:
 ```json
-"test:unit": "tsx --test \"src/**/*.test.ts\""
+"test:unit": "find src -name '*.test.ts' -print0 | xargs -0 tsx --test"
 ```
+> **Jangan pakai glob yang di-kutip** (`tsx --test "src/**/*.test.ts"`): dukungan glob pada `--test` hanya ada di Node 21+, sedangkan Node lokal repo ini v20 → script itu gagal dengan "Could not find". `find | xargs` deterministik di semua shell & versi Node, dan menjangkau kedalaman berapa pun.
 
-- [ ] **Step 3: Verifikasi glob baru menjangkau file nested**
+- [ ] **Step 3: Verifikasi script baru menjangkau file nested**
 
-Buat file sementara `src/lib/mitra/__globcheck.test.ts` berisi:
-```ts
-import test from "node:test";
-test("glob check", () => {});
-```
-Jalankan: `npm run test:unit 2>&1 | grep -c "glob check"` → expect `1`.
-Lalu hapus file tersebut.
+Buat dua file sementara:
+- `src/lib/mitra/__globcheck.test.ts` (3 level — tempat test_task nanti berada)
+- `src/a/b/c/__globcheck.test.ts` (5 level — pembuktian depth-independent)
+
+Keduanya berisi `import test from "node:test"; test("glob check", () => {});`
+
+Jalankan: `npm run test:unit 2>&1 | grep -E "^# tests"` → expect **64** (62 + 2).
+Lalu hake both file sementara (`rm -rf src/lib/mitra src/a`) dan konfirmasi `git status --short` tidak menampilkan file apa pun di `src/`.
 
 - [ ] **Step 4: Tambahkan step unit test ke CI**
 
