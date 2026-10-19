@@ -41,6 +41,20 @@ test("admin tidak boleh approve pengajuannya sendiri", () => {
   assert.equal(r.allowed, false);
 });
 
+test("gate approve menolak pengajuan yang sudah diputuskan", () => {
+  const r = evaluateApproval({
+    status: "APPROVED",
+    track: "KLINIS",
+    emailVerifiedAt: new Date().toISOString(),
+    waJoinedConfirmedAt: null,
+    pfaStatus: "BELUM",
+    hasRequiredDocuments: true,
+    adminUserId: "a",
+    applicantUserId: "u",
+  });
+  assert.equal(r.allowed, false);
+});
+
 test("reject wajib menyertakan catatan dan tidak boleh oleh pelamar sendiri", () => {
   assert.equal(evaluateRejection({ status: "PENDING", note: "", adminUserId: "a", applicantUserId: "u" }).allowed, false);
   assert.equal(evaluateRejection({ status: "PENDING", note: "STR belum aktif", adminUserId: "u", applicantUserId: "u" }).allowed, false);
