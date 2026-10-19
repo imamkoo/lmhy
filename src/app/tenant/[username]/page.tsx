@@ -6,6 +6,7 @@ import SessionTabs, { type SessionSlot } from "@/components/sanctuary/SessionTab
 import { ProfileBanner } from "./components/ProfileBanner";
 import { ProfileTabs } from "./components/ProfileTabs";
 import { EditProfileModal } from "./components/EditProfileModal";
+import Link from "next/link";
 import type { Profile } from "@/lib/supabase/types";
 
 export async function generateMetadata({
@@ -142,6 +143,25 @@ export default async function TenantProfilePage({
           isOwnProfile={isOwnProfile}
           initialIsFollowing={isFollowing}
         />
+
+        {currentUser && profile.creator_role === "PENULIS" && (
+          <section className="mt-6 rounded-[28px] bg-[hsl(344,81%,87%)] p-5">
+            <h2 className="font-heading text-lg font-bold text-[#3C3163]">
+              Tertarik menjadi Pendamping Sebaya?
+            </h2>
+            <p className="mt-2 text-sm text-[#3C3163]">
+              Dapatkan pelatihan First Aid Counseling, komunitas, dan akses
+              sesi dengar.
+            </p>
+            <Link
+              href="/mitra/pendamping"
+              className="mt-4 inline-flex rounded-full bg-[#3C3163] px-4 py-2
+                text-sm font-semibold text-white"
+            >
+              Ajukan sekarang
+            </Link>
+          </section>
+        )}
 
         {isApprovedProvider && providerRole ? (
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
