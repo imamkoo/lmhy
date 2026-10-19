@@ -26,12 +26,18 @@ export async function submitMitraApplication(
   context?: { ip?: string },
 ): Promise<SubmitResult> {
   const secret = process.env.MITRA_UPLOAD_SECRET;
-  if (!secret)
+  if (!secret) {
     return {
       ok: false,
       code: "SERVER_ERROR",
       message: "Token unggah belum dikonfigurasi.",
     };
+  }
+
+  const client = await createClient();
+  const {
+    data: { user: sessionUser },
+  } = await client.auth.getUser();
   const requestHeaders = await headers();
   const forwardedIp = requestHeaders
     .get("x-forwarded-for")
@@ -40,17 +46,40 @@ export async function submitMitraApplication(
     .slice(0, 128);
   const ip = context?.ip?.trim().slice(0, 128) || forwardedIp || "unknown";
   const key = `ip:${ip}`;
-  if (!checkSubmissionRateLimit(key).allowed)
+
+  if (!checkSubmissionRateLimit(key).allowed) {
     return {
       ok: false,
       code: "RATE_LIMITED",
       message: "Terlalu banyak pengajuan. Silakan coba lagi nanti.",
     };
+  }
+
   const validation = validateMitraDraft(draft);
-  if (!validation.ok)
+  if (!validation.ok) {
     return { ok: false, code: "VALIDATION_FAILED", issues: validation.issues };
+  }
+
   const normalized = validation.normalized!;
+  if (
+    sessionUser?.email &&
+    normalized.applicantEmail !== sessionUser.email.toLowerCase()
+  ) {
+    return {
+      ok: false,
+      code: "EMAIL_MISMATCH",
+      message: "Email harus sama dengan akun yang sedang masuk.",
+    };
+  }
+
   const admin = await createAdminClient();
+  const { data: memberProfile } = sessionUser
+    ? await admin
+        .from("profiles")
+        .select("username")
+        .eq("id", sessionUser.id)
+        .maybeSingle()
+    : { data: null };
   const [{ data: profiles }, { data: applications }] = await Promise.all([
     admin
       .from("profiles")
@@ -58,11 +87,13 @@ export async function submitMitraApplication(
       .eq("username", normalized.username),
     admin
       .from("provider_applications")
-      .select("applicant_email, status")
+      .select("applicant_email, status, user_id")
       .eq("applicant_email", normalized.applicantEmail)
       .eq("status", "PENDING"),
   ]);
-  const existingUsernames = (profiles ?? []).map((row) => row.username);
+  const existingUsernames = (profiles ?? [])
+    .map((row) => row.username)
+    .filter((username) => username !== memberProfile?.username);
   const activeForEmail = activeApplicationCountByEmail(
     normalized.applicantEmail,
     applications ?? [],
@@ -72,19 +103,52 @@ export async function submitMitraApplication(
     existingEmails: [],
     existingUsernames,
     rateLimited: false,
-    activeForEmail,
+    activeForEmail: sessionUser ? 0 : activeForEmail,
   });
   if (!decision.ok) return decision;
-  const password = draft.password;
+
+  if (sessionUser) {
+    if (
+      (applications ?? []).some(
+        (application) => application.user_id === sessionUser.id,
+      )
+    ) {
+      return {
+        ok: false,
+        code: "ACTIVE_APPLICATION",
+        message: "Anda sudah memiliki pengajuan yang sedang ditinjau.",
+      };
+    }
+    const { error: profileError } = await admin
+      .from("profiles")
+      .update({
+        username: normalized.username,
+        display_name: normalized.applicantName,
+      })
+      .eq("id", sessionUser.id);
+    if (profileError) return { ok: false, code: "SERVER_ERROR" };
+    const result = await createApplication(
+      admin,
+      sessionUser.id,
+      normalized,
+      secret,
+    );
+    if (result.ok) {
+      recordSubmission(key);
+      recordSubmission(`email:${normalized.applicantEmail}`);
+    }
+    return result;
+  }
+
   const { data: created, error: userError } = await admin.auth.admin.createUser(
     {
       email: normalized.applicantEmail,
-      password,
+      password: draft.password,
       email_confirm: false,
       user_metadata: { display_name: normalized.applicantName },
     },
   );
-  if (userError)
+  if (userError) {
     return {
       ok: false,
       code: /already registered|already been registered/i.test(
@@ -93,6 +157,7 @@ export async function submitMitraApplication(
         ? "EMAIL_EXISTS"
         : "SERVER_ERROR",
     };
+  }
   const { error: profileError } = await admin.from("profiles").insert({
     id: created.user.id,
     username: normalized.username,
@@ -115,10 +180,32 @@ export async function submitMitraApplication(
         : undefined,
     };
   }
-  const { data: application, error: applicationError } = await admin
+  const result = await createApplication(
+    admin,
+    created.user.id,
+    normalized,
+    secret,
+  );
+  if (!result.ok) {
+    await admin.from("profiles").delete().eq("id", created.user.id);
+    await admin.auth.admin.deleteUser(created.user.id);
+    return result;
+  }
+  recordSubmission(key);
+  recordSubmission(`email:${normalized.applicantEmail}`);
+  return result;
+}
+
+async function createApplication(
+  admin: Awaited<ReturnType<typeof createAdminClient>>,
+  userId: string,
+  normalized: NonNullable<ReturnType<typeof validateMitraDraft>["normalized"]>,
+  secret: string,
+): Promise<SubmitResult> {
+  const { data: application, error } = await admin
     .from("provider_applications")
     .insert({
-      user_id: created.user.id,
+      user_id: userId,
       track: normalized.track,
       username: normalized.username,
       applicant_name: normalized.applicantName,
@@ -135,20 +222,14 @@ export async function submitMitraApplication(
     })
     .select("id")
     .single();
-  if (applicationError) {
-    await admin.from("profiles").delete().eq("id", created.user.id);
-    await admin.auth.admin.deleteUser(created.user.id);
-    return { ok: false, code: "SERVER_ERROR" };
-  }
-  recordSubmission(key);
-  recordSubmission(`email:${normalized.applicantEmail}`);
+  if (error) return { ok: false, code: "SERVER_ERROR" };
   return {
     ok: true,
     code: "OK",
     applicationId: application.id,
     username: normalized.username,
     uploadToken: createUploadToken(
-      { applicationId: application.id, userId: created.user.id },
+      { applicationId: application.id, userId },
       secret,
     ),
   };

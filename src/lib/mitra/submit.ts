@@ -11,7 +11,9 @@ export type SubmitResultCode =
   | "EMAIL_EXISTS"
   | "RATE_LIMITED"
   | "USERNAME_TAKEN"
-  | "SERVER_ERROR";
+  | "SERVER_ERROR"
+  | "ACTIVE_APPLICATION"
+  | "EMAIL_MISMATCH";
 export interface SubmitResult {
   ok: boolean;
   code: SubmitResultCode;
