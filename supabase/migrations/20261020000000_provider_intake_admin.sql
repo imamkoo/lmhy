@@ -34,7 +34,7 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS public.admin_audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(), actor_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  action TEXT NOT NULL, target_type TEXT NOT NULL, target_id UUID, note TEXT, metadata JSONB, created_at TIMESTAMPTZ DEFAULT NOW(),
+  action TEXT NOT NULL, target_type TEXT NOT NULL, target_id TEXT, note TEXT, metadata JSONB, created_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT admin_audit_log_action_check CHECK (action IN ('APPLICATION_APPROVED','APPLICATION_REJECTED','APPLICATION_EXPIRED','APPLICATION_RESUBMITTED','DOCUMENT_VIEWED','CHECKLIST_UPDATED','LITERA_CONFIG_UPDATED','EMAIL_RESENT','SWEEP_FAILED'))
 );
 
@@ -50,7 +50,6 @@ ALTER TABLE public.provider_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.provider_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-GRANT SELECT ON public.provider_applications, public.provider_documents, public.admin_audit_log TO anon, authenticated;
 GRANT ALL ON public.provider_applications, public.provider_documents, public.admin_audit_log TO service_role;
 INSERT INTO storage.buckets (id, name, public) VALUES ('provider-credentials', 'provider-credentials', false) ON CONFLICT (id) DO NOTHING;
 
