@@ -1171,7 +1171,11 @@ Expected: FAIL
 
 - [ ] **Step 3: Implementasikan**
 
-Sliding window 1 jam per key, `Map<string, number[]>`; `recordSubmission` mengembalikan `allowed: false` bila jumlah entri dalam jendela sudah ≥ limit. `activeApplicationCountByEmail` menghitung hanya status `PENDING`.
+Sliding window 1 jam per key, `Map<string, number[]>`; **`recordSubmission` menambahkan timestamp-nya lebih dulu, baru mengecek**: bila jumlah entri dalam jendela (termasuk yang baru ditambahkan) sudah `>= limit`, kembalikan `allowed: false` + `retryAfterSeconds`. Jadi dengan `IP_SUBMISSION_LIMIT = 3`: percobaan ke-1 & ke-2 lolos, **percobaan ke-3 diblokir** (sesuai judul test "diblokir setelah 3 percobaan").
+
+`checkUsernameCheckLimit(ip)` memakai pola yang sama: ia **menghitung** pemanggilan (setiap cek = satu percobaan) dan memblokir setelah 20 percobaan per menit.
+
+`activeApplicationCountByEmail` menghitung hanya status `PENDING`.
 
 - [ ] **Step 4: Jalankan test + commit**
 
