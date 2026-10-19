@@ -238,6 +238,7 @@ verify session → tentukan scope (pelamar: user_id = auth.uid() | admin: app_me
 | Nomor STR/SIPP | ✔ | |
 | Status STR/SIPP aktif | ✔ | `AKTIF`/`TIDAK_AKTIF`. **Tidak di-drop otomatis** — diberi red flag di antrean admin; keputusan akhir di tangan manusia |
 | Tempat praktik saat ini | ✔ | |
+| **Ringkasan pengalaman & motivasi** (textarea, min 200 karakter) | ✔ | Untuk psikolog: ringkasan pengalaman praktik klinis & alasan ingin bergabung. WAJIB — validator klinis mewajibkan `motivation` ≥ 200 karakter |
 | Lama pengalaman praktik | ✔ | `<1`/`1-2`/`2-4`/`4-7`/`>7` |
 | Estimasi jam terbang sesi | ○ | sinyal komitmen |
 | Modalitas yang bisa melayani | ✔ | `VIDEO`/`VOICE`/`CHAT`, min 1 |
@@ -263,6 +264,8 @@ verify session → tentukan scope (pelamar: user_id = auth.uid() | admin: app_me
 5. Upload dokumen via signed URL.
 6. Kirim email "pengajuan diterima" (C.6) + email konfirmasi Supabase.
 7. Halaman sukses: "Cek email untuk verifikasi" + link ke `/akun/pengajuan`.
+
+**Upload setelah submit tanpa session:** akun baru dibuat dengan `email_confirm: false`, jadi pelamar **belum punya session** ketika ingin mengunggah berkas. Karena itu aksi submit mengembalikan **upload token** (HMAC-SHA256, TTL 24 jam, memuat `applicationId` + `userId`, rahasia dari env `MITRA_UPLOAD_SECRET` dengan fallback `SUPABASE_SERVICE_ROLE_KEY`). Aksi unggah & finale menerima token tersebut sebagai pengganti session — token diverifikasi server-side (perbandingan constant-time) dan terikat ke aplikasi milik pelamar itu. Fallback: setelah email terverifikasi, pelamar login dan memakai session biasa.
 
 **Perilaku subdomain sebelum approve:** halaman tenant menampilkan state netral "Menunggu verifikasi mitra" — tanpa konten, tanpa dokumen, `noindex`, tidak masuk sitemap.
 

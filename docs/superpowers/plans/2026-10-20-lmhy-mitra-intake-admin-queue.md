@@ -1247,7 +1247,30 @@ Urutan pemeriksaan: rate limit → validasi schema → email existing → email 
 4. `createProfile`: `createAdminClient().from('profiles').insert({ id: userId, username, display_name: applicantName, creator_role: 'PENULIS', service_track: null, verification_status: 'PENDING' })`. Bila unique violation username → `USERNAME_TAKEN` + `suggestUsernames` (dan jalankan kompensasi delete akun).
 5. `createApplication`: insert dengan `track`, `details` dari `normalized`, `ethics_pledge_at: now`, `pledge_version: '2026-10-20'`, `status: 'PENDING'`, `applied_at: now`.
 6. `recordSubmission(`ip:${ip}`)` dan `recordSubmission(`email:${email}`)`.
-7. Return `{ ok: true, code: "OK", applicationId, username }`.
+7. Return `{ ok: true, code: "OK", applicationId, username, uploadToken }`.
+
+### 7.1 Upload token (karena akun baru belum punya session)
+
+Akun dibuat dengan `email_confirm: false` → pelamar belum punya session, sehingga aksi unggah tidak bisa mengandalkan `auth.getUser()`. Solusi: aksi submit mengembalikan **upload token**.
+
+**Modul baru `src/lib/mitra/upload-token.ts` (murni, unit-testable, tanpa DB):**
+```ts
+export const UPLOAD_TOKEN_TTL_HOURS = 24;
+export interface UploadTokenPayload { applicationId: string; userId: string; expiresAt: number }
+export function createUploadToken(payload: { applicationId: string; userId: string }, secret: string, now?: Date): string;
+export function verifyUploadToken(token: string, secret: string, now?: Date): { ok: boolean; payload?: UploadTokenPayload; error?: string };
+```
+Implementasi: HMAC-SHA256 (`node:crypto`), payload base64url + signature base64url dipisah tanda `.`, perbandingan signature memakai `timingSafeEqual`, TTL 24 jam, `expiresAt` di dalam payload diverifikasi saat checking. Rahasia: `process.env.MITRA_UPLOAD_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY` — **tanpa** rahasia, `createUploadToken` mengembalikan string kosong dan aksi unggah menolak dengan pesan jelas.
+
+**Perubahan interface (Task 13 & 14):**
+- `SubmitResult` bertambah `uploadToken?: string` (berisi `applicationId` + `userId` pelamar itu).
+- `createDocumentUploadAction` & `finalizeDocumentUploadAction` menerima `uploadToken?: string` **atau** session — resolution: coba token dulu, lalu session. Bila keduanya tidak ada → error "Sesi masuk tidak ditemukan."
+
+**Kenapa token, bukan file sementara di storage:** token tidak meninggalkan berkas yatim di bucket, tidak butuh cron pembersih, dan tidak menambah operasi move pada storage.
+
+### 7.2 Field tambahan di form psikolog (L2)
+
+Field **"Ringkasan pengalaman & motivasi"** (textarea, min 200 karakter) — validator klinis mewajibkan `motivation` ≥ 200 karakter, jadi L1–L3 WAJIB memuatnya (lihat spec §6 L2).
 
 - [ ] **Step 5: Jalankan test + quality gate + commit**
 
