@@ -23,7 +23,7 @@
 - **Tanpa komentar yang tidak diminta** di kode (klausul repo).
 - **Setiap task berakhir dengan commit.** Quality gate sebelum push: `npm run lint`, `npx tsc --noEmit`, `npm run test:unit`, `npm run build`.
 - **Branch:** `feat/mitra-intake-admin-queue` (sudah dibuat, base `origin/develop` @ `ad3e9a6`). Satu PR per increment (§ Increment & PR Boundary).
-- **Tidak boleh** menambahkan dependensi runtime baru. Dependensi dev baru hanya `playwright` (Task 32).
+- **Tidak boleh** menambahkan dependensi runtime baru, dengan SATU pengecualian: `sharp` wajib dideklarasikan eksplisit sebagai dependency langsung (`^0.35.3` — versi yang sudah terpasang di tree, jadi tidak ada unduhan/versi baru). `sharp` sebelumnya hanya ada sebagai dependensi transitif opsional Next.js, padahal `src/lib/media-focal.ts` sudah mengimpornya dan Task 14 membutuhkannya untuk membuang EXIF. Tidak ada dependensi lain yang boleh ditambahkan. Dependensi dev baru hanya `playwright` (Task 32).
 
 ---
 
