@@ -20,6 +20,8 @@ import {
 } from "@/lib/mitra/username-rules";
 import { createUploadToken, verifyUploadToken } from "@/lib/mitra/upload-token";
 import { writeAuditLog } from "@/lib/mitra/audit";
+import { sendEmail } from "@/lib/email";
+import { applicationReceivedTemplate } from "@/lib/email-templates";
 import type { Json, TablesInsert } from "@/lib/supabase/types";
 
 export async function submitMitraApplication(
@@ -137,6 +139,13 @@ export async function submitMitraApplication(
     if (result.ok) {
       recordSubmission(key);
       recordSubmission(`email:${normalized.applicantEmail}`);
+      sendEmail({
+        to: normalized.applicantEmail,
+        ...applicationReceivedTemplate({
+          applicantName: normalized.applicantName,
+          username: normalized.username,
+        }),
+      }).catch(() => {});
     }
     return result;
   }
@@ -194,6 +203,13 @@ export async function submitMitraApplication(
   }
   recordSubmission(key);
   recordSubmission(`email:${normalized.applicantEmail}`);
+  sendEmail({
+    to: normalized.applicantEmail,
+    ...applicationReceivedTemplate({
+      applicantName: normalized.applicantName,
+      username: normalized.username,
+    }),
+  }).catch(() => {});
   return result;
 }
 
@@ -489,6 +505,14 @@ export async function resubmitMitraApplicationAction(
     targetId: newApp.id,
     note: `Supersedes ${applicationId}`,
   });
+
+  sendEmail({
+    to: normalized.applicantEmail,
+    ...applicationReceivedTemplate({
+      applicantName: normalized.applicantName,
+      username: normalized.username,
+    }),
+  }).catch(() => {});
 
   const uploadToken = createUploadToken(
     { applicationId: newApp.id, userId: sessionUser.id },

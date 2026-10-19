@@ -14,6 +14,13 @@ import {
   isEmailVerificationExpired,
   tombstoneUsername,
 } from "@/lib/mitra/expiry";
+import { sendEmail } from "@/lib/email";
+import {
+  applicationApprovedTemplate,
+  applicationExpiredTemplate,
+  applicationRejectedTemplate,
+  verificationReminderTemplate,
+} from "@/lib/email-templates";
 import type { TablesUpdate } from "@/lib/supabase/types";
 
 export interface AdminActionResult {
@@ -256,6 +263,16 @@ export async function approveApplicationAction(
     note: note ?? undefined,
   });
 
+  sendEmail({
+    to: application.applicant_email,
+    ...applicationApprovedTemplate({
+      applicantName: application.applicant_name,
+      roleLabel:
+        newRole === "PRAKTISI" ? "Praktisi Klinis" : "Pendamping Sebaya",
+      username: application.username,
+    }),
+  }).catch(() => {});
+
   return { ok: true };
 }
 
@@ -337,6 +354,15 @@ export async function rejectApplicationAction(
     note,
   });
 
+  sendEmail({
+    to: application.applicant_email,
+    ...applicationRejectedTemplate({
+      applicantName: application.applicant_name,
+      note,
+      username: application.username,
+    }),
+  }).catch(() => {});
+
   return { ok: true };
 }
 
@@ -351,7 +377,9 @@ export async function runExpirySweepAction(): Promise<{
     const supabase = await createAdminClient();
     const { data: pendingApps, error } = await supabase
       .from("provider_applications")
-      .select("id, user_id, applied_at, email_verified_at, username")
+      .select(
+        "id, user_id, applied_at, email_verified_at, username, applicant_email, applicant_name"
+      )
       .eq("status", "PENDING");
 
     if (error || !pendingApps) {
@@ -438,6 +466,14 @@ export async function runExpirySweepAction(): Promise<{
               previous_username: app.username,
             },
           });
+
+          sendEmail({
+            to: app.applicant_email,
+            ...applicationExpiredTemplate({
+              applicantName: app.applicant_name,
+              username: app.username,
+            }),
+          }).catch(() => {});
         }
       }
     }
@@ -457,4 +493,137 @@ export async function runExpirySweepAction(): Promise<{
       error: err instanceof Error ? err.message : "Internal sweep error",
     };
   }
+}
+
+export async function resendVerificationEmailAction(
+  applicationId: string
+): Promise<AdminActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) {
+    return { ok: false, code: "FORBIDDEN", message: "Akses admin diperlukan." };
+  }
+
+  const supabase = await createAdminClient();
+  const { data: application, error } = await supabase
+    .from("provider_applications")
+    .select("id, applicant_name, applicant_email, username, email_verified_at")
+    .eq("id", applicationId)
+    .single();
+
+  if (error || !application) {
+    return { ok: false, code: "NOT_FOUND", message: "Pengajuan tidak ditemukan." };
+  }
+
+  if (application.email_verified_at) {
+    return {
+      ok: false,
+      code: "ALREADY_VERIFIED",
+      message: "Alamat email ini sudah terverifikasi.",
+    };
+  }
+
+  let verificationUrl: string | undefined;
+  try {
+    const { data: linkData } = await supabase.auth.admin.generateLink({
+      type: "magiclink",
+      email: application.applicant_email,
+    });
+    verificationUrl = linkData?.properties?.action_link;
+  } catch {
+    // fallback without link
+  }
+
+  const emailResult = await sendEmail({
+    to: application.applicant_email,
+    ...verificationReminderTemplate({
+      applicantName: application.applicant_name,
+      username: application.username,
+      verificationUrl,
+    }),
+  });
+
+  if (!emailResult.ok && !emailResult.skipped) {
+    return {
+      ok: false,
+      code: "EMAIL_FAILED",
+      message: emailResult.error || "Gagal mengirim email pengingat.",
+    };
+  }
+
+  await writeAuditLog(admin.id, {
+    action: "EMAIL_RESENT",
+    targetType: "provider_application",
+    targetId: applicationId,
+    note: "Resent email verification reminder",
+  });
+
+  return { ok: true };
+}
+
+export async function resendDecisionEmailAction(
+  applicationId: string
+): Promise<AdminActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) {
+    return { ok: false, code: "FORBIDDEN", message: "Akses admin diperlukan." };
+  }
+
+  const supabase = await createAdminClient();
+  const { data: application, error } = await supabase
+    .from("provider_applications")
+    .select("*")
+    .eq("id", applicationId)
+    .single();
+
+  if (error || !application) {
+    return { ok: false, code: "NOT_FOUND", message: "Pengajuan tidak ditemukan." };
+  }
+
+  if (application.status !== "APPROVED" && application.status !== "REJECTED") {
+    return {
+      ok: false,
+      code: "INVALID_STATE",
+      message: "Pengajuan belum diputuskan.",
+    };
+  }
+
+  let emailTemplate;
+  if (application.status === "APPROVED") {
+    emailTemplate = applicationApprovedTemplate({
+      applicantName: application.applicant_name,
+      roleLabel:
+        application.track === "KLINIS"
+          ? "Praktisi Klinis"
+          : "Pendamping Sebaya",
+      username: application.username,
+    });
+  } else {
+    emailTemplate = applicationRejectedTemplate({
+      applicantName: application.applicant_name,
+      note: application.decision_note || "Dokumen belum lengkap.",
+      username: application.username,
+    });
+  }
+
+  const emailResult = await sendEmail({
+    to: application.applicant_email,
+    ...emailTemplate,
+  });
+
+  if (!emailResult.ok && !emailResult.skipped) {
+    return {
+      ok: false,
+      code: "EMAIL_FAILED",
+      message: emailResult.error || "Gagal mengirim email keputusan.",
+    };
+  }
+
+  await writeAuditLog(admin.id, {
+    action: "EMAIL_RESENT",
+    targetType: "provider_application",
+    targetId: applicationId,
+    note: `Resent ${application.status} decision email`,
+  });
+
+  return { ok: true };
 }
