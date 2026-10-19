@@ -93,6 +93,7 @@ export default function PendampingApplicationForm({
   } | null>(null);
   const [secondsRemaining, setSecondsRemaining] = useState(5);
   const started = useRef(Date.now());
+  const prefilledUsername = initialValues.username ?? "";
   const set = (key: keyof PendampingDraft, value: unknown) =>
     setDraft((old) => ({ ...old, [key]: value }));
   const err = (key: string) =>
@@ -100,11 +101,8 @@ export default function PendampingApplicationForm({
       ? issues.find((issue) => issue.field === key)?.message
       : undefined;
   useEffect(() => {
-    if (
-      draft.username.length < 3 ||
-      draft.username === initialValues.username
-    ) {
-      if (draft.username === initialValues.username) {
+    if (draft.username.length < 3 || draft.username === prefilledUsername) {
+      if (draft.username === prefilledUsername) {
         setUsername({ available: true, suggestions: [] });
       }
       return;
@@ -114,7 +112,7 @@ export default function PendampingApplicationForm({
       400,
     );
     return () => clearTimeout(timer);
-  }, [draft.username]);
+  }, [draft.username, prefilledUsername]);
   useEffect(() => {
     const timer = setInterval(
       () =>

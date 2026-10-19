@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Tables } from "@/lib/supabase/types";
+import { APPLICATION_STATUS_LABELS } from "@/lib/mitra/application-labels";
 
 type ProfileSummary = Pick<
   Tables<"profiles">,
@@ -61,13 +62,7 @@ export default function AccountOverview({
           <dt className="text-slate-500">Status pengajuan</dt>
           <dd>
             {application
-              ? {
-                  PENDING: "Sedang ditinjau",
-                  APPROVED: "Disetujui",
-                  REJECTED: "Perlu diperbaiki",
-                  EXPIRED: "Kedaluwarsa",
-                  SUPERSEDED: "Digantikan",
-                }[application.status]
+              ? APPLICATION_STATUS_LABELS[application.status]
               : "Belum ada pengajuan"}
           </dd>
         </div>

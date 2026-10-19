@@ -1,14 +1,8 @@
 import Link from "next/link";
 import type { Tables } from "@/lib/supabase/types";
+import { APPLICATION_STATUS_LABELS } from "@/lib/mitra/application-labels";
 
 const labels = { SEBAYA: "Pendamping Sebaya", KLINIS: "Psikolog" };
-const statuses = {
-  PENDING: "Sedang ditinjau",
-  APPROVED: "Disetujui",
-  REJECTED: "Perlu diperbaiki",
-  EXPIRED: "Kedaluwarsa",
-  SUPERSEDED: "Digantikan",
-};
 
 export default function ApplicationTimeline({
   applications,
@@ -31,7 +25,7 @@ export default function ApplicationTimeline({
               {labels[application.track]}
             </h2>
             <span className="rounded-full bg-[hsl(344,81%,87%)] px-3 py-1 text-xs font-semibold">
-              {application.status}
+              {APPLICATION_STATUS_LABELS[application.status]}
             </span>
           </div>
           <p className="mt-3 text-sm text-slate-600">
