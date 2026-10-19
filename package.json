@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:unit": "tsx --test src/**/*.test.ts src/**/**/*.test.ts"
+    "test:unit": "find src -name '*.test.ts' -print0 | xargs -0 tsx --test"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.11",
