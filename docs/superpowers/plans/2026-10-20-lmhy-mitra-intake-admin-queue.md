@@ -1192,6 +1192,8 @@ git commit -m "feat(mitra): add submission rate limits"
 **Files:**
 - Create: `src/lib/mitra/submit.ts`
 - Test: `src/lib/mitra/submit.test.ts`
+- Create: `src/lib/mitra/upload-token.ts`
+- Test: `src/lib/mitra/upload-token.test.ts`
 - Create: `src/app/actions/mitra.ts`
 
 **Interfaces:**
@@ -1199,7 +1201,7 @@ git commit -m "feat(mitra): add submission rate limits"
 - Produces:
   ```ts
   export type SubmitResultCode = "OK" | "VALIDATION_FAILED" | "EMAIL_EXISTS" | "RATE_LIMITED" | "USERNAME_TAKEN" | "SERVER_ERROR";
-  export interface SubmitResult { ok: boolean; code: SubmitResultCode; message?: string; issues?: ValidationIssue[]; applicationId?: string; username?: string }
+  export interface SubmitResult { ok: boolean; code: SubmitResultCode; message?: string; issues?: ValidationIssue[]; applicationId?: string; username?: string; uploadToken?: string }
   export async function submitMitraApplication(draft: MitraDraft, context?: { ip?: string }): Promise<SubmitResult>;
   export async function checkMitraUsernameAction(username: string): Promise<{ available: boolean; error?: string; suggestions: string[] }>;
   ```
@@ -1425,9 +1427,10 @@ git commit -m "feat(mitra): add public partner hub page"
 `PsikologApplicationForm.tsx`:
 - State: `step`, `draft` (semua field), `issues`, `suggests`, `isPending` (`useTransition`), `submitted`.
 - **Langkah 1**: nama+gelar, email, WhatsApp, kota, provinsi (select 38 provinsi), username (live check debounce 400ms memakai `checkMitraUsernameAction` → tampilkan 3 saran bila bentrok), kata sandi.
-- **Langkah 2**: kampus S2, tahun lulus, peminatan (select 6), nomor STR, status STR (radio AKTIF/TIDAK_AKTIF — bila TIDAK_AKTIF tampilkan catatan "Pengajuan tetap dapat diajukan; tim kami akan meninjaunya lebih ketat"), tempat praktik, lama pengalaman (select), jam terbang (select, opsional), modalitas (checkbox VIDEO/VOICE/CHAT, min 1).
+- **Langkah 2**: kampus S2, tahun lulus, peminatan (select 6), nomor STR, status STR (radio AKTIF/TIDAK_AKTIF — bila TIDAK_AKTIF tampilkan catatan "Pengajuan tetap dapat diajukan; tim kami akan meninjaunya lebih ketat"), tempat praktik, **ringkasan pengalaman & motivasi (textarea, min 200 karakter — WAJIB, validator klinis mewanyakannya)**, lama pengalaman (select), jam terbang (select, opsional), modalitas (checkbox VIDEO/VOICE/CHAT, min 1).
 - **Langkah 3**: upload STR (wajib) & CV (opsional), checkbox kebenaran data, checkbox kode etik (tautan ke naskah `/mitra/pakta-etika`), honeypot `<input name="website" className="hidden" tabIndex={-1} autoComplete="off">`, dan `formStartedAt` (timestamp saat mount) untuk(time-to-submit ≥5 detik).
-- Submit: `validateMitraDraft` (klien) → bila issues, tampilkan inline; bila ok → `submitMitraApplication(draft, { ip })`; sukses → layar sukses "Cek email untuk verifikasi" + link `/akun/pengajuan` (login) + link `/mitra/status`.
+- Submit: `validateMitraDraft` (klien) → bila issues, tampilkan inline; bila ok → `submitMitraApplication(draft, { ip })`; sukses → layar sukses "Cek email untuk verifikasi" + link `/akun/pengajuan` (login) + link `/mitra/status`, dan **simpan `uploadToken` dari hasil aksi** (state) untuk tahap unggah.
+- Tahap unggah (setelah submit sukses): memakai `uploadToken` tersebut sebagai otorisasi (akun baru belum punya session) → `createDocumentUploadAction({ applicationId, uploadToken, docType, mimeType, sizeBytes, filename })` → PUT byte ke signed upload URL → `finalizeDocumentUploadAction({ path, uploadToken })`. Tampilkan progres & status per berkas; jangan menyatakan berkas tersimpan sebelum finalize berhasil.
 - Honeypot terisi atau `Date.now() - formStartedAt < 5000` → jangan kirim (tampilkan pesan generik).
 
 - [ ] **Step 3: Halaman server**
