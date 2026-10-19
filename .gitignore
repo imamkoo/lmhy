@@ -38,3 +38,6 @@ worktrees/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SDD scratch workspace (ledger, briefs, review packages) — never tracked
+.superpowers/
