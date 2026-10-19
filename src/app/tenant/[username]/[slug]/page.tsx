@@ -12,6 +12,7 @@ import { SocialShareBar } from "../components/SocialShareBar";
 import { CommentSection } from "../components/CommentSection";
 import { FollowButton } from "../components/FollowButton";
 import { ArticleCoverImage } from "../components/ArticleCoverImage";
+import { ArticleThumbnailImage } from "../components/ArticleThumbnailImage";
 import { getAdaptiveCoverPosition } from "@/lib/media-focal";
 import { BackToProfileLink } from "./BackToProfileLink";
 import DoorwayCard from "@/components/sanctuary/DoorwayCard";
@@ -381,8 +382,7 @@ export default async function TenantArticlePage({
                     <div>
                       {other.media_url && !other.media_url.startsWith("blob:") && (
                         <div className="relative mb-3 h-32 w-full overflow-hidden rounded-xl bg-black/5 dark:bg-white/5">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <ArticleThumbnailImage
                             src={other.media_url}
                             alt={other.title}
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
