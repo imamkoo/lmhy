@@ -1084,7 +1084,7 @@ Expected: FAIL
 
 `src/lib/mitra/metrics.ts` berisi `medianReviewHours` (murni) + `fetchOverviewMetrics()` (server, pakai `createAdminClient`, 4 query: `profiles` count per role, `profiles` count per `verification_status`, `provider_applications` count pending per track, `provider_applications` decided 30 hari terakhir).
 
-`src/app/admin/page.tsx` menampilkan 6 kartu metrik (§10.2 spec) dengan Tailwind saja (bar persentase untuk `statusCounts`).
+`src/app/admin/page.tsx` menampilkan 5 kartu metrik + blok bar persentase `statusCounts` dengan Tailwind saja. Baris ke-6 di spec §10.2 ("10 aktivitas admin terakhir") bukan kartu — itu scope Task 31 (feed aktivitas admin).
 
 - [ ] **Step 4: Jalankan test + quality gate + commit**
 
