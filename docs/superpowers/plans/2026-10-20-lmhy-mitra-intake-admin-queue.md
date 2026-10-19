@@ -805,13 +805,20 @@ git commit -m "feat(admin): add is_admin identity helpers and admin bootstrap sc
 `src/middleware.ts`:
 - Tambah ke `ROOT_ROUTES`: `"/mitra"`, `"/akun"`, `"/praktik"`.
 - Import `isAdminUser` dari `@/lib/admin-auth-edge` (**bukan** `@/lib/admin-auth` — middleware berjalan di Edge runtime dan `@/lib/admin-auth` mengimpor `next/headers`).
-- Pada blok yang sudah obtaining `user` dari Supabase (di dalam `if (user) { ... }`), tambahkan **sebelum** gate `/builder`:
+- Pada blok yang sudah obtaining `user` dari Supabase, letakkan guard admin **setelah** blok `if (user) { ... }` ditutup (bukan di dalamnya) — supaya **dua** kasus tertangani: tidak login → `/login?next=<path>`; login tapi bukan admin → `/`:
 ```ts
 const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/");
 if (isAdminPath) {
+  if (!user) {
+    const adminLogin = NextResponse.redirect(
+      new URL(`/login?next=${encodeURIComponent(url.pathname)}`, req.url)
+    );
+    sessionResponse.cookies.getAll().forEach((cookie) => adminLogin.cookies.set(cookie.name, cookie.value, cookie));
+    return adminLogin;
+  }
   if (!isAdminUser(user)) {
     const denied = NextResponse.redirect(new URL("/", req.url));
-    sessionResponse.cookies.forEach((cookie) => denied.cookies.set(cookie.name, cookie.value, cookie));
+    sessionResponse.cookies.getAll().forEach((cookie) => denied.cookies.set(cookie.name, cookie.value, cookie));
     return denied;
   }
 }
