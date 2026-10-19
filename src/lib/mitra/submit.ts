@@ -13,7 +13,11 @@ export type SubmitResultCode =
   | "USERNAME_TAKEN"
   | "SERVER_ERROR"
   | "ACTIVE_APPLICATION"
-  | "EMAIL_MISMATCH";
+  | "EMAIL_MISMATCH"
+  | "UNAUTHORIZED"
+  | "NOT_FOUND"
+  | "FORBIDDEN"
+  | "INVALID_STATE";
 export interface SubmitResult {
   ok: boolean;
   code: SubmitResultCode;

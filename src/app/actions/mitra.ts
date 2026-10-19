@@ -19,7 +19,8 @@ import {
   validateMitraUsername,
 } from "@/lib/mitra/username-rules";
 import { createUploadToken, verifyUploadToken } from "@/lib/mitra/upload-token";
-import type { Json } from "@/lib/supabase/types";
+import { writeAuditLog } from "@/lib/mitra/audit";
+import type { Json, TablesInsert } from "@/lib/supabase/types";
 
 export async function submitMitraApplication(
   draft: MitraDraft,
@@ -365,4 +366,139 @@ export async function createDocumentUploadAction(input: {
   )
     return { ok: false, error: "Pengajuan tidak ditemukan." };
   return createUploadTicket({ ...input, userId });
+}
+
+export async function resubmitMitraApplicationAction(
+  applicationId: string,
+  draft: MitraDraft,
+): Promise<SubmitResult> {
+  const secret = process.env.MITRA_UPLOAD_SECRET;
+  if (!secret) {
+    return {
+      ok: false,
+      code: "SERVER_ERROR",
+      message: "Token unggah belum dikonfigurasi.",
+    };
+  }
+
+  const client = await createClient();
+  const {
+    data: { user: sessionUser },
+  } = await client.auth.getUser();
+
+  if (!sessionUser) {
+    return {
+      ok: false,
+      code: "UNAUTHORIZED",
+      message: "Silakan masuk terlebih dahulu.",
+    };
+  }
+
+  const admin = await createAdminClient();
+  const { data: previousApp, error: fetchError } = await admin
+    .from("provider_applications")
+    .select("*")
+    .eq("id", applicationId)
+    .single();
+
+  if (fetchError || !previousApp) {
+    return {
+      ok: false,
+      code: "NOT_FOUND",
+      message: "Pengajuan lama tidak ditemukan.",
+    };
+  }
+
+  if (previousApp.user_id !== sessionUser.id) {
+    return {
+      ok: false,
+      code: "FORBIDDEN",
+      message: "Anda bukan pemilik pengajuan ini.",
+    };
+  }
+
+  if (previousApp.status !== "REJECTED" && previousApp.status !== "EXPIRED") {
+    return {
+      ok: false,
+      code: "INVALID_STATE",
+      message:
+        "Hanya pengajuan yang ditolak atau kedaluwarsa yang dapat diajukan ulang.",
+    };
+  }
+
+  const validation = validateMitraDraft(draft);
+  if (!validation.ok) {
+    return { ok: false, code: "VALIDATION_FAILED", issues: validation.issues };
+  }
+
+  const normalized = validation.normalized!;
+  const nowIso = new Date().toISOString();
+
+  const { data: newApp, error: insertError } = await admin
+    .from("provider_applications")
+    .insert({
+      user_id: sessionUser.id,
+      track: normalized.track,
+      username: normalized.username,
+      applicant_name: normalized.applicantName,
+      applicant_email: normalized.applicantEmail,
+      whatsapp: normalized.whatsapp,
+      domicile_province: normalized.domicileProvince,
+      domicile_city: normalized.domicileCity,
+      motivation: normalized.motivation,
+      background_track:
+        (normalized.backgroundTrack as TablesInsert<"provider_applications">["background_track"]) ||
+        null,
+      ethics_pledge_at: normalized.ethicsAcceptedAt || nowIso,
+      pledge_version: "2026-10-20",
+      applied_at: nowIso,
+      status: "PENDING",
+      details: normalized.details as Json,
+      supersedes: applicationId,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !newApp) {
+    return {
+      ok: false,
+      code: "SERVER_ERROR",
+      message: "Gagal membuat pengajuan baru.",
+    };
+  }
+
+  await admin
+    .from("provider_applications")
+    .update({
+      status: "SUPERSEDED",
+      superseded_by: newApp.id,
+    })
+    .eq("id", applicationId);
+
+  await admin
+    .from("profiles")
+    .update({
+      display_name: normalized.applicantName,
+      verification_status: "PENDING",
+    })
+    .eq("id", sessionUser.id);
+
+  await writeAuditLog(sessionUser.id, {
+    action: "APPLICATION_RESUBMITTED",
+    targetType: "provider_application",
+    targetId: newApp.id,
+    note: `Supersedes ${applicationId}`,
+  });
+
+  const uploadToken = createUploadToken(
+    { applicationId: newApp.id, userId: sessionUser.id },
+    secret,
+  );
+
+  return {
+    ok: true,
+    code: "OK",
+    applicationId: newApp.id,
+    uploadToken,
+  };
 }

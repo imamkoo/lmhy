@@ -50,7 +50,11 @@ export default function ApplicationTimeline({
           {(application.status === "REJECTED" ||
             application.status === "EXPIRED") && (
             <Link
-              href={`/mitra/pendamping?resubmit=${application.id}`}
+              href={
+                application.track === "KLINIS"
+                  ? `/mitra/psikolog?resubmit=${application.id}`
+                  : `/mitra/pendamping?resubmit=${application.id}`
+              }
               className="mt-4 inline-flex text-sm font-semibold text-[#3C3163] underline"
             >
               Perbaiki &amp; Ajukan Ulang
