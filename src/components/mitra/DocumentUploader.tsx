@@ -63,7 +63,7 @@ export default function DocumentUploader({
         return;
       }
       const response = await fetch(ticket.signedUrl, {
-        method: "POST",
+        method: "PUT",
         body: file,
         headers: { "Content-Type": file.type },
       });

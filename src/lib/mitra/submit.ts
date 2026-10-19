@@ -20,6 +20,7 @@ export interface SubmitResult {
   applicationId?: string;
   username?: string;
   uploadToken?: string;
+  suggestions?: string[];
 }
 
 export function evaluateSubmission(input: {
@@ -28,7 +29,7 @@ export function evaluateSubmission(input: {
   existingUsernames: string[];
   rateLimited: boolean;
   activeForEmail: number;
-}): SubmitResult & { suggestions?: string[] } {
+}): SubmitResult {
   if (input.rateLimited) return { ok: false, code: "RATE_LIMITED" };
   const validation = validateMitraDraft(input.draft);
   if (!validation.ok)

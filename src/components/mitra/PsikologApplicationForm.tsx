@@ -125,7 +125,16 @@ export default function PsikologApplicationForm() {
     setAttemptedSteps(new Set([1, 2, 3]));
     const result = validate();
     setIssues(result.issues);
-    if (!result.ok) return;
+    if (!result.ok) {
+      if (
+        result.issues.some(
+          (issue) =>
+            issue.field === "honeypot" || issue.field === "formElapsedMs",
+        )
+      )
+        setServerError("Mohon tunggu sebentar sebelum mengirim.");
+      return;
+    }
     startTransition(async () => {
       const answer = await submitMitraApplication({
         ...draft,
@@ -138,13 +147,12 @@ export default function PsikologApplicationForm() {
         return;
       }
       setIssues(answer.issues ?? []);
-      setServerError(
-        answer.code === "EMAIL_EXISTS"
-          ? "Email ini sudah punya akun."
-          : answer.code === "RATE_LIMITED"
-            ? answer.message || "Silakan tunggu sebelum mencoba lagi."
-            : answer.message || "Pengajuan belum dapat dikirim.",
-      );
+      setServerError(answer.message || "Pengajuan belum dapat dikirim.");
+      if (answer.code === "USERNAME_TAKEN" && answer.suggestions?.length)
+        setUsername((current) => ({
+          ...current,
+          suggestions: answer.suggestions!,
+        }));
     });
   };
   if (submitted)
@@ -239,6 +247,7 @@ export default function PsikologApplicationForm() {
               {input("domicileCity", "Kota")}
               {input("username", "Username")}
               {username.error && <p role="alert">{username.error}</p>}
+              {username.available && <p>Username tersedia</p>}
               {username.suggestions.map((value) => (
                 <button
                   type="button"

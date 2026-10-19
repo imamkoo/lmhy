@@ -25,6 +25,13 @@ export async function submitMitraApplication(
   draft: MitraDraft,
   context?: { ip?: string },
 ): Promise<SubmitResult> {
+  const secret = process.env.MITRA_UPLOAD_SECRET;
+  if (!secret)
+    return {
+      ok: false,
+      code: "SERVER_ERROR",
+      message: "Token unggah belum dikonfigurasi.",
+    };
   const requestHeaders = await headers();
   const forwardedIp = requestHeaders
     .get("x-forwarded-for")
@@ -101,6 +108,11 @@ export async function submitMitraApplication(
       code: /unique/i.test(profileError.message)
         ? "USERNAME_TAKEN"
         : "SERVER_ERROR",
+      suggestions: /unique/i.test(profileError.message)
+        ? suggestUsernames(normalized.username, (candidate) =>
+            existingUsernames.includes(candidate),
+          )
+        : undefined,
     };
   }
   const { data: application, error: applicationError } = await admin
@@ -130,13 +142,6 @@ export async function submitMitraApplication(
   }
   recordSubmission(key);
   recordSubmission(`email:${normalized.applicantEmail}`);
-  const secret = process.env.MITRA_UPLOAD_SECRET;
-  if (!secret)
-    return {
-      ok: false,
-      code: "SERVER_ERROR",
-      message: "Token unggah belum dikonfigurasi.",
-    };
   return {
     ok: true,
     code: "OK",
@@ -179,13 +184,11 @@ export async function checkMitraUsernameAction(
   const suggestions = suggestUsernames(username, (candidate) =>
     taken.has(candidate),
   );
-  for (const suggestion of suggestions.slice(0, 2)) taken.add(suggestion);
+  suggestions.forEach((suggestion) => taken.add(suggestion));
   return {
     available: false,
     error: "Username sudah dipakai.",
-    suggestions: suggestUsernames(username, (candidate) =>
-      taken.has(candidate),
-    ),
+    suggestions,
   };
 }
 
