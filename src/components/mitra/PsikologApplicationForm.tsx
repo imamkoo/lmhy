@@ -12,6 +12,7 @@ import {
 import DocumentUploader from "./DocumentUploader";
 import MitraField from "./MitraField";
 import MitraStepper from "./MitraStepper";
+import { INDONESIAN_PROVINCES } from "@/lib/mitra/provinces";
 const STEP_FIELDS: Record<1 | 2 | 3, string[]> = {
   1: [
     "applicantName",
@@ -84,10 +85,15 @@ export default function PsikologApplicationForm() {
   } | null>(null);
   const [statuses, setStatuses] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
+  const [secondsRemaining, setSecondsRemaining] = useState(5);
+  const [attemptedSteps, setAttemptedSteps] = useState<Set<number>>(new Set());
   const started = useRef<number | null>(null);
   if (started.current === null) started.current = new Date().getTime();
   const elapsed = () => new Date().getTime() - (started.current ?? 0);
-  const err = (key: string) => issues.find((i) => i.field === key)?.message;
+  const err = (key: string) =>
+    attemptedSteps.has(step)
+      ? issues.find((i) => i.field === key)?.message
+      : undefined;
   const set = (key: keyof PsikologDraft, value: unknown) =>
     setDraft((old) => ({ ...old, [key]: value }));
   useEffect(() => {
@@ -98,15 +104,25 @@ export default function PsikologApplicationForm() {
     );
     return () => clearTimeout(timer);
   }, [draft.username]);
+  useEffect(() => {
+    const timer = setInterval(
+      () =>
+        setSecondsRemaining(Math.max(0, Math.ceil((5000 - elapsed()) / 1000))),
+      250,
+    );
+    return () => clearInterval(timer);
+  });
   const validate = () =>
     validateMitraDraft({ ...draft, honeypot, formElapsedMs: elapsed() });
   const next = () => {
+    setAttemptedSteps((steps) => new Set(steps).add(step));
     const result = validate();
     setIssues(result.issues);
     if (!result.issues.some((issue) => STEP_FIELDS[step].includes(issue.field)))
       setStep((step + 1) as 1 | 2 | 3);
   };
   const submit = () => {
+    setAttemptedSteps(new Set([1, 2, 3]));
     const result = validate();
     setIssues(result.issues);
     if (!result.ok) return;
@@ -183,8 +199,10 @@ export default function PsikologApplicationForm() {
         labels={["Identitas", "Kredensial", "Komitmen"]}
       />
       <form
+        className="pb-[96px]"
         onSubmit={(e) => {
           e.preventDefault();
+          if (secondsRemaining > 0) return;
           if (step === 3) submit();
           else next();
         }}
@@ -202,7 +220,22 @@ export default function PsikologApplicationForm() {
               {input("academicTitle", "Gelar")}
               {input("applicantEmail", "Email")}
               {input("whatsapp", "WhatsApp")}
-              {input("domicileProvince", "Provinsi")}
+              <MitraField
+                label="Provinsi"
+                name="domicileProvince"
+                error={err("domicileProvince")}
+              >
+                <select
+                  id="domicileProvince"
+                  value={draft.domicileProvince}
+                  onChange={(e) => set("domicileProvince", e.target.value)}
+                >
+                  <option value="">Pilih provinsi</option>
+                  {INDONESIAN_PROVINCES.map((province) => (
+                    <option key={province}>{province}</option>
+                  ))}
+                </select>
+              </MitraField>
               {input("domicileCity", "Kota")}
               {input("username", "Username")}
               {username.error && <p role="alert">{username.error}</p>}
@@ -384,8 +417,12 @@ export default function PsikologApplicationForm() {
               Kembali
             </button>
           )}
-          <button disabled={pending}>
-            {step === 3 ? "Kirim pengajuan" : "Lanjut"}
+          <button disabled={pending || secondsRemaining > 0}>
+            {secondsRemaining > 0
+              ? `Siap dalam ${secondsRemaining} dtk`
+              : step === 3
+                ? "Kirim pengajuan"
+                : "Lanjut"}
           </button>
         </div>
       </form>
