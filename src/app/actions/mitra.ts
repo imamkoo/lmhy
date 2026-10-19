@@ -1,9 +1,11 @@
 "use server";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { checkSubmissionRateLimit, recordSubmission } from "@/lib/mitra/rate-limit";
 import { validateMitraDraft, type MitraDraft } from "@/lib/mitra/application-schema";
 import { evaluateSubmission, type SubmitResult } from "@/lib/mitra/submit";
+import { createUploadTicket } from "@/lib/mitra/documents";
 import { suggestUsernames, validateMitraUsername } from "@/lib/mitra/username-rules";
 import type { Json } from "@/lib/supabase/types";
 
@@ -40,3 +42,10 @@ export async function checkMitraUsernameAction(username: string): Promise<{ avai
   return { available: !taken.has(username), suggestions: suggestUsernames(username, (candidate) => taken.has(candidate)) };
 }
 
+export async function createDocumentUploadAction(input: { applicationId: string; docType: string; mimeType: string; sizeBytes: number; filename: string }) {
+  const client = await createClient(); const { data: { user } } = await client.auth.getUser();
+  if (!user) return { ok: false, error: "Sesi masuk tidak ditemukan." };
+  const admin = await createAdminClient(); const { data: application } = await admin.from("provider_applications").select("user_id").eq("id", input.applicationId).maybeSingle();
+  if (!application || application.user_id !== user.id) return { ok: false, error: "Pengajuan tidak ditemukan." };
+  return createUploadTicket({ ...input, userId: user.id });
+}
