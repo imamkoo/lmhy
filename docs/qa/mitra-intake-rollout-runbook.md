@@ -34,11 +34,19 @@ Yang dilakukan skrip, berurutan:
 ```bash
 --dry-run            # hanya menampilkan rencana
 --phase=1|2|3|4|5    # fase rollout (default 1 = semua flag false)
+--whitelist=a@b.com  # override daftar email yang boleh mendaftar (kosong = semua)
 --admin-email=...    # default admin@letmehearyou.id
 --skip-migrations    # lewati langkah 1–2
 --skip-admin         # lewati langkah 4
 --skip-vercel        # lewati langkah 3, 5, 6
 ```
+
+**Contoh naik ke Fase 2 (smoke test, hanya email QA):**
+```bash
+npm run rollout:mitra -- --phase=2 \
+  --whitelist="qa.praktisi.01@gmail.com,qa.pendamping.pending@gmail.com,qa.klien.01@gmail.com,admin@letmehearyou.id"
+```
+> Fase 2 mengaktifkan **shadow mode**: form terbuka, pengajuan masuk antrean, tapi tombol Setujui/Tolak di `/admin/verifikasi` membalas *"Shadow mode aktif: keputusan dinonaktifkan."* — aman untuk menguji alur penuh tanpa memberi role ke siapa pun.
 
 > ⚠️ Skrip **tidak menghapus** env var Vercel yang tidak lagi dipakai — hanya memberi tahu. Hapus manual bila perlu.
 > ⚠️ Secret (`MITRA_UPLOAD_SECRET`, `SWEEP_SECRET`, `CRON_SECRET`) di-generate otomatis bila env lokal kosong. **Nilai berbeda = endpoint cron tidak sinkron** — pakai yang tertulis di `.env.local` untuk pemanggilan manual.
