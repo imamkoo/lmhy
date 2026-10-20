@@ -49,8 +49,26 @@ CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON public.admin_audit_log(cre
 ALTER TABLE public.provider_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.provider_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+-- storage.objects dimiliki supabase_storage_admin, jadi role postgres pun tidak
+-- boleh ALTER. Di Supabase RLS storage.objects sudah aktif secara default.
+DO $$
+BEGIN
+  ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+EXCEPTION
+  WHEN insufficient_privilege THEN
+    RAISE NOTICE 'storage.objects: RLS sudah dikelola platform, dilewati';
+END;
+$$;
+
 GRANT ALL ON public.provider_applications, public.provider_documents, public.admin_audit_log TO service_role;
+
+-- Supabase memberi default privilege ALL untuk anon/authenticated pada tabel baru
+-- di schema public. Cabut agar posturnya benar-benar deny-all: tanpa grant,
+-- RLS tetap menjadi satu-satunya penahan, dan tabel yang berisi PII pelamar
+-- (nama, email, WhatsApp, motivasi) tidak bisa bocor bila RLS pernah dimatikan.
+REVOKE ALL ON public.provider_applications, public.provider_documents, public.admin_audit_log FROM anon, authenticated;
+
 INSERT INTO storage.buckets (id, name, public) VALUES ('provider-credentials', 'provider-credentials', false) ON CONFLICT (id) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION public.release_mitra_username(target_user_id uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
