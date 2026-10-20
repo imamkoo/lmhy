@@ -10,7 +10,8 @@
     "test:unit": "find src -name '*.test.ts' -print0 | xargs -0 tsx --test",
     "purge:documents": "tsx scripts/purge-expired-documents.mjs",
     "rollout:mitra": "tsx scripts/rollout-mitra-intake.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "setup:email": "tsx scripts/setup-email-provider.mjs"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.11",

@@ -52,6 +52,48 @@ npm run rollout:mitra -- --phase=2 \
 > ⚠️ Secret (`MITRA_UPLOAD_SECRET`, `SWEEP_SECRET`, `CRON_SECRET`) di-generate otomatis bila env lokal kosong. **Nilai berbeda = endpoint cron tidak sinkron** — pakai yang tertulis di `.env.local` untuk pemanggilan manual.
 ---
 
+## 🔌 Setup Provider Email (Resend)
+
+Email notifikasi approve/reject memakai adapter `src/lib/email.ts`. Supabase Auth **sudah** dikonfigurasi pakai Resend SMTP (jadi email konfirmasi pendaftaran & reset password sudah jalan), tetapi notifikasi dari aplikasi butuh API key sendiri.
+
+```bash
+# 1. Ambil API key: https://resend.com/api-keys → Create API Key (prefix re_)
+export RESEND_API_KEY="re_xxx"
+export VERCEL_TOKEN="$(tr -d '\n' < ~/.config/lmhy-vercel-token)"
+
+# 2. Jalankan setup (cek domain → uji kirim 3 template → set env Vercel → redeploy)
+npm run setup:email -- --to=email-anda@gmail.com
+```
+
+Yang dilakukan skrip:
+
+| # | Langkah | Output |
+|---|---|---|
+| 1 | Cek status domain Resend + record DNS yang belum lengkap | `letmehearyou.id VERIFIED` + daftar record |
+| 2 | Uji kirim 3 template (diterima / disetujui / ditolak) | `✓ diterima → terkirim` |
+| 3 | Set `RESEND_API_KEY` + `EMAIL_FROM` di Vercel production | `dibuat` / `diupdate` |
+| 4 | Trigger redeploy + tunggu `READY` | `✓ deployment production READY` |
+
+`EMAIL_FROM` default: `Let Me Hear You <noreply@letmehearyou.id>` — domain yang sama dengan yang sudah dipakai Supabase, jadi **tidak perlu setup DNS tambahan**.
+
+### DNS yang disarankan (opsional, kualitas deliverability)
+
+Di Cloudflare → DNS → Records, **edit** (jangan tambah) record TXT `letmehearyou.id`:
+
+```
+v=spf1 include:_spf.mx.cloudflare.net include:amazonses.com ~all
+```
+
+Lalu **tambah** record baru:
+
+```
+_dmarc.letmehearyou.id   TXT   v=DMARC1; p=none; rua=mailto:noreply@letmehearyou.id
+```
+
+> Tanpa ini email tetap terkirim (DKIM pass) tetapi SPF fail → sedikit masuk folder spam. Tidak blocking.
+
+---
+
 ## 👤 Jalur Manual (kalau tidak mau/token tidak bisa dibagikan)
 
 ### TL;DR — 8 Langkah
