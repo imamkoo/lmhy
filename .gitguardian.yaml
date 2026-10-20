@@ -7,3 +7,4 @@ secret:
     - '**/*.spec.tsx'
     - '**/tests/**'
     - '**/__tests__/**'
+    - '**/__fixtures__/**'

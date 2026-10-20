@@ -5,61 +5,10 @@ import {
   validatePsikologDraft,
   validatePendampingDraft,
 } from "./application-schema";
-import type { PsikologDraft, PendampingDraft } from "./application-schema";
-
-function psikologValidFixture(): PsikologDraft {
-  return {
-    track: "KLINIS",
-    applicantName: "Budi Santoso",
-    applicantEmail: "budi@contoh.id",
-    whatsapp: "081234567890",
-    domicileProvince: "DKI Jakarta",
-    domicileCity: "Jakarta Selatan",
-    username: "budi-santoso-psikolog",
-    password: "rahasia123",
-    academicTitle: "S.Psi",
-    s2Campus: "Universitas Indonesia",
-    s2GraduationYear: 2018,
-    specialization: "Klinis Dewasa",
-    strNumber: "1234567890",
-    sipStatus: "AKTIF",
-    currentPractice: "Klinik Sehat Jiwa",
-    yearsExperience: "5 tahun",
-    flightHours: "1500 jam",
-    modalities: ["VIDEO", "CHAT"],
-    motivation:
-      "Saya ingin bergabung sebagai mitra psikolog klinis untuk membantu masyarakat mendapatkan layanan konseling kesehatan mental yang profesional, terjangkau, dan amanah melalui platform ini secara berkelanjutan dan berintegritas tinggi.",
-    ethicsAccepted: true,
-    dataAccuracyAccepted: true,
-    honeypot: "",
-    formElapsedMs: 9000,
-  };
-}
-
-function pendampingValidFixture(): PendampingDraft {
-  return {
-    track: "SEBAYA",
-    applicantName: "Siti Rahma",
-    applicantEmail: "siti@contoh.id",
-    whatsapp: "081298765432",
-    domicileProvince: "Jawa Barat",
-    domicileCity: "Bandung",
-    username: "siti-rahma-sebaya",
-    password: "rahasia123",
-    backgroundTrack: "PENYINTAS",
-    personalExperience:
-      "Saya adalah penyintas gangguan kecemasan yang telah pulih dan aktif mendampingi teman sebaya di komunitas selama lebih dari 2 tahun.",
-    availability: "Malam hari (19:00 - 22:00)",
-    motivation:
-      "Saya terdorong untuk menjadi pendamping sebaya karena percaya bahwa pengalaman pemulihan saya dapat memberikan harapan dan ruang aman bagi mereka yang sedang berjuang menghadapi masa-masa sulit dalam hidup mereka saat ini.",
-    ethicsAccepted: true,
-    dataAccuracyAccepted: true,
-    waGroupConfirmed: true,
-    pfaCommitment: true,
-    honeypot: "",
-    formElapsedMs: 8000,
-  };
-}
+import {
+  pendampingValidFixture,
+  psikologValidFixture,
+} from "./__fixtures__/mitra-draft";
 
 test("psikolog: field wajib hilang menghasilkan issue per field", () => {
   const issues = validatePsikologDraft({
