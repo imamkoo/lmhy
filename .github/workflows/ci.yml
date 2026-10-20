@@ -33,5 +33,12 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Verify RLS deny-all
+        run: node scripts/verify-rls.mjs
+        continue-on-error: true
+
       - name: Build
         run: npm run build

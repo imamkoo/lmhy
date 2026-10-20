@@ -438,6 +438,24 @@ export interface Database {
         }
         Relationships: []
       }
+      provider_applications: {
+        Row: { id: string; user_id: string; track: 'SEBAYA' | 'KLINIS'; status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'SUPERSEDED'; username: string; applicant_name: string; applicant_email: string; whatsapp: string; domicile_province: string; domicile_city: string; motivation: string; background_track: 'PENYINTAS' | 'PEMERHATI' | 'MAHASISWA' | 'LAINNYA' | null; pfa_status: 'BELUM' | 'SEDANG' | 'SELESAI'; pfa_evidence_doc_id: string | null; wa_joined_confirmed_at: string | null; ethics_pledge_at: string; pledge_version: string; email_verified_at: string | null; applied_at: string; decided_at: string | null; decided_by: string | null; decision_note: string | null; supersedes: string | null; superseded_by: string | null; details: Json; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; track: 'SEBAYA' | 'KLINIS'; status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'SUPERSEDED'; username: string; applicant_name: string; applicant_email: string; whatsapp: string; domicile_province: string; domicile_city: string; motivation: string; background_track?: 'PENYINTAS' | 'PEMERHATI' | 'MAHASISWA' | 'LAINNYA' | null; pfa_status?: 'BELUM' | 'SEDANG' | 'SELESAI'; pfa_evidence_doc_id?: string | null; wa_joined_confirmed_at?: string | null; ethics_pledge_at: string; pledge_version: string; email_verified_at?: string | null; applied_at?: string; decided_at?: string | null; decided_by?: string | null; decision_note?: string | null; supersedes?: string | null; superseded_by?: string | null; details: Json; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; track?: 'SEBAYA' | 'KLINIS'; status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'SUPERSEDED'; username?: string; applicant_name?: string; applicant_email?: string; whatsapp?: string; domicile_province?: string; domicile_city?: string; motivation?: string; background_track?: 'PENYINTAS' | 'PEMERHATI' | 'MAHASISWA' | 'LAINNYA' | null; pfa_status?: 'BELUM' | 'SEDANG' | 'SELESAI'; pfa_evidence_doc_id?: string | null; wa_joined_confirmed_at?: string | null; ethics_pledge_at?: string; pledge_version?: string; email_verified_at?: string | null; applied_at?: string; decided_at?: string | null; decided_by?: string | null; decision_note?: string | null; supersedes?: string | null; superseded_by?: string | null; details?: Json; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      provider_documents: {
+        Row: { id: string; application_id: string; user_id: string; doc_type: 'STR' | 'SIPP' | 'CV' | 'TRAINING_CERT' | 'PFA_CERT' | 'OTHER'; storage_path: string; original_filename: string; mime_type: string; size_bytes: number; uploaded_at: string; purge_after: string | null }
+        Insert: { id?: string; application_id: string; user_id: string; doc_type: 'STR' | 'SIPP' | 'CV' | 'TRAINING_CERT' | 'PFA_CERT' | 'OTHER'; storage_path: string; original_filename: string; mime_type: string; size_bytes: number; uploaded_at?: string; purge_after?: string | null }
+        Update: { id?: string; application_id?: string; user_id?: string; doc_type?: 'STR' | 'SIPP' | 'CV' | 'TRAINING_CERT' | 'PFA_CERT' | 'OTHER'; storage_path?: string; original_filename?: string; mime_type?: string; size_bytes?: number; uploaded_at?: string; purge_after?: string | null }
+        Relationships: []
+      }
+      admin_audit_log: {
+        Row: { id: string; actor_id: string; action: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED' | 'DOCUMENT_PURGED'; target_type: string; target_id: string | null; note: string | null; metadata: Json | null; created_at: string }
+        Insert: { id?: string; actor_id: string; action: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED' | 'DOCUMENT_PURGED'; target_type: string; target_id?: string | null; note?: string | null; metadata?: Json | null; created_at?: string }
+        Update: { id?: string; actor_id?: string; action?: 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'APPLICATION_EXPIRED' | 'APPLICATION_RESUBMITTED' | 'DOCUMENT_VIEWED' | 'CHECKLIST_UPDATED' | 'LITERA_CONFIG_UPDATED' | 'EMAIL_RESENT' | 'SWEEP_FAILED' | 'DOCUMENT_PURGED'; target_type?: string; target_id?: string | null; note?: string | null; metadata?: Json | null; created_at?: string }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

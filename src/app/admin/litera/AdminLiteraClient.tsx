@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  verifyAdminPin,
   getAdminLiteraQuotaAction,
   getAdminLiteraTokenomicsAction,
 } from "@/app/actions/admin-nft";
@@ -11,20 +10,12 @@ import { LiteraPublisherQuota, LiteraPublisherTokenomics } from "@/lib/litera";
 import { LiteraIntegrationPreflightResult } from "@/lib/litera-runtime";
 
 export function AdminLiteraClient() {
-  // 1. PIN Security Gate (Default: 123456)
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [inputPin, setInputPin] = useState("");
-  const [pinError, setPinError] = useState<string | null>(null);
-  const [isCheckingPin, setIsCheckingPin] = useState(false);
-
-  // 2. Litera Quota & Credits State (Free Kuota & Paid Credits)
   const [quotaData, setQuotaData] = useState<LiteraPublisherQuota | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
   const [preflightData, setPreflightData] = useState<LiteraIntegrationPreflightResult | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isLoadingQuota, setIsLoadingQuota] = useState(true);
 
-  // 3. Litera Single Source of Truth Tokenomics Policy State
   const [tokenomicsData, setTokenomicsData] = useState<LiteraPublisherTokenomics | null>(null);
   const [isLoadingTokenomics, setIsLoadingTokenomics] = useState(true);
 
@@ -50,73 +41,8 @@ export function AdminLiteraClient() {
       });
   }, []);
 
-  // Handle PIN verification
-  const handleVerifyPin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPinError(null);
-    setIsCheckingPin(true);
-
-    try {
-      const isValid = await verifyAdminPin(inputPin);
-      if (isValid) {
-        setIsAuthenticated(true);
-      } else {
-        setPinError("PIN Admin salah. Default PIN adalah 123456.");
-      }
-    } catch {
-      setPinError("Terjadi kesalahan saat memverifikasi PIN.");
-    } finally {
-      setIsCheckingPin(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#F5E7C6] text-[#3F3766] flex flex-col font-sans">
-      {/* 0. PIN GATE SECURITY MODAL */}
-      {!isAuthenticated && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F3766]/75 backdrop-blur-md p-4">
-          <div className="w-full max-w-sm rounded-3xl border-4 border-[#3F3766] bg-[#F5E7C6] p-6 sm:p-8 shadow-[0_20px_60px_rgba(63,55,102,0.4)] text-center">
-            <span className="inline-block rounded-xl bg-[#3F3766] px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[#F7ABC5] mb-3">
-              Keamanan Terpusat
-            </span>
-            <h2 className="text-xl font-black text-[#3F3766] tracking-tight">
-              Akses Admin Litera
-            </h2>
-            <p className="mt-1 text-xs text-[#3F3766]/70 leading-relaxed">
-              Masukkan PIN Admin untuk memantau status kuota dan kebijakan tokenomics platform.
-            </p>
-
-            <form onSubmit={handleVerifyPin} className="mt-6 space-y-4">
-              <div>
-                <input
-                  type="password"
-                  maxLength={10}
-                  value={inputPin}
-                  onChange={(e) => setInputPin(e.target.value)}
-                  placeholder="Masukkan PIN (Default: 123456)"
-                  autoFocus
-                  required
-                  className="w-full text-center text-xl font-mono font-bold tracking-widest py-3 px-4 rounded-2xl border-2 border-[#3F3766] bg-white text-[#3F3766] focus:outline-none focus:ring-4 focus:ring-[#F7ABC5] shadow-inner"
-                />
-                {pinError && (
-                  <p className="mt-2 text-xs font-bold text-red-600">
-                    {pinError}
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={isCheckingPin}
-                className="w-full py-3.5 rounded-2xl bg-[#F7ABC5] text-[#3F3766] border-2 border-[#3F3766] text-xs font-black uppercase tracking-wider shadow-[0_4px_0_0_#3F3766] hover:shadow-[0_2px_0_0_#3F3766] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all disabled:opacity-50"
-              >
-                {isCheckingPin ? "Memverifikasi..." : "Buka Portal"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* 1. TOP HEADER NAVIGATION */}
       <header className="sticky top-0 z-30 border-b border-[#3F3766]/15 bg-[#F5E7C6]/90 backdrop-blur-md px-4 py-3.5 sm:px-6">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">

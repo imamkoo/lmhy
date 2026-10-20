@@ -2,10 +2,13 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUsername, getProfileStats } from "@/lib/profile-storage";
 import { getArticlesByUsername } from "@/lib/article-storage";
-import SessionTabs, { type SessionSlot } from "@/components/sanctuary/SessionTabs";
+import SessionTabs, {
+  type SessionSlot,
+} from "@/components/sanctuary/SessionTabs";
 import { ProfileBanner } from "./components/ProfileBanner";
 import { ProfileTabs } from "./components/ProfileTabs";
 import { EditProfileModal } from "./components/EditProfileModal";
+import Link from "next/link";
 import type { Profile } from "@/lib/supabase/types";
 
 export async function generateMetadata({
@@ -55,6 +58,7 @@ export default async function TenantProfilePage({
   // auth/DB failure must never 500 the profile — degrade to guest view instead.
   let currentUser: { id: string } | null = null;
   let isOwnProfile = false;
+  let viewerRole: Profile["creator_role"] | null = null;
   let isFollowing = false;
 
   try {
@@ -65,6 +69,15 @@ export default async function TenantProfilePage({
     currentUser = user;
 
     isOwnProfile = Boolean(currentUser && currentUser.id === profile.id);
+
+    if (currentUser) {
+      const { data: viewerProfile } = await supabase
+        .from("profiles")
+        .select("creator_role")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+      viewerRole = viewerProfile?.creator_role ?? null;
+    }
 
     if (currentUser && !isOwnProfile) {
       try {
@@ -81,7 +94,10 @@ export default async function TenantProfilePage({
       }
     }
   } catch (err) {
-    console.error("[TenantProfilePage] Visitor session lookup failed, rendering as guest:", err);
+    console.error(
+      "[TenantProfilePage] Visitor session lookup failed, rendering as guest:",
+      err,
+    );
   }
 
   const providerRole =
@@ -112,7 +128,10 @@ export default async function TenantProfilePage({
         price_idr: slot.price_idr,
       }));
     } catch (err) {
-      console.error("[TenantProfilePage] Slot lookup failed, rendering without sessions:", err);
+      console.error(
+        "[TenantProfilePage] Slot lookup failed, rendering without sessions:",
+        err,
+      );
     }
   }
 
@@ -120,16 +139,35 @@ export default async function TenantProfilePage({
     <main className="min-h-screen bg-[#fbf8f5] px-4 py-8 text-slate-900 sm:px-6 md:px-12 md:py-12">
       <div className="mx-auto max-w-4xl">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <a href="https://letmehearyou.id" className="inline-flex shrink-0 items-center" aria-label="Ke beranda Let Me Hear You">
+          <a
+            href="https://letmehearyou.id"
+            className="inline-flex shrink-0 items-center"
+            aria-label="Ke beranda Let Me Hear You"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/LMHY.png" alt="Let Me Hear You" className="h-6 w-auto max-w-[50vw] object-contain sm:h-9" />
+            <img
+              src="/assets/LMHY.png"
+              alt="Let Me Hear You"
+              className="h-6 w-auto max-w-[50vw] object-contain sm:h-9"
+            />
           </a>
           <a
             href="https://letmehearyou.id"
             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white/80 px-2.5 py-1.5 text-xs font-semibold text-[#3F3766] shadow-xs backdrop-blur-xs transition hover:bg-[#F7ABC5]/20 hover:text-[#3F3766] sm:border-transparent sm:bg-transparent sm:px-3 sm:py-2 sm:shadow-none"
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             <span>Beranda</span>
           </a>
@@ -142,6 +180,25 @@ export default async function TenantProfilePage({
           isOwnProfile={isOwnProfile}
           initialIsFollowing={isFollowing}
         />
+
+        {currentUser && viewerRole === "PENULIS" && (
+          <section className="mt-6 rounded-[28px] bg-[hsl(344,81%,87%)] p-5">
+            <h2 className="font-heading text-lg font-bold text-[#3C3163]">
+              Tertarik menjadi Pendamping Sebaya?
+            </h2>
+            <p className="mt-2 text-sm text-[#3C3163]">
+              Dapatkan pelatihan First Aid Counseling, komunitas, dan akses sesi
+              dengar.
+            </p>
+            <Link
+              href="/mitra/pendamping"
+              className="mt-4 inline-flex rounded-full bg-[#3C3163] px-4 py-2
+                text-sm font-semibold text-white"
+            >
+              Ajukan sekarang
+            </Link>
+          </section>
+        )}
 
         {isApprovedProvider && providerRole ? (
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
@@ -181,7 +238,9 @@ export default async function TenantProfilePage({
         {/* Global Footer */}
         <footer className="mt-20 border-t border-slate-200/80 pt-8 text-center text-xs text-slate-500">
           <p>
-            Diterbitkan melalui <strong>Let Me Hear You Creator Network</strong>. Terintegrasi dengan protokol <strong>Litera Web3</strong> di Polygon Mainnet.
+            Diterbitkan melalui <strong>Let Me Hear You Creator Network</strong>
+            . Terintegrasi dengan protokol <strong>Litera Web3</strong> di
+            Polygon Mainnet.
           </p>
         </footer>
       </div>

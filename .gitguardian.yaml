@@ -1,0 +1,10 @@
+version: 2
+secret:
+  ignored_paths:
+    - '**/*.test.ts'
+    - '**/*.test.tsx'
+    - '**/*.spec.ts'
+    - '**/*.spec.tsx'
+    - '**/tests/**'
+    - '**/__tests__/**'
+    - '**/__fixtures__/**'
