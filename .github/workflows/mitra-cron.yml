@@ -1,0 +1,65 @@
+name: Mitra Cron
+
+# PENTING: repo ini memakai Vercel Cron (lihat vercel.json) sebagai penjadwal
+# default. Workflow ini adalah ALTERNATIF manual — jangan aktifkan blok
+# `schedule` di bawah jika Vercel Cron sudah aktif, atau proses akan berjalan
+# dua kali. Kedua penjadwal bersifat idempoten, jadi tidak merusak data,
+# tapi audit log jadi ganda.
+#
+# Pemakaian manual (tanpa redeploy):
+#   GitHub → Actions → Mitra Cron → Run workflow
+#
+# Untuk menjadwalkan lewat GitHub Actions:
+#   1. Hapus tanda `##` pada baris schedule di bawah
+#   2. Isi repository secret: APP_URL, SWEEP_SECRET
+#   3. Commit & merge perubahan ini
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Task yang dijalankan"
+        required: true
+        default: "sweep"
+        type: choice
+        options:
+          - sweep
+          - purge-documents
+  ## schedule:
+  ##   - cron: "0 20 20 * *"
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Jalankan task mitra
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SWEEP_SECRET: ${{ secrets.SWEEP_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APP_URL:-}" ] || [ -z "${SWEEP_SECRET:-}" ]; then
+            echo "::error::Repository secret APP_URL dan SWEEP_SECRET wajib diisi"
+            exit 1
+          fi
+          case "${{ inputs.task }}" in
+            sweep)
+              path="/api/internal/sweep"
+              ;;
+            purge-documents)
+              path="/api/internal/purge-documents"
+              ;;
+            *)
+              echo "::error::Task tidak dikenal: ${{ inputs.task }}"
+              exit 1
+              ;;
+          esac
+          echo "Memanggil ${APP_URL}${path}"
+          curl -fsS -X POST "${APP_URL}${path}" \
+            -H "x-sweep-secret: ${SWEEP_SECRET}" \
+            -H "content-type: application/json" \
+            -w '\nHTTP %{http_code}\n'
