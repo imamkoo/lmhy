@@ -147,7 +147,13 @@ export default function PsikologApplicationForm() {
         return;
       }
       setIssues(answer.issues ?? []);
-      setServerError(answer.message || "Pengajuan belum dapat dikirim.");
+      if (answer.code === "EMAIL_EXISTS") {
+        setServerError(
+          "Email ini sudah punya akun di Let Me Hear You. Silakan masuk lewat halaman login, lalu ajukan dari akun tersebut agar email verifikasi diterima di alamat yang benar.",
+        );
+      } else {
+        setServerError(answer.message || "Pengajuan belum dapat dikirim.");
+      }
       if (answer.code === "USERNAME_TAKEN" && answer.suggestions?.length)
         setUsername((current) => ({
           ...current,

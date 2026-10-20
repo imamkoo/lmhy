@@ -21,6 +21,7 @@ import {
   applicationApprovedTemplate,
   applicationExpiredTemplate,
   applicationRejectedTemplate,
+  applicationSupersededTemplate,
   verificationReminderTemplate,
 } from "@/lib/email-templates";
 import type { TablesUpdate } from "@/lib/supabase/types";
@@ -273,6 +274,13 @@ export async function approveApplicationAction(
     .update({ purge_after: purgeAfterIso })
     .eq("application_id", applicationId);
 
+  const supersededResult = await supabase
+    .from("provider_applications")
+    .select("applicant_name, username")
+    .eq("user_id", application.user_id)
+    .eq("status", "SUPERSEDED")
+    .order("applied_at", { ascending: false });
+
   await writeAuditLog(admin.id, {
     action: "APPLICATION_APPROVED",
     targetType: "provider_application",
@@ -280,7 +288,7 @@ export async function approveApplicationAction(
     note: note ?? undefined,
   });
 
-  sendEmail({
+  const approvalEmail = await sendEmail({
     to: application.applicant_email,
     ...applicationApprovedTemplate({
       applicantName: application.applicant_name,
@@ -288,7 +296,26 @@ export async function approveApplicationAction(
         newRole === "PRAKTISI" ? "Praktisi Klinis" : "Pendamping Sebaya",
       username: application.username,
     }),
-  }).catch(() => {});
+  });
+
+  for (const superseded of supersededResult.data ?? []) {
+    await sendEmail({
+      to: application.applicant_email,
+      ...applicationSupersededTemplate({
+        applicantName: superseded.applicant_name,
+        username: superseded.username,
+      }),
+    });
+  }
+
+  if (!approvalEmail.ok && !approvalEmail.skipped) {
+    return {
+      ok: true,
+      code: "EMAIL_FAILED",
+      message:
+        "Mitra disetujui, tetapi email pemberitahuan gagal terkirim. Gunakan 'Kirim ulang email' di antrean.",
+    };
+  }
 
   return { ok: true };
 }
@@ -386,14 +413,23 @@ export async function rejectApplicationAction(
     note,
   });
 
-  sendEmail({
+  const rejectionEmail = await sendEmail({
     to: application.applicant_email,
     ...applicationRejectedTemplate({
       applicantName: application.applicant_name,
       note,
       username: application.username,
     }),
-  }).catch(() => {});
+  });
+
+  if (!rejectionEmail.ok && !rejectionEmail.skipped) {
+    return {
+      ok: true,
+      code: "EMAIL_FAILED",
+      message:
+        "Pengajuan ditolak, tetapi email pemberitahuan gagal terkirim. Gunakan 'Kirim ulang email' di antrean.",
+    };
+  }
 
   return { ok: true };
 }
@@ -589,7 +625,14 @@ export async function resendVerificationEmailAction(
     note: "Resent email verification reminder",
   });
 
-  return { ok: true };
+  return emailResult.skipped
+    ? {
+        ok: false,
+        code: "EMAIL_SKIPPED",
+        message:
+          "Provider email belum dikonfigurasi, email tidak terkirim. Periksa RESEND_API_KEY di Vercel.",
+      }
+    : { ok: true };
 }
 
 export async function resendDecisionEmailAction(
@@ -657,5 +700,12 @@ export async function resendDecisionEmailAction(
     note: `Resent ${application.status} decision email`,
   });
 
-  return { ok: true };
+  return emailResult.skipped
+    ? {
+        ok: false,
+        code: "EMAIL_SKIPPED",
+        message:
+          "Provider email belum dikonfigurasi, email tidak terkirim. Periksa RESEND_API_KEY di Vercel.",
+      }
+    : { ok: true };
 }
