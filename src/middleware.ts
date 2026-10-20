@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
 import { getSessionCookieOptions, SESSION_MAX_AGE } from "@/lib/supabase/cookie";
+import { isAdminUser } from "@/lib/admin-auth-edge";
 
 const ROOT_DOMAINS = [
   "letmehearyou.id",
@@ -28,6 +29,9 @@ const ROOT_ROUTES = [
   "/login",
   "/onboarding",
   "/auth",
+  "/mitra",
+  "/akun",
+  "/praktik",
 ];
 
 /**
@@ -206,6 +210,22 @@ export async function middleware(req: NextRequest) {
           }
         }
       }
+
+      const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/") || url.pathname === "/creator";
+      if (isAdminPath) {
+        if (!user) {
+          const adminLogin = NextResponse.redirect(
+            new URL(`/login?next=${encodeURIComponent(url.pathname)}`, req.url)
+          );
+          sessionResponse.cookies.getAll().forEach((cookie) => adminLogin.cookies.set(cookie.name, cookie.value, cookie));
+          return adminLogin;
+        }
+        if (!isAdminUser(user)) {
+          const denied = NextResponse.redirect(new URL("/", req.url));
+          sessionResponse.cookies.getAll().forEach((cookie) => denied.cookies.set(cookie.name, cookie.value, cookie));
+          return denied;
+        }
+      }
     } catch (authError) {
       console.error("Middleware auth check error:", authError);
     }
@@ -213,6 +233,18 @@ export async function middleware(req: NextRequest) {
 
   // (3) Subdomain routing
   if (subdomain && subdomain !== "www") {
+    if (
+      url.pathname === "/mitra" ||
+      url.pathname.startsWith("/mitra/") ||
+      url.pathname === "/akun" ||
+      url.pathname.startsWith("/akun/")
+    ) {
+      return NextResponse.redirect(
+        new URL(url.pathname + url.search, "https://www.letmehearyou.id"),
+        307
+      );
+    }
+
     // Rute builder di subdomain otomatis diarahkan ke root domain kanonik
     if (url.pathname === "/builder" || url.pathname.startsWith("/builder/")) {
       const canonicalBuilderUrl = new URL(

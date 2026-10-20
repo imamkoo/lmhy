@@ -4,18 +4,16 @@ import { revalidatePath } from "next/cache";
 import {
   AdminTokenomicsConfig,
   getAdminTokenomicsConfig,
+  getDefaultTokenomicsConfig,
   saveAdminTokenomicsConfig,
 } from "@/lib/admin-tokenomics-storage";
 import { literaClient, LiteraPublisherQuota } from "@/lib/litera";
 import { evaluateIntegrationPreflight, getLiteraApiKeyStatus, type LiteraIntegrationPreflightResult } from "@/lib/litera-runtime";
-
-export async function verifyAdminPin(pin: string): Promise<boolean> {
-  const DEFAULT_PIN = "123456";
-  const validPin = process.env.ADMIN_PIN || DEFAULT_PIN;
-  return pin.trim() === validPin.trim();
-}
+import { requireAdmin } from "@/lib/admin-auth";
 
 export async function getTokenomicsConfigAction(): Promise<AdminTokenomicsConfig> {
+  const admin = await requireAdmin();
+  if (!admin) return getDefaultTokenomicsConfig();
   return getAdminTokenomicsConfig();
 }
 
@@ -28,6 +26,8 @@ export interface SaveTokenomicsResult {
 export async function saveTokenomicsConfigAction(
   newConfig: Partial<AdminTokenomicsConfig>
 ): Promise<SaveTokenomicsResult> {
+  const admin = await requireAdmin();
+  if (!admin) return { success: false, message: "Akses admin diperlukan." };
   if (newConfig.maxMint !== undefined && newConfig.maxMint < 2) {
     return { success: false, message: "Batas Max Mint minimal 2 edisi." };
   }
@@ -76,6 +76,8 @@ export interface AdminLiteraQuotaResult {
 }
 
 export async function getAdminLiteraQuotaAction(): Promise<AdminLiteraQuotaResult> {
+  const admin = await requireAdmin();
+  if (!admin) return { quota: null, hasApiKey: false, error: "Akses admin diperlukan." };
   const apiKey = process.env.LITERA_API_KEY;
   const configuredWallet = process.env.LITERA_PUBLISHER_WALLET;
   const apiKeyStatus = getLiteraApiKeyStatus(apiKey);
@@ -115,5 +117,7 @@ export async function getAdminLiteraQuotaAction(): Promise<AdminLiteraQuotaResul
 }
 
 export async function getAdminLiteraTokenomicsAction() {
+  const admin = await requireAdmin();
+  if (!admin) return null;
   return await literaClient.getPublisherTokenomics();
 }

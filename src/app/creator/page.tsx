@@ -1,4 +1,5 @@
-import AdminLiteraPage, { metadata } from "../admin/litera/page";
+import { redirect } from "next/navigation";
 
-export { metadata };
-export default AdminLiteraPage;
+export default function CreatorRedirectPage() {
+  redirect("/admin/litera");
+}
