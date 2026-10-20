@@ -6,7 +6,47 @@ Estimasi total waktu: **45–60 menit** (terutama menunggu redeploy Vercel).
 
 ---
 
-## TL;DR — 8 Langkah
+## 🚀 Jalur Otomatis (disarankan)
+
+Langkah 1–4 bisa dijalankan **satu perintah** lewat `scripts/rollout-mitra-intake.mjs`:
+
+```bash
+export SUPABASE_PAT="sbp_xxx"     # https://supabase.com/dashboard/account/tokens
+export VERCEL_TOKEN="xxx"         # https://vercel.com/account/tokens
+
+npm run rollout:mitra -- --dry-run   # 1. lihat rencananya tanpa mengubah apa pun
+npm run rollout:mitra                # 2. eksekusi
+```
+
+Yang dilakukan skrip, berurutan:
+
+| # | Langkah | Verifikasi di output |
+|---|---|---|
+| 1 | Terapkan 2 migrasi via Supabase Management API (multi-statement, fallback per statement) | `✓ …sql diterapkan` |
+| 2 | Verifikasi: 3 tabel, bucket private, 0 policy RLS, fungsi `release_mitra_username` | `✓ 3 tabel mitra ada` · `✓ RLS deny-all terverifikasi` |
+| 3 | Resolve project Vercel + ambil `SUPABASE_SERVICE_ROLE_KEY` | `✓ project: lmhy (…)` |
+| 4 | Buat/flag akun admin (`email_confirm: true` + `app_metadata.is_admin`) | `✓ app_metadata.is_admin = true` |
+| 5 | Set env var di Vercel (create/update, skip yang tidak berubah) | `✓ total: N dibuat · N diperbarui` |
+| 6 | Trigger redeploy production + tunggu sampai `READY` | `✓ deployment production READY` |
+| 7 | Simpan semua secret ke `.env.local` (gitignored) | `✓ .env.local diperbarui` |
+
+**Opsi:**
+```bash
+--dry-run            # hanya menampilkan rencana
+--phase=1|2|3|4|5    # fase rollout (default 1 = semua flag false)
+--admin-email=...    # default admin@letmehearyou.id
+--skip-migrations    # lewati langkah 1–2
+--skip-admin         # lewati langkah 4
+--skip-vercel        # lewati langkah 3, 5, 6
+```
+
+> ⚠️ Skrip **tidak menghapus** env var Vercel yang tidak lagi dipakai — hanya memberi tahu. Hapus manual bila perlu.
+> ⚠️ Secret (`MITRA_UPLOAD_SECRET`, `SWEEP_SECRET`, `CRON_SECRET`) di-generate otomatis bila env lokal kosong. **Nilai berbeda = endpoint cron tidak sinkron** — pakai yang tertulis di `.env.local` untuk pemanggilan manual.
+---
+
+## 👤 Jalur Manual (kalau tidak mau/token tidak bisa dibagikan)
+
+### TL;DR — 8 Langkah
 
 ```
 □ 1. Terapkan 2 migrasi SQL di Supabase        (10 menit)
