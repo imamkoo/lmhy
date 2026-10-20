@@ -1,3 +1,12 @@
+const major = Number.parseInt(process.versions.node.split(".")[0] ?? "0", 10);
+if (major < 22) {
+  console.error(
+    `Node.js ${major} tidak didukung. Supabase SDK butuh Node 22+ (WebSocket native).` +
+      ` Repo ini memakai Node 22 (.nvmrc). Ganti dengan: nvm use 22`,
+  );
+  process.exit(1);
+}
+
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!serviceKey) {
   console.log('SKIP: SUPABASE_SERVICE_ROLE_KEY belum diset');
