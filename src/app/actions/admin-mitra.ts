@@ -22,8 +22,9 @@ import {
   applicationExpiredTemplate,
   applicationRejectedTemplate,
   applicationSupersededTemplate,
-  verificationReminderTemplate,
+  emailVerificationTemplate,
 } from "@/lib/email-templates";
+import { buildVerificationUrl } from "@/lib/mitra/email-verification";
 import type { TablesUpdate } from "@/lib/supabase/types";
 
 export interface AdminActionResult {
@@ -478,7 +479,33 @@ export async function runExpirySweepAction(): Promise<{
     let expiredAppCount = 0;
     let releasedUsernamesCount = 0;
 
+    const { data: authUsers } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    const confirmedAtByUserId = new Map<string, string>();
+    for (const user of authUsers?.users ?? []) {
+      if (user.email_confirmed_at) {
+        confirmedAtByUserId.set(user.id, user.email_confirmed_at);
+      }
+    }
+
     for (const app of pendingApps) {
+      if (!app.email_verified_at) {
+        const confirmedAt = confirmedAtByUserId.get(app.user_id);
+        if (confirmedAt) {
+          const { error: backfillError } = await supabase
+            .from("provider_applications")
+            .update({ email_verified_at: confirmedAt })
+            .eq("id", app.id)
+            .is("email_verified_at", null);
+
+          if (!backfillError) {
+            app.email_verified_at = confirmedAt;
+          }
+        }
+      }
+
       const appliedDate = new Date(app.applied_at);
       let expireReason: string | null = null;
       let isEmailExpiry = false;
@@ -590,23 +617,36 @@ export async function resendVerificationEmailAction(
     };
   }
 
-  let verificationUrl: string | undefined;
+  let tokenHash: string | undefined;
   try {
     const { data: linkData } = await supabase.auth.admin.generateLink({
       type: "magiclink",
       email: application.applicant_email,
     });
-    verificationUrl = linkData?.properties?.action_link;
+    tokenHash = linkData?.properties?.hashed_token;
   } catch {
     // fallback without link
   }
 
+  if (!tokenHash) {
+    return {
+      ok: false,
+      code: "EMAIL_FAILED",
+      message:
+        "Tautan verifikasi gagal dibuat. Pastikan email pelamar masih terdaftar di Supabase Auth.",
+    };
+  }
+
   const emailResult = await sendEmail({
     to: application.applicant_email,
-    ...verificationReminderTemplate({
+    ...emailVerificationTemplate({
       applicantName: application.applicant_name,
       username: application.username,
-      verificationUrl,
+      verificationUrl: buildVerificationUrl(
+        process.env.APP_URL?.trim() || "https://www.letmehearyou.id",
+        tokenHash,
+        "/akun?tab=pengajuan",
+      ),
     }),
   });
 
