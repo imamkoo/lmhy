@@ -9,6 +9,19 @@ export interface EmailContent {
   text: string;
 }
 
+const DEFAULT_BASE_URL = "https://www.letmehearyou.id";
+
+export function baseUrl(): string {
+  const raw = process.env.APP_URL?.trim();
+  if (!raw) return DEFAULT_BASE_URL;
+  try {
+    const url = new URL(raw);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return DEFAULT_BASE_URL;
+  }
+}
+
 const BASE_WRAPPER = (title: string, bodyContent: string) => `
 <!DOCTYPE html>
 <html lang="id">
@@ -51,7 +64,7 @@ export function applicationReceivedTemplate(args: TemplateArgs): EmailContent {
     <p>Terima kasih telah mengajukan diri sebagai mitra di <strong>Let Me Hear You</strong> dengan akun <code>@${args.username}</code>.</p>
     <p>Berkas dan informasi yang Anda lampirkan telah masuk ke antrean verifikasi tim kami. Kami akan meninjau kelengkapan kredensial dan komitmen etika Anda secara seksama.</p>
     <div style="margin:24px 0;text-align:center;">
-      <a href="https://letmehearyou.com/akun/pengajuan" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Pantau Status Pengajuan</a>
+      <a href="${baseUrl()}/akun/pengajuan" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Pantau Status Pengajuan</a>
     </div>
     <p style="margin-top:24px;">Salam hangat,<br><strong>Tim Let Me Hear You</strong></p>
     `
@@ -75,7 +88,7 @@ export function applicationApprovedTemplate(
     </div>
     <p>Anda kini memiliki hak penuh untuk mengelola sesi pendampingan/konseling dan membangun ruang aman bagi mereka yang membutuhkan.</p>
     <div style="margin:24px 0;text-align:center;">
-      <a href="https://letmehearyou.com/praktik" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Buka Ruang Praktik Anda</a>
+      <a href="${baseUrl()}/mitra" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Buka Portal Mitra Anda</a>
     </div>
     <p style="margin-top:24px;">Salam hangat,<br><strong>Tim Let Me Hear You</strong></p>
     `
@@ -101,7 +114,7 @@ export function applicationRejectedTemplate(
     </div>
     <p>Jangan berkecil hati. Anda dapat memperbaiki data atau berkas dokumen tersebut, lalu mengajukan permohonan kembali melalui tautan di bawah ini:</p>
     <div style="margin:24px 0;text-align:center;">
-      <a href="https://letmehearyou.com/akun/pengajuan" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Perbaiki &amp; Ajukan Ulang</a>
+      <a href="${baseUrl()}/akun/pengajuan" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Perbaiki &amp; Ajukan Ulang</a>
     </div>
     <p style="margin-top:24px;">Salam hangat,<br><strong>Tim Let Me Hear You</strong></p>
     `
@@ -120,7 +133,7 @@ export function applicationExpiredTemplate(args: TemplateArgs): EmailContent {
     <p>Pengajuan kemitraan Anda dengan akun <code>@${args.username}</code> telah melewati batas waktu toleransi verifikasi (TTL) dan kini berstatus kedaluwarsa.</p>
     <p>Sesuai kebijakan platform kami, reservasi username yang belum terverifikasi telah dilepas kembali agar tersedia untuk komunitas.</p>
     <div style="margin:24px 0;text-align:center;">
-      <a href="https://letmehearyou.com/mitra" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Daftar Kembali</a>
+      <a href="${baseUrl()}/mitra" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Daftar Kembali</a>
     </div>
     <p style="margin-top:24px;">Salam hangat,<br><strong>Tim Let Me Hear You</strong></p>
     `
@@ -141,7 +154,7 @@ export function verificationReminderTemplate(
     <p>Pengajuan kemitraan Anda dengan akun <code>@${args.username}</code> menunggu konfirmasi verifikasi alamat email.</p>
     <p>Verifikasi email wajib diselesaikan agar pengajuan Anda dapat ditinjau oleh tim kami. Pengajuan yang belum diverifikasi setelah 7 hari akan kedaluwarsa secara otomatis.</p>
     <div style="margin:24px 0;text-align:center;">
-      <a href="${args.verificationUrl || "https://letmehearyou.com/akun/pengajuan"}" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Konfirmasi Email Sekarang</a>
+      <a href="${args.verificationUrl || baseUrl() + "/akun/pengajuan"}" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Konfirmasi Email Sekarang</a>
     </div>
     <p style="margin-top:24px;">Salam hangat,<br><strong>Tim Let Me Hear You</strong></p>
     `
