@@ -73,7 +73,7 @@ export async function sendEmail(message: EmailMessage): Promise<EmailResult> {
   const resendKey = process.env.RESEND_API_KEY;
   const brevoKey = process.env.BREVO_API_KEY;
   const fromEmail =
-    process.env.EMAIL_FROM || "Let Me Hear You <halo@letmehearyou.com>";
+    process.env.EMAIL_FROM || "Let Me Hear You <noreply@letmehearyou.id>";
 
   if (!resendKey && !brevoKey) {
     return {

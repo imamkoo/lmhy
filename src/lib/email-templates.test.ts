@@ -45,3 +45,45 @@ test("semua template memakai token Warm Sanctuary", () => {
     assert.ok(t.html.includes("Poppins"));
   }
 });
+
+function withAppUrl(value: string | undefined, run: () => void) {
+  const previous = process.env.APP_URL;
+  if (value === undefined) delete process.env.APP_URL;
+  else process.env.APP_URL = value;
+  try {
+    run();
+  } finally {
+    if (previous === undefined) delete process.env.APP_URL;
+    else process.env.APP_URL = previous;
+  }
+}
+
+test("tautan email memakai APP_URL dan tidak pernah domain lama", () => {
+  withAppUrl("https://contoh.test", () => {
+    const templates = [
+      applicationReceivedTemplate({ applicantName: "A", username: "a" }),
+      applicationApprovedTemplate({ applicantName: "A", roleLabel: "P", username: "a" }),
+      applicationRejectedTemplate({ applicantName: "A", note: "x", username: "a" }),
+      applicationExpiredTemplate({ applicantName: "A", username: "a" }),
+      verificationReminderTemplate({ applicantName: "A", username: "a" }),
+    ];
+
+    for (const t of templates) {
+      assert.ok(t.html.includes("https://contoh.test/"), "tautan harus relatif ke APP_URL");
+      assert.ok(!t.html.includes("letmehearyou.com"), "domain lama tidak boleh muncul");
+    }
+  });
+});
+
+test("tautan email jatuh ke domain produksi saat APP_URL kosong", () => {
+  withAppUrl(undefined, () => {
+    const t = applicationReceivedTemplate({ applicantName: "A", username: "a" });
+    assert.ok(t.html.includes("https://www.letmehearyou.id/akun/pengajuan"));
+  });
+});
+
+test("template approval tidak menautkan ke rute /praktik yang belum ada", () => {
+  const t = applicationApprovedTemplate({ applicantName: "A", roleLabel: "P", username: "a" });
+  assert.ok(!t.html.includes("/praktik"));
+  assert.ok(t.html.includes("/mitra"));
+});
