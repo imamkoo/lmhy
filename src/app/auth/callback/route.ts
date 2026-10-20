@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);
     }
 
-    if (verification) {
+    if (verification && verification.type !== "recovery") {
       await markApplicationsVerified(data.user.id, data.user.email);
     }
 
@@ -87,10 +87,10 @@ export async function GET(request: Request) {
       .maybeSingle();
 
     let targetUrl: string;
-    if (!profile?.username) {
-      targetUrl = `${origin}/onboarding`;
-    } else if (verification) {
+    if (verification) {
       targetUrl = `${origin}${next}`;
+    } else if (!profile?.username) {
+      targetUrl = `${origin}/onboarding`;
     } else if (next === "/") {
       targetUrl = `https://${profile.username}.letmehearyou.id/`;
     } else {

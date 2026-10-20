@@ -350,6 +350,16 @@ function LoginFormContent() {
               <p className="text-[11px] text-slate-400 mt-1">
                 Gunakan minimal 6 karakter, termasuk huruf dan angka.
               </p>
+              {mode === 'signin' && (
+                <div className="mt-2 text-right">
+                  <Link
+                    href="/forgot-password"
+                    className="text-[11px] font-semibold text-[#3F3766]/70 hover:text-[#3F3766] hover:underline decoration-[#F7ABC5] decoration-2 underline-offset-4 transition"
+                  >
+                    Lupa kata sandi?
+                  </Link>
+                </div>
+              )}
             </div>
 
             <button

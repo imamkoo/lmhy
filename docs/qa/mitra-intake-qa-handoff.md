@@ -90,7 +90,7 @@ Salin blok ini apa adanya:
 > Password untuk seluruh akun di atas akan dikirim **terpisah** (di kanal terpisah, misal DM pribadi) — tidak disertakan di email ini, supaya tidak ikut ter-forward.
 >
 > **3. Daftar skenario (versi ringkas)**
-> Rincian 24 skenario ada di `docs/qa/mitra-intake-admin-qa.md`. Fokus awal (10 skenario, ±15 menit):
+> Rincian 26 skenario ada di `docs/qa/mitra-intake-admin-qa.md`. Fokus awal (10 skenario, ±15 menit):
 >
 > | # | Skenario | Yang diharapkan |
 > |---|---|---|
@@ -177,7 +177,7 @@ Karena shadow mode aktif:
 
 | Dokumen | Isi |
 |---|---|
-| `docs/qa/mitra-intake-admin-qa.md` | 24 skenario lengkap + matriks rollout Fase 0–5 |
+| `docs/qa/mitra-intake-admin-qa.md` | 26 skenario lengkap + matriks rollout Fase 0–5 |
 | `docs/qa/mitra-admin-sop.md` | SOP review admin, kapan approve vs reject |
 | `docs/qa/mitra-intake-rollout-runbook.md` | Runbook rollout 8 langkah |
 | `docs/qa/mitra-intake-rollback.md` | Prosedur rollback darurat |

@@ -63,3 +63,15 @@ test("selectPendingApplicationsToVerify hanya ambil PENDING yang belum terverifi
   ]);
   assert.deepEqual(ids, ["a", "d"]);
 });
+
+test("parseVerificationParams menerima type recovery untuk reset kata sandi", () => {
+  const params = new URLSearchParams("token_hash=abc123&type=recovery&next=%2Freset-password");
+  assert.deepEqual(parseVerificationParams(params), {
+    tokenHash: "abc123",
+    type: "recovery",
+  });
+});
+
+test("type recovery tetap ditolak bila token_hash kosong", () => {
+  assert.equal(parseVerificationParams(new URLSearchParams("type=recovery")), null);
+});
