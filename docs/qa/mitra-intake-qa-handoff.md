@@ -25,10 +25,10 @@ Salin blok ini apa adanya:
 > - Antrean verifikasi → https://www.letmehearyou.id/admin/verifikasi
 >
 > **🔑 Akun (pakai email yang ada di daftar putih, jangan email lain)**
-> - Pelamar psikolog → `qa.praktisi.01@gmail.com`
 > - Pelamar pendamping → `qa.pendamping.pending@gmail.com`
 > - Klien biasa → `qa.klien.01@gmail.com`
 > - Admin → `admin@letmehearyou.id`
+> - Pelamar psikolog → **akun kosong baru** (misal `qa.praktisi.99@gmail.com`) — akan dikirim terpisah ke owner untuk dimasukkan ke whitelist. Akun `qa.praktisi.01` sudah terdaftar, jadi tidak bisa dipakai untuk uji form guest.
 > - Password semua akun di atas: **diteruskan terpisah** (tidak di pesan ini, demi keamanan)
 >
 > **✅ Yang perlu dicek (10 menit, bisa di HP)**
@@ -135,11 +135,29 @@ Salin blok ini apa adanya:
 | Kredensial | Lokasi di komputer owner | Cara dibaca |
 |---|---|---|
 | Password admin | `~/.config/lmhy-admin-password` | `cat ~/.config/lmhy-admin-password` |
-| Password akun QA |(owner akan distributing via kanal terpisah)| — |
+| Password 3 akun QA | `~/.config/lmhy-qa-accounts.txt` | `cat ~/.config/lmhy-qa-accounts.txt` |
 | Token Supabase (PAT) | `~/.config/lmhy-supabase-pat` | `cat ~/.config/lmhy-supabase-pat` |
 | Token Vercel | `~/.config/lmhy-vercel-token` | `cat ~/.config/lmhy-vercel-token` |
 
 > **Selalu kirim kredensial lewat kanal terpisah** (DM, pesan pribadi, atau password manager), **jangan** di dalam email/chat grup yang akan di-forward.
+
+### ⚠️ Peran akun QA (sudah ter-set, jangan diubah tester)
+
+| Akun | `creator_role` | `verification_status` | Untuk menguji |
+|---|---|---|---|
+| `qa.praktisi.01@gmail.com` | `PRAKTISI` | `APPROVED` | Alur **psikolog** — akun sudah pernah terverifikasi, jadi **jangan** pakai ini untuk uji form guest (email sudah terdaftar → submit ditolak). |
+| `qa.pendamping.pending@gmail.com` | `PENDAMPING` | `PENDING` | Alur **pendamping** (member) — form in-app akan memprefill data yang read-only. |
+| `qa.klien.01@gmail.com` | `PENULIS` | `NONE` | Guard admin (Skenario 12) & area akun. |
+
+> **Untuk uji form psikolog sebagai tamu**, pakai akun **kosong** yang baru dibuat tester (misal `qa.praktisi.99@gmail.com`) dan minta owner menambahkan email itu ke whitelist lebih dulu. Form psikolog bersifat *guest-first*: akun baru dibuat saat submit, dan emailnya **wajib diverifikasi** sebelum bisa disetujui admin.
+
+### 📬 Status email (supaya tester tidak salah lapor)
+
+| Jenis email | Status | Sumber |
+|---|---|---|
+| Konfirmasi pendaftaran (Supabase Auth) | ✅ **Sudah bisa terkirim** | Supabase sudah dikonfigurasi pakai Resend SMTP (`smtp.resend.com`) |
+| Reset password Supabase | ✅ Bisa | Supabase Auth (Resend SMTP) |
+| Notifikasi approve/reject dari aplikasi | ⚠️ **Belum terkirim** | Provider email aplikasi (`RESEND_API_KEY`) belum terpasang — email dilewati diam-diam, pengajuan tetap masuk antrean. **Ini bukan bug.** |
 
 ---
 
