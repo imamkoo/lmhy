@@ -58,3 +58,4 @@ Panduan pengujian manual dan matriks verifikasi fitur pendaftaran mitra publik, 
 | **Fase 5 (Buka Penuh)** | `true` | `true` | `true` | `false` | Semua jalur kemitraan dibuka bebas untuk publik dan komunitas. |
 
 > Panduan eksekusi langkah demi langkah (migrasi SQL, env Vercel, bootstrap admin, cron, urutan naik fase) ada di **`docs/qa/mitra-intake-rollout-runbook.md`**.
+> Pesan siap-salin untuk meneruskan pengujian ke tim QA (versi chat + versi email) ada di **`docs/qa/mitra-intake-qa-handoff.md`**.
