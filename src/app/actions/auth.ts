@@ -13,6 +13,8 @@ import {
   checkLoginRateLimit,
   recordFailedLoginAttempt,
   resetLoginAttempts,
+  checkPasswordResetLimit,
+  recordPasswordResetRequest,
 } from '@/lib/rate-limit';
 
 export interface AuthActionResult {
@@ -352,6 +354,83 @@ export async function signUpWithEmailAction(
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Gagal mendaftarkan akun.';
+    return { success: false, error: message };
+  }
+}
+
+export async function requestPasswordResetAction(input: {
+  email: string;
+}): Promise<AuthActionResult> {
+  const email = (input.email || '').trim().toLowerCase();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { success: false, error: 'Masukkan alamat email yang valid.' };
+  }
+
+  const headerStore = await headers();
+  const clientIp =
+    headerStore.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown-ip';
+  const rateLimitKey = `${clientIp}:${email}`;
+
+  const rateCheck = checkPasswordResetLimit(rateLimitKey);
+  if (!rateCheck.allowed) {
+    return {
+      success: false,
+      error: `Terlalu banyak permintaan reset. Silakan tunggu ${Math.ceil(
+        (rateCheck.retryAfterSeconds ?? 0) / 60
+      )} menit.`,
+      retryAfterSeconds: rateCheck.retryAfterSeconds,
+    };
+  }
+  recordPasswordResetRequest(rateLimitKey);
+
+  try {
+    const supabase = await createClient();
+    const origin = await getOrigin();
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/auth/callback?next=/akun/keamanan&type=recovery`,
+    });
+  } catch {
+    // Sengaja tidak membocorkan status akun.
+  }
+
+  return { success: true };
+}
+
+export async function updatePasswordAction(input: {
+  password: string;
+}): Promise<AuthActionResult> {
+  const password = (input.password || '').trim();
+
+  if (password.length < 8) {
+    return { success: false, error: 'Kata sandi minimal 8 karakter.' };
+  }
+  if (password.length > 72) {
+    return { success: false, error: 'Kata sandi maksimal 72 karakter.' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Sesi reset tidak ditemukan. Silakan buka tautan dari email kembali.',
+      };
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : 'Gagal memperbarui kata sandi.';
     return { success: false, error: message };
   }
 }

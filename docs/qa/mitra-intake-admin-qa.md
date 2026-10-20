@@ -15,7 +15,7 @@ Panduan pengujian manual dan matriks verifikasi fitur pendaftaran mitra publik, 
 
 ---
 
-## 2. Matriks Pengujian Skenario (24 Skenario)
+## 2. Matriks Pengujian Skenario (26 Skenario)
 
 > **Status awal semua skenario: `⏳ TODO`.** Skenario ini disusun dari spesifikasi, **belum dieksekusi manual** — belum ada tester yang menjalankan alurnya di environment produksi. Ganti `⏳ TODO` dengan `✅ PASS` / `❌ FAIL` + catatan hanya setelah benar-benar dijalankan.
 > Prasyarat: migrasi DB sudah diterapkan, env Vercel terisi, akun admin sudah di-bootstrap, dan rollout flagminimal Fase 2 (lihat `docs/qa/mitra-intake-rollout-runbook.md`).
@@ -46,6 +46,10 @@ Panduan pengujian manual dan matriks verifikasi fitur pendaftaran mitra publik, 
 | **20** | Race-condition pencegahan double approve | 2 admin klik approve pada pengajuan yang sama | Hanya 1 yang berhasil, admin ke-2 menerima notifikasi sudah diproses | ⏳ TODO |
 | **21** | Sweep kedaluwarsa & pelepasan username | Jalankan `POST /api/internal/sweep` dengan token | Pengajuan >7 hr tanpa verifikasi email jadi EXPIRED, username dilepas | ⏳ TODO |
 | **22** | Backfill verifikasi dari `auth.users` | Jalankan sweep untuk pengajuan yang user-nya sudah `email_confirmed_at` terisi | `email_verified_at` terisi otomatis dari `email_confirmed_at`; pengajuan tidak jadi EXPIRED | ⏳ TODO |
+| **23** | Minta tautan reset kata sandi | Buka `/forgot-password`, isi email akun terdaftar | Respons sukses generik (tanpa membocorkan apakah email terdaftar); email berisi tautan | ⏳ TODO |
+| **24** | Atur ulang kata sandi dari tautan email | Klik tautan reset, isi kata sandi baru ≥8 karakter | Diarahkan ke `/reset-password` dengan sesi aktif; kata sandi baru bisa dipakai login; tautan tidak bisa dipakai ulang | ⏳ TODO |
+| **25** | Tautan reset tidak memverifikasi pengajuan | Buka tautan reset untuk akun yang punya pengajuan PENDING | `email_verified_at` tetap `null` (reset tidak boleh dianggap verifikasi email) | ⏳ TODO |
+| **26** | Batas permintaan reset | Kirim permintaan reset 4x beruntun untuk email sama | Permintaan ke-4 ditolak dengan pesan tunggu; kuota pulih setelah 15 menit | ⏳ TODO |
 
 ---
 

@@ -3,7 +3,13 @@ export interface VerificationCallbackParams {
   type: string;
 }
 
-const ALLOWED_OTP_TYPES = new Set(["email", "signup", "magiclink", "email_change"]);
+const ALLOWED_OTP_TYPES = new Set([
+  "email",
+  "signup",
+  "magiclink",
+  "email_change",
+  "recovery",
+]);
 
 export function parseVerificationParams(
   searchParams: URLSearchParams
