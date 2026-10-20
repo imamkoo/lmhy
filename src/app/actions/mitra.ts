@@ -21,7 +21,11 @@ import {
 import { createUploadToken, verifyUploadToken } from "@/lib/mitra/upload-token";
 import { writeAuditLog } from "@/lib/mitra/audit";
 import { sendEmail } from "@/lib/email";
-import { applicationReceivedTemplate } from "@/lib/email-templates";
+import {
+  applicationReceivedTemplate,
+  emailVerificationTemplate,
+} from "@/lib/email-templates";
+import { buildVerificationUrl } from "@/lib/mitra/email-verification";
 import { isEmailWhitelisted } from "@/lib/mitra/flags";
 import type { Json, TablesInsert } from "@/lib/supabase/types";
 
@@ -221,7 +225,45 @@ export async function submitMitraApplication(
       username: normalized.username,
     }),
   }).catch(() => {});
+  await sendVerificationEmail(
+    admin,
+    normalized.applicantEmail,
+    normalized.applicantName,
+    normalized.username,
+  );
   return result;
+}
+
+export async function sendVerificationEmail(
+  admin: Awaited<ReturnType<typeof createAdminClient>>,
+  email: string,
+  applicantName: string,
+  username: string,
+): Promise<boolean> {
+  try {
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+    });
+    const tokenHash = data?.properties?.hashed_token;
+    if (error || !tokenHash) return false;
+
+    const result = await sendEmail({
+      to: email,
+      ...emailVerificationTemplate({
+        applicantName,
+        username,
+        verificationUrl: buildVerificationUrl(
+          process.env.APP_URL?.trim() || "https://www.letmehearyou.id",
+          tokenHash,
+          "/akun?tab=pengajuan",
+        ),
+      }),
+    });
+    return result.ok;
+  } catch {
+    return false;
+  }
 }
 
 async function createApplication(

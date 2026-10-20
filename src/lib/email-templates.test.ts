@@ -6,7 +6,7 @@ import {
   applicationReceivedTemplate,
   applicationRejectedTemplate,
   applicationSupersededTemplate,
-  verificationReminderTemplate,
+  emailVerificationTemplate,
 } from "./email-templates";
 
 test("template approval memuat nama, role, dan username", () => {
@@ -37,7 +37,7 @@ test("semua template memakai token Warm Sanctuary", () => {
     applicationApprovedTemplate({ applicantName: "A", roleLabel: "P", username: "a" }),
     applicationRejectedTemplate({ applicantName: "A", note: "x", username: "a" }),
     applicationExpiredTemplate({ applicantName: "A", username: "a" }),
-    verificationReminderTemplate({ applicantName: "A", username: "a" }),
+    emailVerificationTemplate({ applicantName: "A", username: "a", verificationUrl: "https://contoh.test/auth/callback?token_hash=t&type=email&next=%2Fakun" }),
     applicationSupersededTemplate({ applicantName: "A", username: "a" }),
   ];
 
@@ -67,7 +67,7 @@ test("tautan email memakai APP_URL dan tidak pernah domain lama", () => {
       applicationApprovedTemplate({ applicantName: "A", roleLabel: "P", username: "a" }),
       applicationRejectedTemplate({ applicantName: "A", note: "x", username: "a" }),
       applicationExpiredTemplate({ applicantName: "A", username: "a" }),
-      verificationReminderTemplate({ applicantName: "A", username: "a" }),
+      emailVerificationTemplate({ applicantName: "A", username: "a", verificationUrl: "https://contoh.test/auth/callback?token_hash=t&type=email&next=%2Fakun" }),
       applicationSupersededTemplate({ applicantName: "A", username: "a" }),
     ];
 
@@ -106,7 +106,7 @@ test("input pengguna di-escape agar tidak bisa menyuntik HTML ke email admin", (
     applicationApprovedTemplate({ applicantName: "A", roleLabel: payload, username: "aman" }),
     applicationRejectedTemplate({ applicantName: payload, note: payload, username: "aman" }),
     applicationExpiredTemplate({ applicantName: payload, username: "aman" }),
-    verificationReminderTemplate({ applicantName: payload, username: "aman" }),
+    emailVerificationTemplate({ applicantName: payload, username: "aman", verificationUrl: "https://contoh.test/auth/callback?token_hash=t&type=email" }),
     applicationSupersededTemplate({ applicantName: payload, username: "aman" }),
   ];
 
@@ -123,4 +123,28 @@ test("input pengguna di-escape agar tidak bisa menyuntik HTML ke email admin", (
   });
   assert.ok(rejected.html.includes("&lt;img src=x"));
   assert.ok(rejected.text.includes(payload), "versi teks biasa tetap apa adanya");
+});
+
+test("template verifikasi memuat tautan token_hash yang membawa session", () => {
+  const url =
+    "https://www.letmehearyou.id/auth/callback?token_hash=abc&type=email&next=%2Fakun";
+  const t = emailVerificationTemplate({
+    applicantName: "Siti",
+    username: "siti",
+    verificationUrl: url,
+  });
+  assert.ok(t.html.includes("token_hash=abc"));
+  assert.ok(t.html.includes("/auth/callback"));
+  assert.ok(!t.html.includes("/auth/v1/verify"));
+  assert.ok(t.text.includes(url));
+});
+
+test("tanggal kedaluwarsa dijelaskan di template verifikasi", () => {
+  const t = emailVerificationTemplate({
+    applicantName: "Siti",
+    username: "siti",
+    verificationUrl: "https://www.letmehearyou.id/auth/callback?token_hash=abc",
+  });
+  assert.ok(t.html.includes("7 hari"));
+  assert.ok(t.text.includes("7 hari"));
 });

@@ -150,21 +150,22 @@ export function applicationExpiredTemplate(args: TemplateArgs): EmailContent {
   return { subject, html, text };
 }
 
-export function verificationReminderTemplate(
-  args: TemplateArgs & { verificationUrl?: string }
+export function emailVerificationTemplate(
+  args: TemplateArgs & { verificationUrl: string }
 ): EmailContent {
-  const subject = `Pengingat Verifikasi Email Kemitraan LMHY — ${args.applicantName}`;
-  const text = `Halo ${args.applicantName},\n\nKami mengingatkan Anda untuk segera memverifikasi alamat email Anda untuk pengajuan kemitraan di Let Me Hear You (@${args.username}).\n\nPengajuan tanpa verifikasi email akan kedaluwarsa secara otomatis dalam 7 hari sejak pendaftaran.\n\nSalam hangat,\nTim Let Me Hear You`;
+  const subject = `Verifikasi Email Pengajuan Kemitraan LMHY — ${args.applicantName}`;
+  const text = `Halo ${args.applicantName},\n\nTerima kasih telah mengajukan diri sebagai mitra di Let Me Hear You (@${args.username}).\n\nSatu langkah lagi: verifikasi alamat email Anda melalui tautan berikut.\n\n${args.verificationUrl}\n\nPengajuan tanpa verifikasi email akan kedaluwarsa otomatis dalam 7 hari sejak pendaftaran.\n\nSalam hangat,\nTim Let Me Hear You`;
   const html = BASE_WRAPPER(
     subject,
     `
-    <h2 style="margin:0 0 16px 0;font-size:18px;color:#3C3163;">Verifikasi Alamat Email Anda</h2>
+    <h2 style="margin:0 0 16px 0;font-size:18px;color:#3C3163;">Satu Langkah Lagi: Verifikasi Email</h2>
     <p>Halo <strong>${escapeHtml(args.applicantName)}</strong>,</p>
-    <p>Pengajuan kemitraan Anda dengan akun <code>@${escapeHtml(args.username)}</code> menunggu konfirmasi verifikasi alamat email.</p>
-    <p>Verifikasi email wajib diselesaikan agar pengajuan Anda dapat ditinjau oleh tim kami. Pengajuan yang belum diverifikasi setelah 7 hari akan kedaluwarsa secara otomatis.</p>
+    <p>Terima kasih telah mengajukan diri sebagai mitra di <strong>Let Me Hear You</strong> dengan akun <code>@${escapeHtml(args.username)}</code>.</p>
+    <p>Klik tombol di bawah untuk memverifikasi alamat email Anda. Verifikasi wajib diselesaikan agar pengajuan Anda dapat ditinjau tim kami.</p>
     <div style="margin:24px 0;text-align:center;">
-      <a href="${args.verificationUrl || baseUrl() + "/akun/pengajuan"}" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Konfirmasi Email Sekarang</a>
+      <a href="${escapeHtml(args.verificationUrl)}" style="background:#F7ABC5;color:#3C3163;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:bold;display:inline-block;font-size:13px;">Verifikasi Email Saya</a>
     </div>
+    <p style="font-size:12px;opacity:0.7;">Tautan ini hanya berlaku sekali. Pengajuan yang belum diverifikasi setelah 7 hari akan kedaluwarsa secara otomatis.</p>
     <p style="margin-top:24px;">Salam hangat,<br><strong>Tim Let Me Hear You</strong></p>
     `
   );
