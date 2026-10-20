@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test:unit": "find src -name '*.test.ts' -print0 | xargs -0 tsx --test",
     "purge:documents": "tsx scripts/purge-expired-documents.mjs",
+    "rollout:mitra": "tsx scripts/rollout-mitra-intake.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
