@@ -50,6 +50,7 @@ const SKIP_VERCEL = has("--skip-vercel");
 const SKIP_ADMIN = has("--skip-admin");
 const ADMIN_EMAIL = valueOf("admin-email", "admin@letmehearyou.id");
 const PHASE = valueOf("phase", "1");
+const WHITELIST_OVERRIDE = valueOf("whitelist", null);
 const APP_URL = process.env.APP_URL || "https://letmehearyou.id";
 
 const SUPABASE_REF = process.env.SUPABASE_PROJECT_REF || "wzywhjsxrbkgoxaingar";
@@ -166,6 +167,14 @@ async function runSql(query) {
 
 function generateSecret() {
   return crypto.randomBytes(32).toString("hex");
+}
+
+function readLocalEnv(key) {
+  if (!fs.existsSync(ENV_LOCAL)) return null;
+  const match = fs
+    .readFileSync(ENV_LOCAL, "utf-8")
+    .match(new RegExp(`^${key}=(.*)$`, "m"));
+  return match ? match[1].trim() : null;
 }
 
 function upsertEnvLocal(vars) {
@@ -289,6 +298,14 @@ async function main() {
   if (!flags) {
     fail(`Phase tidak dikenal: ${PHASE}. Pilihan: ${Object.keys(PHASE_FLAGS).join(", ")}`);
     process.exit(1);
+  }
+  if (WHITELIST_OVERRIDE !== null) {
+    flags.whitelist = WHITELIST_OVERRIDE
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+      .join(",");
+    info(`whitelist di-override: ${flags.whitelist || "(kosong = semua email boleh)"}`);
   }
 
   if (!DRY_RUN) {
@@ -542,9 +559,14 @@ async function main() {
   step(5, total, "Set env var di Vercel");
 
   const secrets = {
-    mitraUploadSecret: process.env.MITRA_UPLOAD_SECRET || generateSecret(),
-    sweepSecret: process.env.SWEEP_SECRET || generateSecret(),
-    cronSecret: process.env.CRON_SECRET || generateSecret(),
+    // Reuse nilai yang sudah ada agar re-run tidak membuat secret baru
+    // (nilai berbeda = pemanggilan cron manual jadi tidak sinkron).
+    mitraUploadSecret:
+      process.env.MITRA_UPLOAD_SECRET || readLocalEnv("MITRA_UPLOAD_SECRET") || generateSecret(),
+    sweepSecret:
+      process.env.SWEEP_SECRET || readLocalEnv("SWEEP_SECRET") || generateSecret(),
+    cronSecret:
+      process.env.CRON_SECRET || readLocalEnv("CRON_SECRET") || generateSecret(),
   };
 
   const desiredAll = buildDesiredEnv({
