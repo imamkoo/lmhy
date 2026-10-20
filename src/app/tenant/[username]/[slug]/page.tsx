@@ -12,7 +12,7 @@ import { SocialShareBar } from "../components/SocialShareBar";
 import { CommentSection } from "../components/CommentSection";
 import { FollowButton } from "../components/FollowButton";
 import { ArticleCoverImage } from "../components/ArticleCoverImage";
-import { ArticleThumbnailImage } from "../components/ArticleThumbnailImage";
+import { ArticleThumbnailImage } from "@/components/articles/ArticleThumbnailImage";
 import { getAdaptiveCoverPosition } from "@/lib/media-focal";
 import { BackToProfileLink } from "./BackToProfileLink";
 import DoorwayCard from "@/components/sanctuary/DoorwayCard";

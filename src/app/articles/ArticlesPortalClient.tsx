@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import { ArticleThumbnailImage } from "@/components/articles/ArticleThumbnailImage";
 import type { Article } from "@/lib/article-storage";
 import type { User } from "@supabase/supabase-js";
 
@@ -243,16 +244,16 @@ export function ArticlesPortalClient({
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-slate-950/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-all">
         <nav
           id="Navbar"
-          className="max-w-[1130px] mx-auto px-4 sm:px-6 flex justify-between items-center py-4 gap-4"
+          className="max-w-[1130px] mx-auto px-4 sm:px-6 flex justify-between items-center py-3 sm:py-4 gap-3 sm:gap-4"
         >
           {/* Logo Brand + Search */}
-          <div className="logo-container flex gap-6 items-center flex-1">
-            <Link href="/" className="flex shrink-0 items-center group">
+          <div className="logo-container flex gap-4 sm:gap-6 items-center flex-1 min-w-0">
+            <Link href="/" className="flex min-w-0 items-center group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/assets/LMHY.png"
                 alt="Let Me Hear You"
-                className="h-8 sm:h-9 w-auto object-contain group-hover:opacity-90 transition-opacity"
+                className="h-auto w-auto max-h-7 sm:max-h-9 max-w-[min(52vw,100%)] sm:max-w-none object-contain group-hover:opacity-90 transition-opacity"
               />
             </Link>
 
@@ -293,10 +294,10 @@ export function ArticlesPortalClient({
           </div>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               href="/builder"
-              className="rounded-full px-5 py-2.5 flex items-center gap-2 font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#3c3163] to-[hsl(257,68%,65%)] shadow-md shadow-purple-900/20 hover:shadow-lg hover:shadow-purple-900/30 hover:scale-105 transition-all"
+              className="rounded-full px-2 sm:px-5 py-1.5 sm:py-2.5 flex items-center gap-1.5 sm:gap-2 font-bold text-xs sm:text-sm whitespace-nowrap text-white bg-gradient-to-r from-[#3c3163] to-[hsl(257,68%,65%)] shadow-md shadow-purple-900/20 hover:shadow-lg hover:shadow-purple-900/30 hover:scale-105 transition-all"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -305,7 +306,7 @@ export function ArticlesPortalClient({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="w-4 h-4 shrink-0"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0"
               >
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
@@ -324,7 +325,7 @@ export function ArticlesPortalClient({
             ) : (
               <Link
                 href="/login"
-                className="rounded-full px-4 py-2 flex items-center font-semibold text-xs text-slate-700 dark:text-slate-300 border border-[#EEF0F7] dark:border-white/10 hover:ring-2 hover:ring-[hsl(257,68%,73%)] transition-all"
+                className="rounded-full px-2 sm:px-4 py-1.5 sm:py-2 flex items-center font-semibold text-xs whitespace-nowrap text-slate-700 dark:text-slate-300 border border-[#EEF0F7] dark:border-white/10 hover:ring-2 hover:ring-[hsl(257,68%,73%)] transition-all"
               >
                 Masuk
               </Link>
@@ -405,7 +406,7 @@ export function ArticlesPortalClient({
             {/* SECTION 1: FEATURED CAROUSEL (Sesuai Maga #Featured dengan Prev/Next Button) */}
             {currentHero && (
               <section id="Featured" className="w-full mb-16">
-                <div className="relative w-full h-[480px] sm:h-[540px] rounded-[28px] overflow-hidden shadow-2xl shadow-purple-950/15 border border-white/40 dark:border-white/10">
+                <div className="relative w-full h-[420px] sm:h-[540px] rounded-[28px] overflow-hidden shadow-2xl shadow-purple-950/15 border border-white/40 dark:border-white/10">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={currentHero.id || currentHero.slug}
@@ -415,10 +416,11 @@ export function ArticlesPortalClient({
                       transition={{ duration: 0.4 }}
                       className="absolute inset-0"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <ArticleThumbnailImage
                         src={currentHero.media_url || "/assets/portal/news/cover-7.png"}
                         alt={currentHero.title}
+                        eager
+                        fallbackSrc="/assets/portal/news/cover-7.png"
                         className="w-full h-full object-cover"
                       />
                     </motion.div>
@@ -428,8 +430,8 @@ export function ArticlesPortalClient({
                   <div className="w-full h-full bg-gradient-to-t from-[rgba(18,15,29,0.95)] via-[rgba(18,15,29,0.45)] to-transparent absolute inset-0 z-10" />
 
                   {/* Card Detail & Carousel Controls */}
-                  <div className="w-full h-full flex items-end justify-between p-6 sm:p-12 relative z-20">
-                    <div className="flex flex-col gap-3 max-w-2xl">
+                  <div className="w-full h-full flex flex-col justify-end sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6 p-5 sm:p-12 relative z-20">
+                    <div className="flex flex-col gap-2.5 sm:gap-3 max-w-2xl min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="rounded-full px-3.5 py-1 bg-[hsl(257,68%,73%)] text-slate-950 font-extrabold text-xs tracking-wider uppercase shadow-md">
                           Featured
@@ -454,7 +456,7 @@ export function ArticlesPortalClient({
                         </p>
                       )}
 
-                      <div className="flex items-center gap-3 text-xs text-white/80 pt-1">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:text-xs text-white/80 pt-1">
                         <Link
                           href={resolveAuthorHref(currentHero.username)}
                           className="font-semibold text-white hover:underline flex items-center gap-1.5"
@@ -475,11 +477,11 @@ export function ArticlesPortalClient({
 
                     {/* Prev/Next Buttons */}
                     {heroSlides.length > 1 && (
-                      <div className="flex items-center gap-3 mb-2 shrink-0">
+                      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 self-end sm:mb-2">
                         <button
                           onClick={prevHero}
                           aria-label="Previous slide"
-                          className="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md ring-1 ring-white/50 hover:ring-2 hover:ring-[hsl(257,68%,73%)] hover:bg-white hover:text-slate-900 transition-all duration-300"
+                          className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md ring-1 ring-white/50 hover:ring-2 hover:ring-[hsl(257,68%,73%)] hover:bg-white hover:text-slate-900 transition-all duration-300"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src="/assets/portal/icons/arrow.svg" alt="prev" className="w-4 h-4 invert" />
@@ -487,7 +489,7 @@ export function ArticlesPortalClient({
                         <button
                           onClick={nextHero}
                           aria-label="Next slide"
-                          className="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md ring-1 ring-white/50 hover:ring-2 hover:ring-[hsl(257,68%,73%)] hover:bg-white hover:text-slate-900 transition-all duration-300 rotate-180"
+                          className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md ring-1 ring-white/50 hover:ring-2 hover:ring-[hsl(257,68%,73%)] hover:bg-white hover:text-slate-900 transition-all duration-300 rotate-180"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src="/assets/portal/icons/arrow.svg" alt="next" className="w-4 h-4 invert" />
@@ -502,14 +504,14 @@ export function ArticlesPortalClient({
             {/* SECTION 2: UP TO DATE (Sesuai Maga #Up-to-date 3 Columns) */}
             {upToDateNews.length > 0 && (
               <section id="Up-to-date" className="flex flex-col gap-6 mb-16">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <h2 className="font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-white tracking-tight">
                       Karya Terbaru & Hot <br className="hidden sm:inline" />
                       Refleksi untuk Jiwa
                     </h2>
                   </div>
-                  <p className="rounded-full px-4 py-2 bg-[#f2eefc] dark:bg-purple-950/60 font-bold text-xs uppercase tracking-wider text-[#3c3163] dark:text-purple-300 w-fit border border-purple-200/50 dark:border-white/5">
+                  <p className="rounded-full px-4 py-2 bg-[#f2eefc] dark:bg-purple-950/60 font-bold text-xs uppercase tracking-wider text-[#3c3163] dark:text-purple-300 w-fit border border-purple-200/50 dark:border-white/5 self-start">
                     UP TO DATE
                   </p>
                 </div>
@@ -529,10 +531,10 @@ export function ArticlesPortalClient({
                         <p className="absolute top-4 left-4 z-10 rounded-full px-3 py-1 bg-white/95 dark:bg-slate-900/90 font-extrabold text-[10px] tracking-wider uppercase text-slate-900 dark:text-white shadow-sm">
                           {art.tags?.[0] || "Refleksi"}
                         </p>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <ArticleThumbnailImage
                           src={art.media_url || "/assets/portal/news/cover-4.png"}
                           alt={art.title}
+                          fallbackSrc="/assets/portal/news/cover-4.png"
                           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                         />
                       </Link>
@@ -617,13 +619,13 @@ export function ArticlesPortalClient({
             {/* SECTION 4: SPLIT FEATURED + SCROLLABLE LIST (Sesuai Maga #Latest-entertainment) */}
             {splitHero && (
               <section id="Latest-refleksi" className="flex flex-col gap-6 mb-16">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <h2 className="font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-white tracking-tight">
                     Catatan Pilihan Jiwa & Ruang Dengar
                   </h2>
                   <Link
                     href="#Up-to-date"
-                    className="rounded-full px-5 py-2 flex items-center gap-2 font-semibold text-xs border border-[#EEF0F7] dark:border-white/10 hover:ring-2 hover:ring-[hsl(257,68%,73%)] transition-all"
+                    className="rounded-full px-5 py-2 flex items-center gap-2 font-semibold text-xs border border-[#EEF0F7] dark:border-white/10 hover:ring-2 hover:ring-[hsl(257,68%,73%)] transition-all self-start"
                   >
                     Eksplorasi
                   </Link>
@@ -632,10 +634,10 @@ export function ArticlesPortalClient({
                 <div className="flex flex-col lg:flex-row gap-6 items-stretch">
                   {/* Left Big Feature Card */}
                   <div className="relative w-full lg:flex-1 h-[424px] rounded-[24px] overflow-hidden shadow-xl border border-black/5 dark:border-white/10 group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <ArticleThumbnailImage
                       src={splitHero.media_url || "/assets/portal/news/cover-5.png"}
                       alt={splitHero.title}
+                      fallbackSrc="/assets/portal/news/cover-5.png"
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
                     <div className="w-full h-full bg-gradient-to-t from-[rgba(18,15,29,0.92)] via-[rgba(18,15,29,0.45)] to-transparent absolute inset-0 z-10" />
@@ -667,10 +669,10 @@ export function ArticlesPortalClient({
                         className="rounded-[20px] border border-[#EEF0F7] dark:border-white/10 p-3.5 flex items-center gap-3.5 hover:ring-2 hover:ring-[hsl(257,68%,73%)] transition-all bg-white dark:bg-slate-900/80 group shrink-0"
                       >
                         <div className="w-[110px] h-[86px] rounded-[14px] overflow-hidden shrink-0 relative">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <ArticleThumbnailImage
                             src={art.media_url || "/assets/portal/news/cover-3.png"}
                             alt={art.title}
+                            fallbackSrc="/assets/portal/news/cover-3.png"
                             className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
@@ -702,10 +704,10 @@ export function ArticlesPortalClient({
                       className="flex flex-col bg-white dark:bg-slate-900/80 rounded-[20px] p-4 border border-[#EEF0F7] dark:border-white/10 gap-3 group hover:border-[hsl(257,68%,73%)] transition-all"
                     >
                       <div className="w-full h-40 rounded-[14px] overflow-hidden relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <ArticleThumbnailImage
                           src={art.media_url || "/assets/portal/news/cover.png"}
                           alt={art.title}
+                          fallbackSrc="/assets/portal/news/cover.png"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                       </div>

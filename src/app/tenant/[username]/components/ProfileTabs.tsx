@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { getBuilderUrl } from "@/lib/builder";
 import type { Article, Profile } from "@/lib/supabase/types";
-import { ArticleThumbnailImage } from "./ArticleThumbnailImage";
+import { ArticleThumbnailImage } from "@/components/articles/ArticleThumbnailImage";
 
 interface ProfileTabsProps {
   articles: Article[];
