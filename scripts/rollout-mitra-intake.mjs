@@ -183,6 +183,20 @@ function upsertEnvLocal(vars) {
   fs.writeFileSync(ENV_LOCAL, content);
 }
 
+// Env var yang pernah dikelola SP-1 — kalau muncul sebagai "tidak dipakai",
+// berarti memang perlu dibersihkan manual oleh operator.
+const RETIRED_SPD1_KEYS = new Set([
+  "ADMIN_PIN",
+  "ADMIN_SYSTEM_ACTOR_ID",
+  "MITRA_INTAKE_SHADOW_MODE",
+  "MITRA_INTAKE_WHITELIST_EMAILS",
+  "MITRA_UPLOAD_SECRET",
+  "NEXT_PUBLIC_MITRA_INTAKE_ENABLED",
+  "NEXT_PUBLIC_MITRA_INTAKE_PENDAMPING_ENABLED",
+  "NEXT_PUBLIC_MITRA_INTAKE_PSIKOLOG_ENABLED",
+  "SWEEP_SECRET",
+]);
+
 const PHASE_FLAGS = {
   1: { intake: false, psikolog: false, pendamping: false, shadow: false, whitelist: "" },
   2: { intake: true, psikolog: true, pendamping: true, shadow: true, whitelist: "" },
@@ -191,10 +205,52 @@ const PHASE_FLAGS = {
   5: { intake: true, psikolog: true, pendamping: true, shadow: false, whitelist: "" },
 };
 
+function envUrl(projectId, teamId, version) {
+  const base = `/${version}/projects/${projectId}/env`;
+  return teamId ? `${base}?teamId=${teamId}` : base;
+}
+
+async function fetchServiceRoleKeyFromSupabase() {
+  if (!SUPABASE_PAT) return null;
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
+    try {
+      const keys = await supabaseApi(`/projects/${SUPABASE_REF}/api-keys`);
+      if (!Array.isArray(keys)) {
+        info(`api-keys percobaan ${attempt}: ${JSON.stringify(keys).slice(0, 90)}`);
+        await new Promise((r) => setTimeout(r, 2500));
+        continue;
+      }
+      // Key baru (sb_secret_*) ditolak PostgREST & Auth Admin di project ini —
+      // yang dipakai adalah legacy service_role JWT.
+      const legacy = keys.find((k) => k.id === "service_role");
+      if (legacy?.api_key) return legacy.api_key;
+      return null;
+    } catch (err) {
+      info(`api-keys percobaan ${attempt} gagal: ${err.message}`);
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+  }
+  return null;
+}
+
 async function resolveVercelContext() {
-  const project = await vercelApi(`/v9/projects/${VERCEL_TEAM}/${VERCEL_PROJECT}`);
+  // idOrName bisa berupa "<project>" atau "<team>/<project>" — coba keduanya.
+  let project = null;
+  for (const idOrName of [VERCEL_PROJECT, `${VERCEL_TEAM}/${VERCEL_PROJECT}`]) {
+    try {
+      project = await vercelApi(`/v9/projects/${idOrName}`);
+      break;
+    } catch (err) {
+      info(`resolve project "${idOrName}" gagal (${err.message})`);
+    }
+  }
+  if (!project) {
+    throw new Error(
+      `Project Vercel "${VERCEL_PROJECT}" tidak ditemukan. Cek VERCEL_PROJECT/VERCEL_TEAM & token.`,
+    );
+  }
   const envs = (
-    await vercelApi(`/v9/projects/${project.id}/env?teamId=${project.teamId}`)
+    await vercelApi(`/v9/projects/${project.id}/env`)
   ).envs || [];
   return { project, envs };
 }
@@ -211,7 +267,7 @@ async function createVercelEnv(projectId, teamId, item) {
   for (const version of ["v10", "v9"]) {
     try {
       return await vercelApi(
-        `/${version}/projects/${projectId}/env?teamId=${teamId}`,
+        envUrl(projectId, teamId, version),
         { method: "POST", body },
       );
     } catch (err) {
@@ -321,6 +377,30 @@ async function main() {
     );
     if ((fnRes?.[0]?.n ?? 0) > 0) ok("fungsi release_mitra_username ada");
     else fail("fungsi release_mitra_username tidak ditemukan");
+
+    // Supabase memberi default privilege ALL untuk anon/authenticated pada tabel
+    // baru di schema public. Cabut agar deny-all tidak bergantung pada RLS saja.
+    const grantRes = await runSql(
+      `SELECT count(*)::int AS n FROM information_schema.role_table_grants
+       WHERE grantee IN ('anon','authenticated')
+         AND table_name IN ('provider_applications','provider_documents','admin_audit_log')`,
+    );
+    const grantCount = grantRes?.[0]?.n ?? 0;
+    if (grantCount === 0) ok("tidak ada privilege anon/authenticated (deny-all diperkuat)");
+    else {
+      fail(`masih ada ${grantCount} privilege anon/authenticated — jalankan REVOKE`);
+      await runSql(
+        `REVOKE ALL ON public.provider_applications, public.provider_documents,
+         public.admin_audit_log FROM anon, authenticated`,
+      );
+      const after = await runSql(
+        `SELECT count(*)::int AS n FROM information_schema.role_table_grants
+         WHERE grantee IN ('anon','authenticated')
+           AND table_name IN ('provider_applications','provider_documents','admin_audit_log')`,
+      );
+      if ((after?.[0]?.n ?? 0) === 0) ok("REVOKE berhasil — 0 privilege tersisa");
+      else fail("REVOKE gagal, privilege anon masih ada");
+    }
   }
 
   // --------------------------------------- 3. resolusikan konteks Vercel (read)
@@ -345,15 +425,22 @@ async function main() {
         serviceRoleKey = found.value;
         ok("SUPABASE_SERVICE_ROLE_KEY dibaca dari Vercel");
       } else {
-        fail(
-          "SUPABASE_SERVICE_ROLE_KEY tidak terbaca dari Vercel — pass manual: SUPABASE_SERVICE_ROLE_KEY=...",
+        info(
+          "SUPABASE_SERVICE_ROLE_KEY di Vercel bertipe sensitive (tidak terbaca via API) — ambil dari Supabase…",
         );
-        process.exit(1);
+        serviceRoleKey = await fetchServiceRoleKeyFromSupabase();
+        if (serviceRoleKey) {
+          ok("SUPABASE_SERVICE_ROLE_KEY diambil dari Supabase Management API");
+        } else {
+          fail(
+            "SUPABASE_SERVICE_ROLE_KEY tidak ditemukan — pass manual: SUPABASE_SERVICE_ROLE_KEY=...",
+          );
+          process.exit(1);
+        }
       }
     } else {
       ok("SUPABASE_SERVICE_ROLE_KEY dari environment lokal");
-    }
-  }
+    }  }
 
   if (!serviceRoleKey) {
     if (DRY_RUN) {
@@ -460,7 +547,7 @@ async function main() {
     cronSecret: process.env.CRON_SECRET || generateSecret(),
   };
 
-  const desired = buildDesiredEnv({
+  const desiredAll = buildDesiredEnv({
     supabaseServiceRoleKey: serviceRoleKey,
     mitraUploadSecret: secrets.mitraUploadSecret,
     sweepSecret: secrets.sweepSecret,
@@ -477,6 +564,23 @@ async function main() {
     whitelistEmails: flags.whitelist,
   });
 
+  // JANGAN pernah menimpa SUPABASE_SERVICE_ROLE_KEY yang sudah ada di Vercel:
+  // nilainya bertipe sensitive (tidak bisa dibaca), dan project ini hanya
+  // menerima legacy service_role JWT untuk PostgREST — menimpanya dengan key
+  // format baru (sb_secret_*) akan mematikan webhook Litera.
+  const alreadyHasServiceRole = existingEnv.some(
+    (e) =>
+      e.key === "SUPABASE_SERVICE_ROLE_KEY" && e.target.includes("production"),
+  );
+  const desired = alreadyHasServiceRole
+    ? desiredAll.filter((d) => d.key !== "SUPABASE_SERVICE_ROLE_KEY")
+    : desiredAll;
+  if (alreadyHasServiceRole) {
+    info(
+      "SUPABASE_SERVICE_ROLE_KEY sudah ada di Vercel (production) — TIDAK ditimpa, nilainya dipertahankan",
+    );
+  }
+
   if (DRY_RUN || SKIP_VERCEL) {
     info(`rencana ${desired.length} env var:`);
     for (const d of desired) {
@@ -490,7 +594,7 @@ async function main() {
     }
     for (const { existing, desired: want } of diff.update) {
       await vercelApi(
-        `/v9/projects/${vercelProject.id}/env/${existing.id}?teamId=${vercelProject.teamId}`,
+        envUrl(vercelProject.id, vercelProject.teamId, 'v9') + `/${existing.id}`,
         {
           method: "PATCH",
           body: JSON.stringify({
@@ -504,9 +608,14 @@ async function main() {
     }
     for (const item of diff.unchanged) info(`sama     ${item.key}`);
     if (diff.remove.length) {
-      warn(
-        `env var tidak lagi dipakai: ${diff.remove.map((e) => e.key).join(", ")} — TIDAK dihapus otomatis`,
-      );
+      // Hanya bodyweight kalau key-nya pernah dikelola SP-1; env bawaan project
+      // (Litera, Supabase, dsb) bukan urusan rollout ini.
+      const retired = diff.remove.filter((e) => RETIRED_SPD1_KEYS.has(e.key));
+      if (retired.length) {
+        warn(
+          `env var SP-1 yang tidak lagi dipakai: ${retired.map((e) => e.key).join(", ")} — TIDAK dihapus otomatis`,
+        );
+      }
     }
     ok(
       `total: ${diff.create.length} dibuat · ${diff.update.length} diperbarui · ${diff.unchanged.length} sama`,
@@ -520,7 +629,7 @@ async function main() {
     warn("Dilewati (dry-run / --skip-vercel)");
   } else {
     const deployments = await vercelApi(
-      `/v6/deployments?projectId=${vercelProject.id}&target=production&limit=1&teamId=${vercelProject.teamId}`,
+      `/v6/deployments?projectId=${vercelProject.id}&target=production&limit=1`,
     );
     const latest = deployments.deployments?.[0];
     if (!latest) {
@@ -528,7 +637,7 @@ async function main() {
       process.exit(1);
     }
     const created = await vercelApi(
-      `/v13/deployments?teamId=${vercelProject.teamId}`,
+      `/v13/deployments`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -546,7 +655,7 @@ async function main() {
     for (let i = 0; i < 90 && state !== "READY" && state !== "ERROR"; i += 1) {
       await new Promise((r) => setTimeout(r, 10000));
       const status = await vercelApi(
-        `/v13/deployments/${created.id}?teamId=${vercelProject.teamId}`,
+        `/v13/deployments/${created.id}`,
       );
       state = status.readyState;
       process.stdout.write(`    … ${state}\n`);
