@@ -92,8 +92,8 @@ Dua tugas berjalan otomatis via Vercel Cron (lihat `vercel.json`):
 
 | Tugas | Endpoint | Jadwal | Efek |
 |---|---|---|---|
-| Sweep kedaluwarsa | `GET /api/internal/sweep` | `0 20 20 * *` (03:00 WIB, harian) | Pengajuan >7 hari tanpa verifikasi email atau >30 hari → `EXPIRED`; username dilepas (tombstone `akun-<8hex>`) |
-| Purge dokumen | `GET /api/internal/purge-documents` | `0 30 3 * *` (10:30 WIB, mingguan) | Dokumen kredensial dihapus 90 hari setelah keputusan |
+| Sweep kedaluwarsa | `GET /api/internal/sweep` | `0 20 * * *` (03:00 WIB, harian) | Pengajuan >7 hari tanpa verifikasi email atau >30 hari → `EXPIRED`; username dilepas (tombstone `akun-<8hex>`) |
+| Purge dokumen | `GET /api/internal/purge-documents` | `30 3 * * 1` (10:30 WIB, mingguan) | Dokumen kredensial dihapus 90 hari setelah keputusan |
 
 **Konsekuensi untuk reviewer:** pengajuan bisa berubah status menjadi `EXPIRED` tanpa interaksi manusia. Saat membuka antrean, perhitungkan umur pengajuan sebelum menyetujui — pengajuan yang sudah kedaluwarsa akan ditolak gate approve dengan pesan eksplisit.
 

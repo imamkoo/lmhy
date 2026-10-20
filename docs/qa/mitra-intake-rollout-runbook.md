@@ -193,10 +193,16 @@ Vercel → **Settings** → **Cron Jobs**. Harus terlihat 2 entri:
 
 | Path | Schedule | Arti |
 |---|---|---|
-| `/api/internal/sweep` | `0 20 20 * *` (03:00 WIB) | Sweep kedaluwarsa harian |
-| `/api/internal/purge-documents` | `0 30 3 * *` (10:30 WIB) | Purge dokumen 90 hari (minggu) |
+| `/api/internal/sweep` | `0 20 * * *` (03:00 WIB) | Sweep kedaluwarsa harian |
+| `/api/internal/purge-documents` | `30 3 * * 1` (10:30 WIB) | Purge dokumen 90 hari (minggu) |
 
-> ⚠️ **Paket Hobby**: cron hanya bisa jalan **sekali per hari** dan jadwalnya bisa dieksekusi kapan saja dalam jam tersebut. Rentang `*/5 * * * *` akan **gagal deploy**. Jadwal di atas aman.
+> ⚠️ **Paket Hobby**: cron hanya bisa jalan **sekali per hari** dan jadwalnya bisa dieksekusi kapan saja dalam jam tersebut. Ekspresi seperti `*/5 * * * *` akan **gagal deploy** dengan pesan *"Hobby accounts are limited to daily cron jobs."* Jadwal di atas aman.
+> ⚠️ **Format cron 5 field: `menit jam hari-bulan bulan hari-minggu`.** Field `jam` maksimal **23**, `menit` maksimal **59**. Kesalahan ini **menggagalkan seluruh deploy**, bukan cuma cron-nya:
+> ```
+> Error while validating your Cron Jobs expressions:
+>   - Number 30 of hours field is bigger than upper limit '23' (Input cron: '0 30 3 * *')
+> ```
+> Cron `0 30 3 * *` bermaksud "menit 0, jam 30" — bukan "jam 3 menit 30". Yang benar untuk **03:30** adalah `30 3 * * *` (menit 30, jam 3). `0 20 20 * *` = tanggal 20 tiap bulan, bukan setiap hari — untuk **setiap hari jam 20:00** yang benar `0 20 * * *`.
 > ⚠️ **Vercel tidak me-retry** cron yang gagal → cek **View Logs** di halaman Cron Jobs secara berkala.
 
 ---
