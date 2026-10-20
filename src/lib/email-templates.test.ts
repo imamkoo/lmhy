@@ -5,6 +5,7 @@ import {
   applicationExpiredTemplate,
   applicationReceivedTemplate,
   applicationRejectedTemplate,
+  applicationSupersededTemplate,
   verificationReminderTemplate,
 } from "./email-templates";
 
@@ -37,6 +38,7 @@ test("semua template memakai token Warm Sanctuary", () => {
     applicationRejectedTemplate({ applicantName: "A", note: "x", username: "a" }),
     applicationExpiredTemplate({ applicantName: "A", username: "a" }),
     verificationReminderTemplate({ applicantName: "A", username: "a" }),
+    applicationSupersededTemplate({ applicantName: "A", username: "a" }),
   ];
 
   for (const t of templates) {
@@ -66,6 +68,7 @@ test("tautan email memakai APP_URL dan tidak pernah domain lama", () => {
       applicationRejectedTemplate({ applicantName: "A", note: "x", username: "a" }),
       applicationExpiredTemplate({ applicantName: "A", username: "a" }),
       verificationReminderTemplate({ applicantName: "A", username: "a" }),
+      applicationSupersededTemplate({ applicantName: "A", username: "a" }),
     ];
 
     for (const t of templates) {
@@ -85,5 +88,39 @@ test("tautan email jatuh ke domain produksi saat APP_URL kosong", () => {
 test("template approval tidak menautkan ke rute /praktik yang belum ada", () => {
   const t = applicationApprovedTemplate({ applicantName: "A", roleLabel: "P", username: "a" });
   assert.ok(!t.html.includes("/praktik"));
-  assert.ok(t.html.includes("/mitra"));
+  assert.ok(t.html.includes("/akun?tab=pengajuan"));
+});
+
+test("template approval mengarah ke halaman status pengajuan akun", () => {
+  withAppUrl("https://contoh.test", () => {
+    const t = applicationApprovedTemplate({ applicantName: "A", roleLabel: "P", username: "a" });
+    assert.ok(t.html.includes("https://contoh.test/akun?tab=pengajuan"));
+    assert.ok(t.html.includes("Lihat Status Pengajuan"));
+  });
+});
+
+test("input pengguna di-escape agar tidak bisa menyuntik HTML ke email admin", () => {
+  const payload = '<img src=x onerror="alert(1)">';
+  const templates = [
+    applicationReceivedTemplate({ applicantName: payload, username: "aman" }),
+    applicationApprovedTemplate({ applicantName: "A", roleLabel: payload, username: "aman" }),
+    applicationRejectedTemplate({ applicantName: payload, note: payload, username: "aman" }),
+    applicationExpiredTemplate({ applicantName: payload, username: "aman" }),
+    verificationReminderTemplate({ applicantName: payload, username: "aman" }),
+    applicationSupersededTemplate({ applicantName: payload, username: "aman" }),
+  ];
+
+  for (const t of templates) {
+    assert.ok(!t.html.includes("<img src=x"), "tag mentah tidak boleh lolos");
+    assert.ok(!t.html.includes('onerror="'), "atribut event tidak boleh lolos");
+    assert.ok(t.html.includes("&lt;img src=x"), "harus tampil sebagai teks");
+  }
+
+  const rejected = applicationRejectedTemplate({
+    applicantName: "A",
+    note: payload,
+    username: "aman",
+  });
+  assert.ok(rejected.html.includes("&lt;img src=x"));
+  assert.ok(rejected.text.includes(payload), "versi teks biasa tetap apa adanya");
 });

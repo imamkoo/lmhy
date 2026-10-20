@@ -125,7 +125,11 @@ export function VerificationDetail({
         approveNote.trim() || undefined
       );
       if (res.ok) {
-        setActionSuccess("Pengajuan berhasil disetujui!");
+        setActionSuccess(
+          res.code === "EMAIL_FAILED"
+            ? res.message || "Disetujui, tetapi email gagal terkirim."
+            : "Pengajuan berhasil disetujui!",
+        );
         setShowApproveModal(false);
         onActionComplete?.();
       } else {
@@ -147,7 +151,11 @@ export function VerificationDetail({
         rejectNote.trim()
       );
       if (res.ok) {
-        setActionSuccess("Pengajuan telah ditolak.");
+        setActionSuccess(
+          res.code === "EMAIL_FAILED"
+            ? res.message || "Ditolak, tetapi email gagal terkirim."
+            : "Pengajuan telah ditolak.",
+        );
         setShowRejectModal(false);
         onActionComplete?.();
       } else {
