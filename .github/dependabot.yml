@@ -1,0 +1,28 @@
+# Dependabot — security & version updates (AGENTS.md Guideline 3)
+# Docs: https://docs.github.com/en/code-security/dependabot/working-with-dependabot
+version: 2
+
+updates:
+  # Production & dev npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    # Abaikan major breaking upgrades — ditangani manual via PR khusus
+    ignore:
+      # wagmi 3.x adalah breaking change (PR terpisah)
+      - dependency-name: "wagmi"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
