@@ -45,5 +45,11 @@
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"
+  },
+  "overrides": {
+    "ws": "8.22.0",
+    "viem": "$viem",
+    "abitype": "1.2.3",
+    "zod": "4.6.7"
   }
 }
