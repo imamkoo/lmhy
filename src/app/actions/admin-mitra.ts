@@ -21,8 +21,10 @@ import {
   applicationApprovedTemplate,
   applicationExpiredTemplate,
   applicationRejectedTemplate,
-  verificationReminderTemplate,
+  applicationSupersededTemplate,
+  emailVerificationTemplate,
 } from "@/lib/email-templates";
+import { buildVerificationUrl } from "@/lib/mitra/email-verification";
 import type { TablesUpdate } from "@/lib/supabase/types";
 
 export interface AdminActionResult {
@@ -273,6 +275,13 @@ export async function approveApplicationAction(
     .update({ purge_after: purgeAfterIso })
     .eq("application_id", applicationId);
 
+  const supersededResult = await supabase
+    .from("provider_applications")
+    .select("applicant_name, username")
+    .eq("user_id", application.user_id)
+    .eq("status", "SUPERSEDED")
+    .order("applied_at", { ascending: false });
+
   await writeAuditLog(admin.id, {
     action: "APPLICATION_APPROVED",
     targetType: "provider_application",
@@ -280,7 +289,7 @@ export async function approveApplicationAction(
     note: note ?? undefined,
   });
 
-  sendEmail({
+  const approvalEmail = await sendEmail({
     to: application.applicant_email,
     ...applicationApprovedTemplate({
       applicantName: application.applicant_name,
@@ -288,7 +297,26 @@ export async function approveApplicationAction(
         newRole === "PRAKTISI" ? "Praktisi Klinis" : "Pendamping Sebaya",
       username: application.username,
     }),
-  }).catch(() => {});
+  });
+
+  for (const superseded of supersededResult.data ?? []) {
+    await sendEmail({
+      to: application.applicant_email,
+      ...applicationSupersededTemplate({
+        applicantName: superseded.applicant_name,
+        username: superseded.username,
+      }),
+    });
+  }
+
+  if (!approvalEmail.ok && !approvalEmail.skipped) {
+    return {
+      ok: true,
+      code: "EMAIL_FAILED",
+      message:
+        "Mitra disetujui, tetapi email pemberitahuan gagal terkirim. Gunakan 'Kirim ulang email' di antrean.",
+    };
+  }
 
   return { ok: true };
 }
@@ -386,14 +414,23 @@ export async function rejectApplicationAction(
     note,
   });
 
-  sendEmail({
+  const rejectionEmail = await sendEmail({
     to: application.applicant_email,
     ...applicationRejectedTemplate({
       applicantName: application.applicant_name,
       note,
       username: application.username,
     }),
-  }).catch(() => {});
+  });
+
+  if (!rejectionEmail.ok && !rejectionEmail.skipped) {
+    return {
+      ok: true,
+      code: "EMAIL_FAILED",
+      message:
+        "Pengajuan ditolak, tetapi email pemberitahuan gagal terkirim. Gunakan 'Kirim ulang email' di antrean.",
+    };
+  }
 
   return { ok: true };
 }
@@ -442,7 +479,33 @@ export async function runExpirySweepAction(): Promise<{
     let expiredAppCount = 0;
     let releasedUsernamesCount = 0;
 
+    const { data: authUsers } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    const confirmedAtByUserId = new Map<string, string>();
+    for (const user of authUsers?.users ?? []) {
+      if (user.email_confirmed_at) {
+        confirmedAtByUserId.set(user.id, user.email_confirmed_at);
+      }
+    }
+
     for (const app of pendingApps) {
+      if (!app.email_verified_at) {
+        const confirmedAt = confirmedAtByUserId.get(app.user_id);
+        if (confirmedAt) {
+          const { error: backfillError } = await supabase
+            .from("provider_applications")
+            .update({ email_verified_at: confirmedAt })
+            .eq("id", app.id)
+            .is("email_verified_at", null);
+
+          if (!backfillError) {
+            app.email_verified_at = confirmedAt;
+          }
+        }
+      }
+
       const appliedDate = new Date(app.applied_at);
       let expireReason: string | null = null;
       let isEmailExpiry = false;
@@ -554,23 +617,36 @@ export async function resendVerificationEmailAction(
     };
   }
 
-  let verificationUrl: string | undefined;
+  let tokenHash: string | undefined;
   try {
     const { data: linkData } = await supabase.auth.admin.generateLink({
       type: "magiclink",
       email: application.applicant_email,
     });
-    verificationUrl = linkData?.properties?.action_link;
+    tokenHash = linkData?.properties?.hashed_token;
   } catch {
     // fallback without link
   }
 
+  if (!tokenHash) {
+    return {
+      ok: false,
+      code: "EMAIL_FAILED",
+      message:
+        "Tautan verifikasi gagal dibuat. Pastikan email pelamar masih terdaftar di Supabase Auth.",
+    };
+  }
+
   const emailResult = await sendEmail({
     to: application.applicant_email,
-    ...verificationReminderTemplate({
+    ...emailVerificationTemplate({
       applicantName: application.applicant_name,
       username: application.username,
-      verificationUrl,
+      verificationUrl: buildVerificationUrl(
+        process.env.APP_URL?.trim() || "https://www.letmehearyou.id",
+        tokenHash,
+        "/akun?tab=pengajuan",
+      ),
     }),
   });
 
@@ -589,7 +665,14 @@ export async function resendVerificationEmailAction(
     note: "Resent email verification reminder",
   });
 
-  return { ok: true };
+  return emailResult.skipped
+    ? {
+        ok: false,
+        code: "EMAIL_SKIPPED",
+        message:
+          "Provider email belum dikonfigurasi, email tidak terkirim. Periksa RESEND_API_KEY di Vercel.",
+      }
+    : { ok: true };
 }
 
 export async function resendDecisionEmailAction(
@@ -657,5 +740,12 @@ export async function resendDecisionEmailAction(
     note: `Resent ${application.status} decision email`,
   });
 
-  return { ok: true };
+  return emailResult.skipped
+    ? {
+        ok: false,
+        code: "EMAIL_SKIPPED",
+        message:
+          "Provider email belum dikonfigurasi, email tidak terkirim. Periksa RESEND_API_KEY di Vercel.",
+      }
+    : { ok: true };
 }

@@ -38,9 +38,6 @@ export default function MitraStatusPage() {
             </Link>
             .
           </p>
-          <p className="mt-3 text-sm text-slate-500">
-            Lupa kata sandi? Anda dapat mengaturnya ulang melalui halaman login.
-          </p>
         </div>
       </div>
     </main>

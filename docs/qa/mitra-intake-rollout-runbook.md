@@ -103,7 +103,7 @@ _dmarc.letmehearyou.id   TXT   v=DMARC1; p=none; rua=mailto:noreply@letmehearyou
 □ 2. Isi 7 env var di Vercel + REDEPLOY        (15 menit)
 □ 3. Bootstrap akun admin + login ulang        (5 menit)
 □ 4. Verifikasi RLS + endpoint cron             (5 menit)
-□ 5. Jalankan 21 skenario QA manual             (30 menit)
+□ 5. Jalankan 26 skenario QA manual             (30 menit)
 □ 6. Naikkan flag ke Fase 2 (whitelist QA)      (5 menit)
 □ 7. Naikkan ke Fase 3 (shadow mode) → Fase 4  (1 minggu)
 □ 8. Isi env Midtrans + REDEPLOY → lanjut QA A5 (terpisah)
@@ -297,7 +297,7 @@ Vercel → **Settings** → **Cron Jobs**. Harus terlihat 2 entri:
 
 ---
 
-## Langkah 5 — Jalankan 21 Skenario QA Manual
+## Langkah 5 — Jalankan 26 Skenario QA Manual
 
 Buka `docs/qa/mitra-intake-admin-qa.md` → Section 2. Ganti `⏳ TODO` dengan `✅ PASS` / `❌ FAIL` + catatan.
 
@@ -384,7 +384,7 @@ Buka `docs/qa/mitra-intake-admin-qa.md` → Section 2. Ganti `⏳ TODO` dengan `
 | Dokumen | Isi |
 |---|---|
 | `docs/qa/mitra-admin-sop.md` | SOP review harian, kapan approve vs reject, template pesan WA |
-| `docs/qa/mitra-intake-admin-qa.md` | 21 skenario QA manual + matriks rollout Fase 0–5 |
+| `docs/qa/mitra-intake-admin-qa.md` | 26 skenario QA manual + matriks rollout Fase 0–5 |
 | `docs/qa/mitra-intake-rollback.md` | Prosedur darurat rollback + skrip SQL |
 | `docs/qa/sanctuary-studio-and-litera-manual-qa.md` | QA A1–A6, B0–B3 (termasuk A5 Midtrans) |
 | `docs/superpowers/specs/2026-10-20-lmhy-mitra-intake-admin-queue-design.md` | Spesifikasi desain lengkap SP-1 |

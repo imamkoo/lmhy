@@ -28,6 +28,8 @@ const ROOT_ROUTES = [
   "/admin",
   "/login",
   "/onboarding",
+  "/forgot-password",
+  "/reset-password",
   "/auth",
   "/mitra",
   "/akun",

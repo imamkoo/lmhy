@@ -8,14 +8,14 @@ Panduan pengujian manual dan matriks verifikasi fitur pendaftaran mitra publik, 
 
 | Peran Akun | Email QA | Kredensial / Catatan |
 |---|---|---|
-| **Admin Penguji** | `admin.qa@letmehearyou.com` | `app_metadata.is_admin = true` |
+| **Admin Penguji** | lihat `~/.config/lmhy-qa-accounts.txt` | `app_metadata.is_admin = true` |
 | **Pelamar Klinis (Guest)** | `qa.praktisi.01@gmail.com` | Pendaftaran via `/mitra/psikolog` |
 | **Pelamar Sebaya (Member)** | `qa.pendamping.pending@gmail.com` | Login sebagai `PENULIS` via `/mitra/pendamping` |
 | **Klien Reguler** | `qa.klien.01@gmail.com` | User umum tanpa izin mitra |
 
 ---
 
-## 2. Matriks Pengujian Skenario (21 Skenario)
+## 2. Matriks Pengujian Skenario (26 Skenario)
 
 > **Status awal semua skenario: `⏳ TODO`.** Skenario ini disusun dari spesifikasi, **belum dieksekusi manual** — belum ada tester yang menjalankan alurnya di environment produksi. Ganti `⏳ TODO` dengan `✅ PASS` / `❌ FAIL` + catatan hanya setelah benar-benar dijalankan.
 > Prasyarat: migrasi DB sudah diterapkan, env Vercel terisi, akun admin sudah di-bootstrap, dan rollout flagminimal Fase 2 (lihat `docs/qa/mitra-intake-rollout-runbook.md`).
@@ -29,6 +29,7 @@ Panduan pengujian manual dan matriks verifikasi fitur pendaftaran mitra publik, 
 | **5** | Honeypot anti-bot form psikolog | Kirim form dengan field honeypot terisi string | Pengajuan ditolak dengan kode validasi spam | ⏳ TODO |
 | **6** | Unggah berkas kredensial via token | Unggah file PDF STR pada form | File terunggah ke bucket privat dengan signed URL aman | ⏳ TODO |
 | **7** | Halaman status guest & pengingat email | Selesaikan form psikolog | Halaman `/mitra/status` tampil dengan pesan cek email konfirmasi | ⏳ TODO |
+| **7b** | Verifikasi email dari tautan | Buka tautan "Verifikasi Email Saya" di inbox pelamar | Masuk otomatis ke `/akun?tab=pengajuan`; `email_verified_at` terisi; tautan tidak bisa dipakai dua kali | ⏳ TODO |
 | **8** | Akses in-app upgrade Sebaya oleh tamu | Tamu (logged out) akses `/mitra/pendamping` | Diarahkan ke form pendaftaran/login | ⏳ TODO |
 | **9** | In-app upgrade Sebaya oleh Penulis | Login akun Penulis, akses `/mitra/pendamping` | Field identitas prefilled read-only, checklist WA & PFA tampil | ⏳ TODO |
 | **10** | Banner ajakan di profil penulis | Login Penulis, buka profil akun sendiri | Tampil banner ajakan mitra menuju `/mitra/pendamping` | ⏳ TODO |
@@ -40,9 +41,15 @@ Panduan pengujian manual dan matriks verifikasi fitur pendaftaran mitra publik, 
 | **16** | Buka dokumen kredensial berizin | Klik tombol "Lihat" dokumen di detail verifikasi | Dokumen terbuka via signed URL 60s; audit `DOCUMENT_VIEWED` tercatat | ⏳ TODO |
 | **17** | Update checklist admin interaktif | Toggle centang WA dan ubah status PFA | Checklist tersimpan di DB dan tercatat di audit log | ⏳ TODO |
 | **18** | Persetujuan pengajuan mitra | Klik "Setujui Mitra" dengan checklist lengkap | Status pengajuan jadi `APPROVED`, profile role naik ke `PRAKTISI` / `PENDAMPING` | ⏳ TODO |
+| **18b** | Approve ditolak bila email belum terverifikasi | Approve pengajuan yang `email_verified_at` masih null | Tombol approve gagal dengan alasan "Alamat email belum terverifikasi." | ⏳ TODO |
 | **19** | Penolakan pengajuan & ajukan ulang | Admin tolak dengan catatan; pelamar buka `/akun` | Status jadi `REJECTED`, tombol "Perbaiki & Ajukan Ulang" aktif | ⏳ TODO |
 | **20** | Race-condition pencegahan double approve | 2 admin klik approve pada pengajuan yang sama | Hanya 1 yang berhasil, admin ke-2 menerima notifikasi sudah diproses | ⏳ TODO |
 | **21** | Sweep kedaluwarsa & pelepasan username | Jalankan `POST /api/internal/sweep` dengan token | Pengajuan >7 hr tanpa verifikasi email jadi EXPIRED, username dilepas | ⏳ TODO |
+| **22** | Backfill verifikasi dari `auth.users` | Jalankan sweep untuk pengajuan yang user-nya sudah `email_confirmed_at` terisi | `email_verified_at` terisi otomatis dari `email_confirmed_at`; pengajuan tidak jadi EXPIRED | ⏳ TODO |
+| **23** | Minta tautan reset kata sandi | Buka `/forgot-password`, isi email akun terdaftar | Respons sukses generik (tanpa membocorkan apakah email terdaftar); email berisi tautan | ⏳ TODO |
+| **24** | Atur ulang kata sandi dari tautan email | Klik tautan reset, isi kata sandi baru ≥8 karakter | Diarahkan ke `/reset-password` dengan sesi aktif; kata sandi baru bisa dipakai login; tautan tidak bisa dipakai ulang | ⏳ TODO |
+| **25** | Tautan reset tidak memverifikasi pengajuan | Buka tautan reset untuk akun yang punya pengajuan PENDING | `email_verified_at` tetap `null` (reset tidak boleh dianggap verifikasi email) | ⏳ TODO |
+| **26** | Batas permintaan reset | Kirim permintaan reset 4x beruntun untuk email sama | Permintaan ke-4 ditolak dengan pesan tunggu; kuota pulih setelah 15 menit | ⏳ TODO |
 
 ---
 
