@@ -306,15 +306,25 @@ export function LandingPage({
           </motion.div>
           <motion.div className="row" variants={staggerParent}>
             {[
-              { img: "1.jpg", title: "Mentoring", text: "Sharing tentang apa yang dirasa memberatkan dalam menjalani kehidupan tanpa mendapatkan penghakiman." },
-              { img: "2.jpg", title: "Consultation", text: "Case yang lebih urgent dan serius akan di arahkan dan tangani oleh Psikolog handal." },
-              { img: "3.jpg", title: "Sharing", text: "Mendapat sosial support dan komunitas sebagai sarana untuk berdiskusi." },
-              { img: "4.jpg", title: "Online Mentoring", text: "Kelas khusus untuk modul atau webinar seputar psikologi dan kesehatan mental." },
+              { img: "1", title: "Mentoring", text: "Sharing tentang apa yang dirasa memberatkan dalam menjalani kehidupan tanpa mendapatkan penghakiman." },
+              { img: "2", title: "Consultation", text: "Case yang lebih urgent dan serius akan di arahkan dan tangani oleh Psikolog handal." },
+              { img: "3", title: "Sharing", text: "Mendapat sosial support dan komunitas sebagai sarana untuk berdiskusi." },
+              { img: "4", title: "Online Mentoring", text: "Kelas khusus untuk modul atau webinar seputar psikologi dan kesehatan mental." },
             ].map((s) => (
               <motion.div key={s.img} className="services-item" variants={staggerChild}>
                 <div className="img-box">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/assets/img/service/${s.img}`} alt="" />
+                  <img
+                    src={`/assets/img/service/${s.img}-640.webp`}
+                    srcSet={`/assets/img/service/${s.img}-320.webp 320w, /assets/img/service/${s.img}-640.webp 640w`}
+                    sizes="120px"
+                    width={640}
+                    height={960}
+                    loading="lazy"
+                    decoding="async"
+                    style={{ height: "auto" }}
+                    alt=""
+                  />
                 </div>
                 <div className="text">
                   <h3>{s.title}</h3>
