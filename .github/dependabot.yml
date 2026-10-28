@@ -20,6 +20,11 @@ updates:
       # wagmi 3.x adalah breaking change (PR terpisah)
       - dependency-name: "wagmi"
         update-types: ["version-update:semver-major"]
+      # typescript-eslint (stabil terbaru 8.72.1) hanya mendukung
+      # typescript >=4.8.4 <6.1.0, jadi TS 7 mematikan `npm run lint`.
+      # Hapus entri ini begitu typescript-eslint mendukung TS 7.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
